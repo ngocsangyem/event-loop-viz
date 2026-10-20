@@ -10,10 +10,12 @@ import type {
   ScriptOutcome,
 } from '../host/engine-adapter'
 import type { JobKind } from '../trace/trace-event'
+import { promiseJobDescriptor } from './promise-job-descriptor'
 
 type EngineValue = E.Value
 type NativeSteps = Parameters<typeof E.CreateBuiltinFunction.from>[0]
 type EngineJob = Parameters<InstanceType<typeof E.BasicJobQueue>['enqueuePromiseJob']>[0]
+type EnginePromiseEvent = E.PromiseEvent
 type NativeGenerator = (...args: EngineValue[]) => Generator<unknown, unknown, unknown>
 
 /** The execution-context shape this adapter reads; engine262 does not export a precise type. */
@@ -24,6 +26,9 @@ interface Frame {
 
 /** Pinned engine262 build; keep in sync with package.json. */
 export const ENGINE262_COMMIT = '2d7d8d988c77e94473ba0377122cdfccdfe243ba'
+
+/** Revision of patches/@engine262__engine262.patch; bump when the patch changes. */
+export const ENGINE262_PATCH = 'promise-events-1'
 
 /**
  * Creates an engine262 realm driven by manual Job execution: Jobs run only when
@@ -38,18 +43,35 @@ export function createEngine262Adapter(): EngineAdapter {
   const frameIds = new WeakMap<object, FrameInfo>()
   const callbacks = new WeakMap<CallbackHandle, EngineValue>()
   let jobCounter = 0
+  let promiseCounter = 0
+  const promiseIds = new WeakMap<object, string>()
+  /** Stable per-Run id of a promise; assigned on first sight. */
+  const promiseId = (promise: object): string => {
+    let id = promiseIds.get(promise)
+    if (!id) promiseIds.set(promise, (id = `p${++promiseCounter}`))
+    return id
+  }
+  const reportPromiseEvent = (event: EnginePromiseEvent) => {
+    const pid = promiseId(event.promise)
+    if (event.type === 'create') hooks.onPromiseEvent({ type: 'create', pid })
+    else if (event.type === 'reaction') {
+      hooks.onPromiseEvent({ type: 'reaction', pid, via: event.via, pending: event.pending })
+    } else if (event.type === 'resolve') hooks.onPromiseEvent({ type: 'resolve', pid, with: event.with })
+    else hooks.onPromiseEvent({ type: 'settle', pid, state: event.state })
+  }
   const jobIds = new WeakMap<EngineJob, string>()
 
   /** FIFO microtask queue that tells the host about every Job as it is enqueued. */
   class ReportingJobQueue extends E.BasicJobQueue {
-    enqueueTracked(job: EngineJob, kind: JobKind) {
+    enqueueTracked(job: EngineJob, jobKind: JobKind, pid?: string, outcome?: 'fulfill' | 'reject') {
       const jobId = `job-${++jobCounter}`
       jobIds.set(job, jobId)
       super.enqueuePromiseJob(job)
-      hooks.onJobEnqueue(jobId, kind)
+      hooks.onJobEnqueue(jobId, jobKind, pid, outcome)
     }
     override enqueuePromiseJob(job: EngineJob) {
-      this.enqueueTracked(job, 'promise')
+      const d = promiseJobDescriptor(job, promiseId)
+      this.enqueueTracked(job, d.jobKind, d.pid, d.outcome)
     }
   }
   const jobQueue = new ReportingJobQueue()
@@ -161,7 +183,7 @@ export function createEngine262Adapter(): EngineAdapter {
           callerRealm: realm,
           callerScriptOrModule: null,
         } as EngineJob,
-        'queue-microtask',
+        'microtask',
       )
       return E.Value.undefined
     })
@@ -198,6 +220,7 @@ export function createEngine262Adapter(): EngineAdapter {
       const agent = new E.Agent({
         eventLoopRunType: 'manual',
         jobQueue,
+        onPromiseEvent: reportPromiseEvent,
         onNodeEvaluation(node) {
           if (hostDepth) return
           hooks.onNode({

@@ -48,8 +48,10 @@ interface EventBase {
   visible: boolean
 }
 
-/** Where a Job came from: a promise reaction/thenable Job or a queueMicrotask callback. */
-export type JobKind = 'promise' | 'queue-microtask'
+/** What a Job does: run a promise reaction, call a thenable's `then`, or run a queueMicrotask callback. */
+export type JobKind = 'reaction' | 'thenable' | 'microtask'
+
+export type PromiseReactionVia = 'then' | 'await' | 'asyncgen' | 'from-sync'
 
 export type HaltReason = 'natural' | 'nodes' | 'tasks' | 'virtual-time' | 'events'
 
@@ -59,7 +61,15 @@ export type TraceEventBody =
   | { k: 'task:queue'; taskId: string; source: 'script' | 'timer'; dueUs?: number }
   | { k: 'task:begin' | 'task:end'; taskId: string }
   | { k: 'checkpoint:begin' | 'checkpoint:end'; reason: 'task-end' | 'script-end' | 'callback-end' }
-  | { k: 'job:enqueue'; jobId: string; kind: JobKind }
+  | {
+      k: 'job:enqueue'
+      jobId: string
+      jobKind: JobKind
+      /** Target promise: the one whose reaction runs, or the one a thenable Job resolves. */
+      pid?: string
+      /** Which reaction a `reaction` Job runs. */
+      outcome?: 'fulfill' | 'reject'
+    }
   | { k: 'job:begin' | 'job:end'; jobId: string }
   | { k: 'frame:push'; frameId: string; label: string; builtin: boolean }
   | { k: 'frame:pop'; frameId: string; label: string; builtin: boolean }
@@ -71,6 +81,10 @@ export type TraceEventBody =
       nesting: number
       repeat: boolean
     }
+  | { k: 'promise:create'; pid: string }
+  | { k: 'promise:reaction'; pid: string; via: PromiseReactionVia; pending: boolean }
+  | { k: 'promise:resolve'; pid: string; with: 'value' | 'thenable' | 'self' }
+  | { k: 'promise:settle'; pid: string; state: 'fulfilled' | 'rejected' }
   | { k: 'timer:fire' | 'timer:clear'; tid: string }
   | { k: 'exception:report'; origin: 'script' | 'task-callback' | 'microtask-callback'; message: string }
   | { k: 'console'; level: 'log' | 'info' | 'warn' | 'error'; text: string }

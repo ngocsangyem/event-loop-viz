@@ -1,4 +1,5 @@
 import { deriveObservableOutput } from '../trace/derive-observable-output'
+import { finalizeEvents } from './finalize-events'
 import { TRACE_SCHEMA_VERSION } from '../trace/trace-event'
 import type {
   SourceLocation,
@@ -41,6 +42,11 @@ const HTML_TIMERS = 'HTML:#timer-initialisation-steps'
 const HTML_CHECKPOINT = 'HTML:#perform-a-microtask-checkpoint'
 const HTML_REPORT = 'HTML:#report-the-exception'
 const ES_ENQUEUE_JOB = 'ES:#sec-hostenqueuepromisejob'
+const ES_PROMISE_CREATE = 'ES:#sec-promise-executor'
+const ES_PERFORM_THEN = 'ES:#sec-performpromisethen'
+const ES_RESOLVE_FUNCTIONS = 'ES:#sec-promise-resolve-functions'
+const ES_FULFILL = 'ES:#sec-fulfillpromise'
+const ES_REJECT = 'ES:#sec-rejectpromise'
 const HTML_QUEUE_MICROTASK = 'HTML:#dom-queuemicrotask'
 const ES_CONTEXTS = 'ES:#sec-execution-contexts'
 
@@ -71,6 +77,8 @@ export function runHost(
 
   /** seq of each Job's job:enqueue event, so job:begin can point back to it. */
   const jobEnqueueSeq = new Map<string, number>()
+  /** The latest promise event, which is the cause of a Job enqueued right after it. */
+  let lastPromiseEvent: { seq: number; pid: string } | undefined
 
   const emit = (
     body: TraceEventBody,
@@ -109,11 +117,35 @@ export function runHost(
       },
       onFramePush: (f) => emit({ k: 'frame:push', ...f }, ES_CONTEXTS),
       onFramePop: (f) => emit({ k: 'frame:pop', ...f }, ES_CONTEXTS),
-      onJobEnqueue(jobId, kind) {
+      onPromiseEvent(event) {
+        lastPromiseEvent = { seq: events.length, pid: event.pid }
+        if (event.type === 'create') emit({ k: 'promise:create', pid: event.pid }, ES_PROMISE_CREATE)
+        else if (event.type === 'reaction') {
+          emit({ k: 'promise:reaction', pid: event.pid, via: event.via, pending: event.pending }, ES_PERFORM_THEN)
+        } else if (event.type === 'resolve') {
+          emit({ k: 'promise:resolve', pid: event.pid, with: event.with }, ES_RESOLVE_FUNCTIONS)
+        } else {
+          emit(
+            { k: 'promise:settle', pid: event.pid, state: event.state },
+            event.state === 'fulfilled' ? ES_FULFILL : ES_REJECT,
+          )
+        }
+      },
+      onJobEnqueue(jobId, jobKind, pid, outcome) {
         jobEnqueueSeq.set(jobId, events.length)
+        // The engine reports the scheduling promise event right before the Job it causes.
+        const cause = pid !== undefined && lastPromiseEvent?.pid === pid ? lastPromiseEvent.seq : undefined
         emit(
-          { k: 'job:enqueue', jobId, kind },
-          kind === 'queue-microtask' ? HTML_QUEUE_MICROTASK : ES_ENQUEUE_JOB,
+          {
+            k: 'job:enqueue',
+            jobId,
+            jobKind,
+            ...(pid !== undefined && { pid }),
+            ...(outcome && { outcome }),
+          },
+          jobKind === 'microtask' ? HTML_QUEUE_MICROTASK : ES_ENQUEUE_JOB,
+          true,
+          cause,
         )
       },
     },
@@ -208,6 +240,7 @@ export function runHost(
 
   loc = undefined
   emit({ k: 'run:halted', reason: 'natural' }, HTML_LOOP)
+  finalizeEvents(events)
   const trace: Trace = { header, events }
   return { kind: 'ran', trace, observableOutput: deriveObservableOutput(events) }
 }

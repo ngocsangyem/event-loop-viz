@@ -1,4 +1,4 @@
-import { createEngine262Adapter, ENGINE262_COMMIT } from '../engine/engine262-adapter'
+import { createEngine262Adapter, ENGINE262_COMMIT, ENGINE262_PATCH } from '../engine/engine262-adapter'
 import { runHost } from '../host/event-loop-host'
 import type { HostSettings } from '../host/event-loop-host'
 import type { ObservableOutput } from '../trace/observable-output'
@@ -32,6 +32,6 @@ export async function runScript(script: string, settings: RunSettings = {}): Pro
   }
   return runHost(createEngine262Adapter(), script, hostSettings, {
     commit: ENGINE262_COMMIT,
-    patch: 'none',
+    patch: ENGINE262_PATCH,
   })
 }
