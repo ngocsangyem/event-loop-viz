@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatConsoleLines } from './console-lines'
-import type { TraceEvent } from '../trace/trace-event'
+import type { ObservableOutput } from '../trace/observable-output'
 
-const props = defineProps<{ events: readonly TraceEvent[] }>()
-const lines = computed(() => formatConsoleLines(props.events))
+const props = defineProps<{ output: ObservableOutput }>()
+const lines = computed(() => formatConsoleLines(props.output))
 </script>
 
 <template>
