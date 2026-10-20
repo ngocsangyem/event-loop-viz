@@ -1,0 +1,21 @@
+{
+  "fixture": "resolve-thenable-getter-is-sync.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "then getter"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "after resolve"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "fixture": "promise-resolve-identity.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "false"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "Promise.resolve(p)"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "new Promise(r => r(p))"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 3"
+    }
+  ]
+}

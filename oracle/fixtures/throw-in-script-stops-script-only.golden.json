@@ -1,0 +1,30 @@
+{
+  "fixture": "throw-in-script-stops-script-only.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "before throw"
+    },
+    {
+      "kind": "uncaught-exception",
+      "message": "script-boom"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask still runs"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timer still runs"
+    }
+  ]
+}

@@ -14,7 +14,9 @@
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "oxfmt src/"
+    "format": "oxfmt src/",
+    "oracle:record": "node oracle/record-golden-in-chrome.mjs",
+    "test:oracle": "vitest run --config vitest.oracle.config.ts"
   },
   "dependencies": {
     "pinia": "^4.0.3",

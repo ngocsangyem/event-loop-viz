@@ -1,0 +1,25 @@
+{
+  "fixture": "async-function-throw-unhandled.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "in f"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "after f"
+    },
+    {
+      "kind": "unhandled-rejection",
+      "message": "async-boom"
+    }
+  ]
+}

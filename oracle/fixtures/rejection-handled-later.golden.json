@@ -1,0 +1,24 @@
+{
+  "fixture": "rejection-handled-later.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "unhandled-rejection",
+      "message": "x2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "attached"
+    },
+    {
+      "kind": "rejection-handled",
+      "message": "x2"
+    }
+  ]
+}

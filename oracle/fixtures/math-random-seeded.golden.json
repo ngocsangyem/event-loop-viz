@@ -1,0 +1,10 @@
+{
+  "fixture": "math-random-seeded.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "skip",
+  "skipReason": "uses Math.random (ADR-0002 excludes it from differential tests)",
+  "observableOutput": []
+}

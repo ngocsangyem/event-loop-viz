@@ -1,0 +1,26 @@
+{
+  "fixture": "await-vs-then-chain.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "await"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "then1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "then2"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "fixture": "nested-timeout-clamp.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s3"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s4"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s5"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s6"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "t3"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s7"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "s8"
+    }
+  ]
+}

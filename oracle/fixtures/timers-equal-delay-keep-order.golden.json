@@ -1,0 +1,26 @@
+{
+  "fixture": "timers-equal-delay-keep-order.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "C5"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "A10"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "B10"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "fixture": "busy-wait-delays-timeout.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "after busy wait"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout 0"
+    }
+  ]
+}

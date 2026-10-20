@@ -1,0 +1,46 @@
+{
+  "fixture": "resolve-with-promise-thenable-value.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "resolve(value)"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "resolve(thenable)"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "resolve(promise)"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 3"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 4"
+    }
+  ]
+}

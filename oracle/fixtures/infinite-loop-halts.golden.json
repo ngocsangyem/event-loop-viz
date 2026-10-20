@@ -1,0 +1,10 @@
+{
+  "fixture": "infinite-loop-halts.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "skip",
+  "skipReason": "never terminates in Chrome; budget halting is covered by engine unit tests (ADR-0004)",
+  "observableOutput": []
+}

@@ -1,0 +1,41 @@
+{
+  "fixture": "for-await-async-generator.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "g1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "sync"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "loop a"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "g2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "loop b"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "done"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "fixture": "await-native-promise.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "await native promise"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "tick 3"
+    }
+  ]
+}

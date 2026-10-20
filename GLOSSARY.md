@@ -83,3 +83,17 @@ _Avoid_: flaky run, racy script
 **Bookkeeping Event**:
 A Trace Event that is hidden by default and folded into the next Visible Event, e.g. an unobserved promise creation or a built-in frame that calls no user code.
 _Avoid_: internal event, noise
+
+## Differential testing
+
+**Fixture**:
+A Script kept in the differential corpus, named after the one concept it pins (e.g. `await-thenable`).
+_Avoid_: sample, example, test case
+
+**Golden**:
+The Oracle's recorded Observable Output for one Fixture, against which every Run of that Fixture is compared.
+_Avoid_: snapshot, expected output, baseline
+
+**Skipped Fixture**:
+A Fixture with no comparable Golden, either declared out of scope or found to be non-deterministic in the Oracle, always with a stated reason.
+_Avoid_: disabled test, flaky test

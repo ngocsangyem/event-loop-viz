@@ -1,0 +1,10 @@
+{
+  "fixture": "raf-microtask-checkpoint.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "skip",
+  "skipReason": "requestAnimationFrame is out of v1 scope (ADR-0006)",
+  "observableOutput": []
+}

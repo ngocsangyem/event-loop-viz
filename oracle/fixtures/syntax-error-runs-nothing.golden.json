@@ -1,0 +1,10 @@
+{
+  "fixture": "syntax-error-runs-nothing.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "skip",
+  "skipReason": "SyntaxError message text is engine-specific (V8 vs engine262); covered by engine unit tests",
+  "observableOutput": []
+}

@@ -1,0 +1,26 @@
+{
+  "fixture": "queue-microtask-vs-then.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "qm1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "then"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "qm2"
+    }
+  ]
+}

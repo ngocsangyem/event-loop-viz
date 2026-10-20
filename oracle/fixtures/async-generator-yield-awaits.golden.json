@@ -1,0 +1,31 @@
+{
+  "fixture": "async-generator-yield-awaits.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "call next"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "g:start"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "sync end"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "next resolved v"
+    }
+  ]
+}

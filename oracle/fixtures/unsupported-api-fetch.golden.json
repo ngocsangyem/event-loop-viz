@@ -1,0 +1,10 @@
+{
+  "fixture": "unsupported-api-fetch.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "skip",
+  "skipReason": "fetch is an Unsupported API in v1 (ADR-0006); Chrome output is not comparable",
+  "observableOutput": []
+}
