@@ -56,7 +56,12 @@ export type HaltReason = 'natural' | 'nodes' | 'tasks' | 'virtual-time' | 'event
 export type TraceEventBody =
   | { k: 'run:start' }
   | { k: 'run:halted'; reason: HaltReason; limit?: number }
-  | { k: 'task:queue'; taskId: string; source: 'script' | 'timer' | 'dom-manipulation'; dueUs?: number }
+  | {
+      k: 'task:queue'
+      taskId: string
+      source: 'script' | 'timer' | 'port-message' | 'dom-manipulation'
+      dueUs?: number
+    }
   | { k: 'task:begin' | 'task:end'; taskId: string }
   | { k: 'checkpoint:begin' | 'checkpoint:end'; reason: 'task-end' | 'script-end' | 'callback-end' }
   | { k: 'job:enqueue'; jobId: string; kind: JobKind }

@@ -1,0 +1,26 @@
+{
+  "fixture": "message-posted-from-job.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "job"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout0"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "message"
+    }
+  ]
+}

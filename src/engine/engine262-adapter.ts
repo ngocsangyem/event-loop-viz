@@ -11,6 +11,7 @@ import type {
 } from '../host/engine-adapter'
 import type { JobKind } from '../trace/trace-event'
 import { installUnsupportedApiStubs, unsupportedApiOf } from './unsupported-api-stubs'
+import { installMessageChannel } from './message-channel-global'
 
 type EngineValue = E.Value
 type NativeSteps = Parameters<typeof E.CreateBuiltinFunction.from>[0]
@@ -175,6 +176,17 @@ export function createEngine262Adapter(): EngineAdapter {
         'queue-microtask',
       )
       return E.Value.undefined
+    })
+
+    installMessageChannel({
+      realm,
+      defineFunction: defineGlobal,
+      enqueuePortMessage: bindings.enqueuePortMessage,
+      registerCallback(fn) {
+        const handle = { __callbackHandle: true } as const
+        callbacks.set(handle, fn)
+        return handle
+      },
     })
 
     const consoleObject = E.OrdinaryObjectCreate(realm.Intrinsics['%Object.prototype%'])

@@ -12,6 +12,7 @@ import type { ObservableOutput } from '../trace/observable-output'
 import type { CallbackHandle, EngineAdapter } from './engine-adapter'
 import { BudgetHalt, createBudgetMeter } from './budget-meter'
 import { createSeededRandom } from './seeded-random'
+import { createPortMessageTasks, enqueuedBefore } from './port-message-tasks'
 import { createRejectionTracker } from './rejection-tracker'
 import type { NotificationTask } from './rejection-tracker'
 import { createTimingSensitivityTracker } from './timing-sensitivity'
@@ -48,6 +49,7 @@ const HTML_CHECKPOINT = 'HTML:#perform-a-microtask-checkpoint'
 const HTML_REPORT = 'HTML:#report-the-exception'
 const ES_ENQUEUE_JOB = 'ES:#sec-hostenqueuepromisejob'
 const HTML_QUEUE_MICROTASK = 'HTML:#dom-queuemicrotask'
+const HTML_PORT_MESSAGE = 'HTML:#dom-messageport-postmessage'
 const HTML_REJECTION_TRACKER = 'HTML:#the-hostpromiserejectiontracker-implementation'
 const HTML_NOTIFY_REJECTED = 'HTML:#notify-about-rejected-promises'
 const ES_CONTEXTS = 'ES:#sec-execution-contexts'
@@ -76,6 +78,7 @@ export function runHost(
   let order = 0
   let currentNesting = 0
   const timers = new Map<number, PendingTimer>()
+  const portMessages = createPortMessageTasks()
   const meter = createBudgetMeter(settings.budgets)
   const rejections = createRejectionTracker()
   const timing = createTimingSensitivityTracker()
@@ -115,6 +118,11 @@ export function runHost(
       },
       clearTimer(id) {
         if (timers.delete(id)) emit({ k: 'timer:clear', tid: String(id) }, HTML_TIMERS)
+      },
+      enqueuePortMessage(deliver) {
+        const task = { taskId: newTaskId(), deliver, dueUs: nowUs, order: ++order }
+        emit({ k: 'task:queue', taskId: task.taskId, source: 'port-message', dueUs: task.dueUs }, HTML_PORT_MESSAGE)
+        portMessages.push(task)
       },
       writeConsole(level, text) {
         emit({ k: 'console', level, text }, HTML_LOOP)
@@ -274,25 +282,39 @@ export function runHost(
   timing.taskEnded(scriptStartUs, nowUs, pendingDueUs())
 
   for (;;) {
-    const next = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
-    // Chrome runs a timer that is already due before the notification Task; a later timer waits.
+    const nextTimer = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
+    const nextMessage = portMessages.peek()
+    // Cross-source choice: oldest enqueue wins (Host Profile chrome-155, ADR-0010).
+    const useMessage = nextMessage && (!nextTimer || enqueuedBefore(nextMessage, nextTimer))
+    const nextDueUs = useMessage ? nextMessage.dueUs : nextTimer?.dueUs
+    // Chrome runs a task that is already due before the notification Task; a later one waits.
     const notification = rejections.peek()
-    if (notification && (!next || next.dueUs > notification.dueUs)) {
+    if (notification && (nextDueUs === undefined || nextDueUs > notification.dueUs)) {
       runNotification(rejections.dequeue()!)
       continue
     }
-    if (!next) break
-    if (next.dueUs > nowUs) nowUs = next.dueUs
+    if (nextDueUs === undefined) break
+    const taskId = useMessage ? nextMessage.taskId : nextTimer!.taskId
+    if (nextDueUs > nowUs) nowUs = nextDueUs
     meter.checkVirtualTime(nowUs)
     loc = undefined
-    timers.delete(next.tid)
-    currentNesting = next.nesting
-    emit({ k: 'task:begin', taskId: next.taskId }, HTML_LOOP)
+    let callback: CallbackHandle
+    if (useMessage) {
+      portMessages.shift()
+      callback = nextMessage.deliver
+      emit({ k: 'task:begin', taskId }, HTML_LOOP)
+    } else {
+      const next = nextTimer!
+      timers.delete(next.tid)
+      currentNesting = next.nesting
+      callback = next.callback
+      emit({ k: 'task:begin', taskId }, HTML_LOOP)
+      emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
+      // An interval re-arms before its callback runs (HTML timer task steps).
+      if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
+    }
     const taskStartUs = nowUs
-    emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
-    // An interval re-arms before its callback runs (HTML timer task steps).
-    if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
-    const result = engine.invokeCallback(next.callback)
+    const result = engine.invokeCallback(callback)
     if (result.kind === 'threw') {
       emit(
         {
@@ -304,7 +326,7 @@ export function runHost(
         HTML_REPORT,
       )
     }
-    emit({ k: 'task:end', taskId: next.taskId }, HTML_LOOP)
+    emit({ k: 'task:end', taskId }, HTML_LOOP)
     currentNesting = 0
     checkpoint('task-end')
     timing.taskEnded(taskStartUs, nowUs, pendingDueUs())
