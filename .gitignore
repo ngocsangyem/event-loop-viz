@@ -42,3 +42,6 @@ test-results/
 playwright-report/
 
 !.vscode/settings.json
+
+# Agent worktrees
+.claude/worktrees/

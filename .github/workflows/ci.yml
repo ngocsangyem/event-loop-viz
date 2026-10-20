@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, integration/v1]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+
+jobs:
+  checks:
+    name: lint, type-check, unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # No --fix: CI must never rewrite sources or oracle fixtures.
+      - run: pnpm exec oxlint .
+      - run: pnpm exec eslint .
+      - run: pnpm run type-check
+      - run: pnpm exec vitest run
+
+  oracle:
+    name: oracle differential
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Goldens are only compared here, never re-recorded (no oracle:record).
+      - name: Run oracle fixtures
+        run: pnpm run test:oracle --reporter=default --reporter=json --outputFile.json=oracle-report.json
+        continue-on-error: true
+      - name: Gate on unexpected fixture failures
+        run: node .github/scripts/check-oracle-report.mjs oracle-report.json .github/oracle-known-failures.txt
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      # CI serves the production build via `vite preview` (playwright.config.ts).
+      - run: pnpm run build-only
+      # Engine split out of the main chunk, real built-in names kept in the Worker chunk.
+      - run: pnpm run check:build
+      - run: pnpm exec playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

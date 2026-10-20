@@ -36,8 +36,9 @@ describe('Observable Output matches the Chrome Oracle', () => {
     }
     it(file, async () => {
       const source = readFileSync(join(fixturesDir, file), 'utf8')
-      const { observableOutput } = await runScript(source)
-      expect(observableOutput).toEqual(golden.observableOutput)
+      const result = await runScript(source)
+      expect(result.kind).toBe('ran')
+      expect(result.kind === 'ran' ? result.observableOutput : null).toEqual(golden.observableOutput)
     })
   }
 })

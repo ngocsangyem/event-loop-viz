@@ -1,0 +1,3 @@
+# Fixtures that fail until the engine/host behavior they cover lands.
+# CI fails on any failing fixture NOT listed here. Delete a line when its
+# fixture goes green (CI reminds you); never add lines to hide a regression.

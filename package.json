@@ -10,6 +10,7 @@
     "test:unit": "vitest",
     "test:e2e": "playwright test",
     "build-only": "vite build",
+    "check:build": "node scripts/check-production-build.mjs",
     "type-check": "vue-tsc --build",
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",
@@ -19,10 +20,18 @@
     "test:oracle": "vitest run --config vitest.oracle.config.ts"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "6.2.5",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
+    "@lezer/highlight": "1.2.5",
+    "codemirror": "6.0.2",
     "pinia": "^4.0.3",
     "vue": "^3.5.42"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@engine262/engine262": "0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba",
     "@playwright/test": "^1.63.0",
     "@tsconfig/node24": "^24.0.5",
     "@types/jsdom": "^30.0.0",

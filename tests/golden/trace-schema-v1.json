@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "header": {
+    "schemaVersion": {
+      "type": "number"
+    },
+    "engine": {
+      "type": "object",
+      "fields": {
+        "name": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "patch": {
+          "type": "string"
+        }
+      }
+    },
+    "hostProfile": {
+      "type": "enum",
+      "values": [
+        "chrome-155"
+      ]
+    },
+    "budgets": {
+      "type": "object",
+      "fields": {
+        "nodes": {
+          "type": "number"
+        },
+        "tasks": {
+          "type": "number"
+        },
+        "virtualMs": {
+          "type": "number"
+        },
+        "events": {
+          "type": "number"
+        }
+      }
+    },
+    "nodeCostUs": {
+      "type": "number"
+    },
+    "randomSeed": {
+      "type": "number"
+    },
+    "source": {
+      "type": "string"
+    },
+    "unsupportedApis": {
+      "type": "string-array"
+    },
+    "timingSensitive": {
+      "type": "boolean"
+    }
+  },
+  "eventBase": {
+    "seq": {
+      "type": "number"
+    },
+    "t": {
+      "type": "number"
+    },
+    "ref": {
+      "type": "string"
+    },
+    "loc": {
+      "type": "object",
+      "fields": {
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        },
+        "line": {
+          "type": "number"
+        },
+        "column": {
+          "type": "number"
+        }
+      },
+      "optional": true
+    },
+    "cause": {
+      "type": "number",
+      "optional": true
+    },
+    "visible": {
+      "type": "boolean"
+    }
+  },
+  "events": {
+    "run:start": {},
+    "run:halted": {
+      "reason": {
+        "type": "enum",
+        "values": [
+          "natural",
+          "nodes",
+          "tasks",
+          "virtual-time",
+          "events"
+        ]
+      },
+      "limit": {
+        "type": "number",
+        "optional": true
+      }
+    },
+    "task:queue": {
+      "taskId": {
+        "type": "string"
+      },
+      "source": {
+        "type": "enum",
+        "values": [
+          "script",
+          "timer",
+          "port-message",
+          "dom-manipulation"
+        ]
+      },
+      "dueUs": {
+        "type": "number",
+        "optional": true
+      }
+    },
+    "task:begin": {
+      "taskId": {
+        "type": "string"
+      }
+    },
+    "task:end": {
+      "taskId": {
+        "type": "string"
+      }
+    },
+    "checkpoint:begin": {
+      "reason": {
+        "type": "enum",
+        "values": [
+          "task-end",
+          "script-end",
+          "callback-end"
+        ]
+      }
+    },
+    "checkpoint:end": {
+      "reason": {
+        "type": "enum",
+        "values": [
+          "task-end",
+          "script-end",
+          "callback-end"
+        ]
+      }
+    },
+    "job:enqueue": {
+      "jobId": {
+        "type": "string"
+      },
+      "jobKind": {
+        "type": "enum",
+        "values": [
+          "reaction",
+          "thenable",
+          "microtask"
+        ]
+      },
+      "pid": {
+        "type": "string",
+        "optional": true
+      },
+      "outcome": {
+        "type": "enum",
+        "values": [
+          "fulfill",
+          "reject"
+        ],
+        "optional": true
+      }
+    },
+    "job:begin": {
+      "jobId": {
+        "type": "string"
+      }
+    },
+    "job:end": {
+      "jobId": {
+        "type": "string"
+      }
+    },
+    "frame:push": {
+      "frameId": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string"
+      },
+      "builtin": {
+        "type": "boolean"
+      }
+    },
+    "frame:pop": {
+      "frameId": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string"
+      },
+      "builtin": {
+        "type": "boolean"
+      }
+    },
+    "timer:init": {
+      "tid": {
+        "type": "string"
+      },
+      "requestedMs": {
+        "type": "number"
+      },
+      "clampedMs": {
+        "type": "number"
+      },
+      "nesting": {
+        "type": "number"
+      },
+      "repeat": {
+        "type": "boolean"
+      }
+    },
+    "timer:fire": {
+      "tid": {
+        "type": "string"
+      }
+    },
+    "timer:clear": {
+      "tid": {
+        "type": "string"
+      }
+    },
+    "promise:create": {
+      "pid": {
+        "type": "string"
+      }
+    },
+    "promise:reaction": {
+      "pid": {
+        "type": "string"
+      },
+      "via": {
+        "type": "enum",
+        "values": [
+          "then",
+          "await",
+          "asyncgen",
+          "from-sync"
+        ]
+      },
+      "pending": {
+        "type": "boolean"
+      }
+    },
+    "promise:resolve": {
+      "pid": {
+        "type": "string"
+      },
+      "with": {
+        "type": "enum",
+        "values": [
+          "value",
+          "thenable",
+          "self"
+        ]
+      }
+    },
+    "promise:settle": {
+      "pid": {
+        "type": "string"
+      },
+      "state": {
+        "type": "enum",
+        "values": [
+          "fulfilled",
+          "rejected"
+        ]
+      }
+    },
+    "await:suspend": {
+      "fid": {
+        "type": "string"
+      },
+      "awaitedPid": {
+        "type": "string",
+        "optional": true
+      },
+      "mode": {
+        "type": "enum",
+        "values": [
+          "next",
+          "throw"
+        ],
+        "optional": true
+      }
+    },
+    "await:resume": {
+      "fid": {
+        "type": "string"
+      },
+      "awaitedPid": {
+        "type": "string",
+        "optional": true
+      },
+      "mode": {
+        "type": "enum",
+        "values": [
+          "next",
+          "throw"
+        ],
+        "optional": true
+      }
+    },
+    "asyncgen:yield": {
+      "gid": {
+        "type": "string"
+      }
+    },
+    "asyncgen:resume": {
+      "gid": {
+        "type": "string"
+      }
+    },
+    "asyncgen:return-await": {
+      "gid": {
+        "type": "string"
+      }
+    },
+    "rejection:track": {
+      "pid": {
+        "type": "string"
+      },
+      "op": {
+        "type": "enum",
+        "values": [
+          "reject",
+          "handle"
+        ]
+      }
+    },
+    "rejection:notify": {
+      "pid": {
+        "type": "string"
+      },
+      "outcome": {
+        "type": "enum",
+        "values": [
+          "unhandled",
+          "handled"
+        ]
+      },
+      "message": {
+        "type": "string"
+      }
+    },
+    "exception:report": {
+      "origin": {
+        "type": "enum",
+        "values": [
+          "script",
+          "task-callback",
+          "microtask-callback"
+        ]
+      },
+      "message": {
+        "type": "string"
+      },
+      "unsupportedApi": {
+        "type": "string",
+        "optional": true
+      }
+    },
+    "console": {
+      "level": {
+        "type": "enum",
+        "values": [
+          "log",
+          "info",
+          "warn",
+          "error"
+        ]
+      },
+      "text": {
+        "type": "string"
+      }
+    }
+  }
+}

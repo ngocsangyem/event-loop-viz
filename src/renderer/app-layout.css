@@ -1,0 +1,88 @@
+/*
+ * App shell layout. Desktop: editor beside the Scene, with the transport directly under the
+ * Scene and the bottom panel (Console and Events tabs, with the detail pane beside the Events list) below. Phone width stacks everything in
+ * one column: editor, Scene, transport, panels. Grid children get min-width: 0 so long
+ * content (code lines, payloads) scrolls inside its own box instead of widening the page.
+ */
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas:
+    'editor scene'
+    'panels panels';
+  gap: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.app-shell > * {
+  min-width: 0;
+}
+.pane-editor {
+  grid-area: editor;
+}
+.pane-scene {
+  grid-area: scene;
+}
+.pane-panels {
+  grid-area: panels;
+}
+.app-shell pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'editor'
+      'scene'
+      'panels';
+    gap: 12px;
+    padding: 12px;
+  }
+  /* Touch targets: 44 px minimum for everything tappable in the shell. */
+  .app-shell button,
+  .app-shell select,
+  .app-shell summary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .app-shell summary {
+    display: flex;
+    align-items: center;
+  }
+  .app-shell label:has(input[type='checkbox']) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+  .app-shell input[type='checkbox'] {
+    width: 24px;
+    height: 24px;
+  }
+  .app-shell input[type='range'] {
+    min-height: 44px;
+  }
+}
+
+/* Present for assistive tech only: the live step announcer and the page heading. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* One visible focus ring for every control, readable on both themes. */
+.app-shell :focus-visible {
+  outline: 2px solid var(--anatomy-blue);
+  outline-offset: 2px;
+}

@@ -10,6 +10,12 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
+  // The engine runs in a module Worker chunk. Built-in function names become frame labels in the
+  // Trace, so the chunk must keep them (ADR-0001).
+  worker: {
+    format: 'es',
+    rolldownOptions: { output: { keepNames: true } },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

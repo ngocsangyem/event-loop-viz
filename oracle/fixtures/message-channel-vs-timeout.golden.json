@@ -4,7 +4,18 @@
     "browser": "chrome",
     "version": "155.0.8059.85"
   },
-  "status": "skip",
-  "skipReason": "MessageChannel is out of v1 scope (ADR-0006)",
-  "observableOutput": []
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout0"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "message"
+    }
+  ]
 }

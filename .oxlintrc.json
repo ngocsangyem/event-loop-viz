@@ -6,5 +6,24 @@
   },
   "categories": {
     "correctness": "error"
-  }
+  },
+  "ignorePatterns": ["oracle/fixtures/**", ".claude/worktrees/**"],
+  "overrides": [
+    {
+      "files": ["oracle/oracle.test.ts"],
+      "rules": {
+        "vitest/no-conditional-tests": "off",
+        "vitest/no-disabled-tests": "off",
+        "vitest/valid-title": "off"
+      }
+    },
+    {
+      "files": ["oracle/record-golden-in-chrome.mjs"],
+      "rules": { "no-unused-expressions": "off" }
+    },
+    {
+      "files": ["src/engine/engine262-adapter.ts", "src/engine/unsupported-api-stubs.ts", "src/engine/message-channel-global.ts", "src/engine/realm-globals.ts"],
+      "rules": { "require-yield": "off" }
+    }
+  ]
 }
