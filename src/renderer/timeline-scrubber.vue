@@ -41,6 +41,7 @@ function onInput(event: Event) {
       :max="lastIndex"
       step="1"
       :value="index"
+      :aria-valuetext="`Step ${index + 1} of ${lastIndex + 1}`"
       :disabled="!player"
       @input="onInput"
     />

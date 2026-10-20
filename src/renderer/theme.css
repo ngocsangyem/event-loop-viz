@@ -10,7 +10,7 @@
   --anatomy-card: #131313;
   --anatomy-text: #a3a3a3;
   --anatomy-strong: #e6e6e6;
-  --anatomy-muted: #6e6e6e;
+  --anatomy-muted: #8f8f8f;
   --anatomy-paper: #131313;
   --anatomy-face: #1b1b1b;
   --anatomy-top: #1c1c1c;
@@ -31,6 +31,12 @@
   --anatomy-red: #ff6b6b;
   --anatomy-green: #6be0a0;
   --anatomy-blue: #6b9bff;
+  --anatomy-error-text: #ff8a8a;
+  --editor-keyword: #c792ea;
+  --editor-string: #a5d68a;
+  --editor-number: #f2a07a;
+  --editor-comment: #a3a3a3;
+  --editor-name: #82aaff;
   --anatomy-weight: 0.6px;
   --anatomy-ease: cubic-bezier(0.32, 0.72, 0, 1);
   --anatomy-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -47,7 +53,7 @@
     --anatomy-card: #fbfbfa;
     --anatomy-text: #57575a;
     --anatomy-strong: #18181a;
-    --anatomy-muted: #8c8c90;
+    --anatomy-muted: #5f5f64;
     --anatomy-paper: #fbfbfa;
     --anatomy-face: #ffffff;
     --anatomy-top: #ffffff;
@@ -68,6 +74,12 @@
     --anatomy-red: #e5484d;
     --anatomy-green: #30a46c;
     --anatomy-blue: #3e63dd;
+    --anatomy-error-text: #b3261e;
+    --editor-keyword: #6a2bb0;
+    --editor-string: #a1370f;
+    --editor-number: #0b6b3a;
+    --editor-comment: #5f5f64;
+    --editor-name: #1f4fb8;
     --anatomy-lift:
       inset 0 1px 0 0 #ffffff, 0 0 0 1px #0000000f, 0 1px 1px -0.5px #0000000a,
       0 3px 3px -1.5px #0000000a, 0 6px 6px -3px #0000000a, 0 12px 12px -6px #0000000a;
@@ -80,7 +92,7 @@
   --anatomy-card: #fbfbfa;
   --anatomy-text: #57575a;
   --anatomy-strong: #18181a;
-  --anatomy-muted: #8c8c90;
+  --anatomy-muted: #5f5f64;
   --anatomy-paper: #fbfbfa;
   --anatomy-face: #ffffff;
   --anatomy-top: #ffffff;
@@ -101,6 +113,12 @@
   --anatomy-red: #e5484d;
   --anatomy-green: #30a46c;
   --anatomy-blue: #3e63dd;
+  --anatomy-error-text: #b3261e;
+  --editor-keyword: #6a2bb0;
+  --editor-string: #a1370f;
+  --editor-number: #0b6b3a;
+  --editor-comment: #5f5f64;
+  --editor-name: #1f4fb8;
   --anatomy-lift:
     inset 0 1px 0 0 #ffffff, 0 0 0 1px #0000000f, 0 1px 1px -0.5px #0000000a,
     0 3px 3px -1.5px #0000000a, 0 6px 6px -3px #0000000a, 0 12px 12px -6px #0000000a;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import TimelineScrubber from './timeline-scrubber.vue'
@@ -32,10 +32,20 @@ function jumpBy(unit: Unit, direction: 'next' | 'prev') {
 }
 
 
+const nextButton = useTemplateRef<HTMLButtonElement>('nextButton')
+/** Lets the app hand keyboard focus to the controls once a Trace exists. */
+defineExpose({ focusStep: () => nextButton.value?.focus() })
+
 /** Typing in the editor or a field must never trigger transport shortcuts. */
 function isTyping(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null
   return !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))
+}
+
+/** Space activates a focused control; it only toggles playback when nothing else owns it. */
+function ownsSpace(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  return !!el && !!el.closest('button, a[href], summary, [role=button]')
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -56,6 +66,7 @@ function onKeydown(event: KeyboardEvent) {
         Home: () => jump('first'),
         End: () => jump('last'),
       }
+  if (event.key === ' ' && ownsSpace(event.target)) return
   const action = actions[event.key]
   if (!action) return
   event.preventDefault()
@@ -81,7 +92,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     <button type="button" :disabled="!player" :aria-pressed="playing" @click="toggle">
       {{ playing ? 'Pause' : 'Play' }}
     </button>
-    <button type="button" :disabled="!player || atEnd" @click="step('next')">Next</button>
+    <button ref="nextButton" type="button" :disabled="!player || atEnd" @click="step('next')">
+      Next
+    </button>
     <button type="button" :disabled="!player || atEnd" @click="jumpBy('Tick', 'next')">
       Forward one Tick
     </button>

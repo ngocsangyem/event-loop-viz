@@ -8,6 +8,7 @@ import { syntaxErrorMarker } from './syntax-error-marker'
 import type { SyntaxErrorPosition } from './syntax-error-marker'
 import { applySourceHighlight, sourceHighlight } from './source-highlight'
 import type { SourceHighlight } from './source-highlight'
+import { editorSyntaxTheme } from './editor-syntax-theme'
 
 const props = defineProps<{
   modelValue: string
@@ -41,8 +42,11 @@ onMounted(() => {
             },
           },
         ]),
+        // basicSetup does not bind Tab to indentation, so Tab/Shift+Tab move focus out of the
+        // editor and keyboard-only users are never trapped (do not add indentWithTab).
         basicSetup,
         javascript(),
+        editorSyntaxTheme,
         readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
         errorCompartment.of([]),
         sourceHighlight(),
@@ -88,6 +92,8 @@ watch(
 )
 
 onBeforeUnmount(() => view?.destroy())
+
+defineExpose({ focus: () => view?.focus() })
 </script>
 
 <template>
@@ -114,5 +120,23 @@ onBeforeUnmount(() => view?.destroy())
 }
 .script-editor :deep(.cm-editor) {
   min-height: 12em;
+  background: var(--anatomy-card);
+  color: var(--anatomy-strong);
+}
+.script-editor :deep(.cm-gutters) {
+  background: var(--anatomy-card);
+  color: var(--anatomy-text);
+  border-right: 1px solid var(--anatomy-faint);
+}
+.script-editor :deep(.cm-activeLine),
+.script-editor :deep(.cm-activeLineGutter) {
+  background: var(--anatomy-shade-2);
+}
+.script-editor :deep(.cm-cursor) {
+  border-left-color: var(--anatomy-strong);
+}
+.script-editor :deep(.cm-focused) {
+  outline: 2px solid var(--anatomy-blue);
+  outline-offset: -2px;
 }
 </style>
