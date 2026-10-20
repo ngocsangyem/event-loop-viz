@@ -18,6 +18,7 @@ type EngineValue = E.Value
 type NativeSteps = Parameters<typeof E.CreateBuiltinFunction.from>[0]
 type EngineJob = Parameters<InstanceType<typeof E.BasicJobQueue>['enqueuePromiseJob']>[0]
 type EnginePromiseEvent = E.PromiseEvent
+type EngineAwaitEvent = E.AwaitEvent
 type NativeGenerator = (...args: EngineValue[]) => Generator<unknown, unknown, unknown>
 
 /** The execution-context shape this adapter reads; engine262 does not export a precise type. */
@@ -33,7 +34,7 @@ const VIRTUAL_EPOCH_MS = 1_700_000_000_000
 export const ENGINE262_COMMIT = '2d7d8d988c77e94473ba0377122cdfccdfe243ba'
 
 /** Revision of patches/@engine262__engine262.patch; bump when the patch changes. */
-export const ENGINE262_PATCH = 'promise-events-1'
+export const ENGINE262_PATCH = 'promise-events-2'
 
 /**
  * Creates an engine262 realm driven by manual Job execution: Jobs run only when
@@ -63,6 +64,12 @@ export function createEngine262Adapter(): EngineAdapter {
       hooks.onPromiseEvent({ type: 'reaction', pid, via: event.via, pending: event.pending })
     } else if (event.type === 'resolve') hooks.onPromiseEvent({ type: 'resolve', pid, with: event.with })
     else hooks.onPromiseEvent({ type: 'settle', pid, state: event.state })
+  }
+  const reportAwaitEvent = (event: EngineAwaitEvent) => {
+    if (hostDepth) return
+    const fid = frameInfo(event.context as unknown as Frame).frameId
+    if (event.type === 'suspend') hooks.onAwaitEvent({ type: 'suspend', fid, awaitedPid: promiseId(event.promise) })
+    else hooks.onAwaitEvent({ type: 'resume', fid, mode: event.mode })
   }
   const jobIds = new WeakMap<EngineJob, string>()
 
@@ -279,6 +286,7 @@ export function createEngine262Adapter(): EngineAdapter {
         },
         jobQueue,
         onPromiseEvent: reportPromiseEvent,
+        onAwaitEvent: reportAwaitEvent,
         onNodeEvaluation(node) {
           if (hostDepth) return
           hooks.onNode({

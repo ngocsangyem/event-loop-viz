@@ -30,8 +30,8 @@
     "job:begin jobId=job-1 <- job:enqueue#22",
     "promise:resolve pid=p2 with=value",
     "promise:settle pid=p2 state=fulfilled",
-    "job:enqueue jobId=job-2 jobKind=reaction pid=p2 outcome=fulfill <- promise:settle#41",
-    "job:begin jobId=job-2 <- job:enqueue#42",
+    "job:enqueue jobId=job-2 jobKind=reaction pid=p2 outcome=fulfill <- promise:settle#42",
+    "job:begin jobId=job-2 <- job:enqueue#43",
     "promise:resolve pid=p1 with=value",
     "promise:settle pid=p1 state=fulfilled"
   ],
@@ -70,8 +70,8 @@
     "job:begin jobId=job-1 <- job:enqueue#27",
     "promise:resolve pid=p1 with=value",
     "promise:settle pid=p1 state=fulfilled",
-    "job:enqueue jobId=job-2 jobKind=reaction pid=p1 outcome=fulfill <- promise:settle#50",
-    "job:begin jobId=job-2 <- job:enqueue#51",
+    "job:enqueue jobId=job-2 jobKind=reaction pid=p1 outcome=fulfill <- promise:settle#52",
+    "job:begin jobId=job-2 <- job:enqueue#53",
     "promise:resolve pid=p3 with=value",
     "promise:settle pid=p3 state=fulfilled"
   ],
