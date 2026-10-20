@@ -138,6 +138,12 @@ export function createEngine262Adapter(): EngineAdapter {
         return E.Value.undefined
       })
     }
+    const mathObject = global.properties.get(E.Value('Math'))?.Value
+    if (mathObject instanceof E.ObjectValue) {
+      defineGlobal(mathObject, 'random', function* () {
+        return E.Value(bindings.random())
+      })
+    }
     global.properties.set(
       E.Value('console'),
       E.Descriptor({

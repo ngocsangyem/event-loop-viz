@@ -23,6 +23,8 @@ export interface HostBindings {
   setTimer(callback: CallbackHandle, delayMs: number, repeat: boolean): number
   clearTimer(id: number): void
   writeConsole(level: 'log' | 'info' | 'warn' | 'error', text: string): void
+  /** Seeded source for `Math.random`, in [0, 1). */
+  random(): number
 }
 
 export interface FrameInfo {
