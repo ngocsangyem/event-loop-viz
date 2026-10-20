@@ -12,6 +12,7 @@ import type { ObservableOutput } from '../trace/observable-output'
 import type { CallbackHandle, EngineAdapter } from './engine-adapter'
 import { BudgetHalt, createBudgetMeter } from './budget-meter'
 import { createSeededRandom } from './seeded-random'
+import { createPortMessageTasks, enqueuedBefore } from './port-message-tasks'
 import { createTimingSensitivityTracker } from './timing-sensitivity'
 
 export interface HostSettings {
@@ -46,6 +47,7 @@ const HTML_CHECKPOINT = 'HTML:#perform-a-microtask-checkpoint'
 const HTML_REPORT = 'HTML:#report-the-exception'
 const ES_ENQUEUE_JOB = 'ES:#sec-hostenqueuepromisejob'
 const HTML_QUEUE_MICROTASK = 'HTML:#dom-queuemicrotask'
+const HTML_PORT_MESSAGE = 'HTML:#dom-messageport-postmessage'
 const ES_CONTEXTS = 'ES:#sec-execution-contexts'
 
 /** Nesting level above which Chrome clamps timers to 4 ms (HTML timer initialization steps). */
@@ -72,6 +74,7 @@ export function runHost(
   let order = 0
   let currentNesting = 0
   const timers = new Map<number, PendingTimer>()
+  const portMessages = createPortMessageTasks()
   const meter = createBudgetMeter(settings.budgets)
   const timing = createTimingSensitivityTracker()
   const pendingDueUs = () => [...timers.values()].map((t) => t.dueUs)
@@ -110,6 +113,11 @@ export function runHost(
       },
       clearTimer(id) {
         if (timers.delete(id)) emit({ k: 'timer:clear', tid: String(id) }, HTML_TIMERS)
+      },
+      enqueuePortMessage(deliver) {
+        const task = { taskId: newTaskId(), deliver, dueUs: nowUs, order: ++order }
+        emit({ k: 'task:queue', taskId: task.taskId, source: 'port-message', dueUs: task.dueUs }, HTML_PORT_MESSAGE)
+        portMessages.push(task)
       },
       writeConsole(level, text) {
         emit({ k: 'console', level, text }, HTML_LOOP)
@@ -222,23 +230,37 @@ export function runHost(
   timing.taskEnded(scriptStartUs, nowUs, pendingDueUs())
 
   for (;;) {
-    const next = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
-    if (!next) break
-    if (next.dueUs > nowUs) nowUs = next.dueUs
+    const nextTimer = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
+    const nextMessage = portMessages.peek()
+    if (!nextTimer && !nextMessage) break
+    // Cross-source choice: oldest enqueue wins (Host Profile chrome-155, ADR-0010).
+    const useMessage = nextMessage && (!nextTimer || enqueuedBefore(nextMessage, nextTimer))
+    const taskId = useMessage ? nextMessage.taskId : nextTimer!.taskId
+    const dueUs = useMessage ? nextMessage.dueUs : nextTimer!.dueUs
+    if (dueUs > nowUs) nowUs = dueUs
     meter.checkVirtualTime(nowUs)
     loc = undefined
-    timers.delete(next.tid)
-    currentNesting = next.nesting
-    emit({ k: 'task:begin', taskId: next.taskId }, HTML_LOOP)
+    let callback: CallbackHandle
+    if (useMessage) {
+      portMessages.shift()
+      callback = nextMessage.deliver
+      emit({ k: 'task:begin', taskId }, HTML_LOOP)
+    } else {
+      const next = nextTimer!
+      timers.delete(next.tid)
+      currentNesting = next.nesting
+      callback = next.callback
+      emit({ k: 'task:begin', taskId }, HTML_LOOP)
+      emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
+      // An interval re-arms before its callback runs (HTML timer task steps).
+      if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
+    }
     const taskStartUs = nowUs
-    emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
-    // An interval re-arms before its callback runs (HTML timer task steps).
-    if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
-    const result = engine.invokeCallback(next.callback)
+    const result = engine.invokeCallback(callback)
     if (result.kind === 'threw') {
       emit({ k: 'exception:report', origin: 'task-callback', message: result.message }, HTML_REPORT)
     }
-    emit({ k: 'task:end', taskId: next.taskId }, HTML_LOOP)
+    emit({ k: 'task:end', taskId }, HTML_LOOP)
     currentNesting = 0
     checkpoint('task-end')
     timing.taskEnded(taskStartUs, nowUs, pendingDueUs())

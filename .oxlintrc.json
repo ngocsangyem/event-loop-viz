@@ -22,7 +22,7 @@
       "rules": { "no-unused-expressions": "off" }
     },
     {
-      "files": ["src/engine/engine262-adapter.ts"],
+      "files": ["src/engine/engine262-adapter.ts", "src/engine/message-channel-global.ts"],
       "rules": { "require-yield": "off" }
     }
   ]

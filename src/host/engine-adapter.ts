@@ -22,6 +22,11 @@ export interface HostBindings {
   /** Returns the timer id handed to the Script. */
   setTimer(callback: CallbackHandle, delayMs: number, repeat: boolean): number
   clearTimer(id: number): void
+  /**
+   * A message was posted to a started MessagePort: queue a Task on the port-message source.
+   * The host later calls `deliver` like any task callback.
+   */
+  enqueuePortMessage(deliver: CallbackHandle): void
   writeConsole(level: 'log' | 'info' | 'warn' | 'error', text: string): void
   /** Seeded source for `Math.random`, in [0, 1). */
   random(): number
