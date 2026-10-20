@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { openBottomTab } from './bottom-tabs'
 
 test.use({ viewport: { width: 375, height: 812 }, hasTouch: true })
 
@@ -47,5 +48,6 @@ test('an example can be run and stepped through by touch at phone width', async 
   expect(Number(next)).toBeGreaterThan(Number(start))
   await page.getByRole('button', { name: 'Prev' }).tap()
   expect(await current()).toBe(start)
-  await expect(page.getByTestId('console-panel')).toBeAttached()
+  await openBottomTab(page, 'Console')
+  await expect(page.getByRole('tabpanel', { name: 'Console' })).toBeVisible()
 })
