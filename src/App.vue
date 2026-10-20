@@ -138,7 +138,7 @@ onMounted(() => {
     />
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
-    <TransportBar v-model="position" :player="player" />
+    <TransportBar v-model="position" :player="player" :events="events" />
 
     <template v-if="trace">
       <ol data-testid="event-list">
