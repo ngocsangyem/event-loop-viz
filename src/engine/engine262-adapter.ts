@@ -9,9 +9,11 @@ import type {
   HostBindings,
   ScriptOutcome,
 } from '../host/engine-adapter'
+import type { JobKind } from '../trace/trace-event'
 
 type EngineValue = E.Value
 type NativeSteps = Parameters<typeof E.CreateBuiltinFunction.from>[0]
+type EngineJob = Parameters<InstanceType<typeof E.BasicJobQueue>['enqueuePromiseJob']>[0]
 type NativeGenerator = (...args: EngineValue[]) => Generator<unknown, unknown, unknown>
 
 /** The execution-context shape this adapter reads; engine262 does not export a precise type. */
@@ -35,6 +37,22 @@ export function createEngine262Adapter(): EngineAdapter {
   let frameCounter = 0
   const frameIds = new WeakMap<object, FrameInfo>()
   const callbacks = new WeakMap<CallbackHandle, EngineValue>()
+  let jobCounter = 0
+  const jobIds = new WeakMap<EngineJob, string>()
+
+  /** FIFO microtask queue that tells the host about every Job as it is enqueued. */
+  class ReportingJobQueue extends E.BasicJobQueue {
+    enqueueTracked(job: EngineJob, kind: JobKind) {
+      const jobId = `job-${++jobCounter}`
+      jobIds.set(job, jobId)
+      super.enqueuePromiseJob(job)
+      hooks.onJobEnqueue(jobId, kind)
+    }
+    override enqueuePromiseJob(job: EngineJob) {
+      this.enqueueTracked(job, 'promise')
+    }
+  }
+  const jobQueue = new ReportingJobQueue()
 
   const withHostContext = <T>(fn: () => T): T => {
     hostDepth++
@@ -131,6 +149,23 @@ export function createEngine262Adapter(): EngineAdapter {
     defineGlobal(global, 'clearTimeout', clearFn)
     defineGlobal(global, 'clearInterval', clearFn)
 
+    defineGlobal(global, 'queueMicrotask', function* (callback) {
+      if (!E.isFunctionObject(callback ?? E.Value.undefined)) {
+        return E.Throw.TypeError('queueMicrotask: callback must be a function')
+      }
+      const fn = callback as EngineValue
+      jobQueue.enqueueTracked(
+        {
+          queueName: 'PromiseJobs',
+          job: (() => E.Call(fn, E.Value.undefined, [])) as unknown as EngineJob['job'],
+          callerRealm: realm,
+          callerScriptOrModule: null,
+        } as EngineJob,
+        'queue-microtask',
+      )
+      return E.Value.undefined
+    })
+
     const consoleObject = E.OrdinaryObjectCreate(realm.Intrinsics['%Object.prototype%'])
     for (const level of ['log', 'info', 'warn', 'error'] as const) {
       defineGlobal(consoleObject, level, function* (...args) {
@@ -162,6 +197,7 @@ export function createEngine262Adapter(): EngineAdapter {
       hooks = engineHooks
       const agent = new E.Agent({
         eventLoopRunType: 'manual',
+        jobQueue,
         onNodeEvaluation(node) {
           if (hostDepth) return
           hooks.onNode({
@@ -226,11 +262,13 @@ export function createEngine262Adapter(): EngineAdapter {
       return outcome
     },
 
-    drainMicrotasks(onUncaught) {
-      const queue = E.surroundingAgent.jobQueue
-      for (let job = queue.shift(); job; job = queue.shift()) {
-        E.runSingleJobInQueue(job, (error) => onUncaught(errorMessage(error)), () => {})
-      }
+    runNextJob(onBegin, onUncaught) {
+      const job = jobQueue.shift()
+      if (!job) return undefined
+      const jobId = jobIds.get(job) ?? `job-${++jobCounter}`
+      onBegin(jobId)
+      E.runSingleJobInQueue(job, (error) => onUncaught(errorMessage(error)), () => {})
+      return jobId
     },
   }
 }
