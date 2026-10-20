@@ -40,6 +40,12 @@ function step(direction: 'next' | 'prev') {
   if (player.value) position.value = player.value[direction](position.value)
 }
 
+// Source ranges at the playhead; host-internal events carry none, which clears the highlight.
+const sourceHighlight = computed(() => {
+  const state = player.value?.stateAt(position.value)
+  return state ? { source: state.sourceRange, cause: state.causeRange } : null
+})
+
 const visibleEvents = computed(() => events.value.slice(0, position.value + 1))
 // During replay the Trace header is authoritative; before a Run the live scan of the editor text.
 const unsupportedApis = computed(() =>
@@ -111,7 +117,9 @@ onMounted(() => {
 
 <template>
   <main>
-    <ScriptEditor v-model="script" :read-only="replaying" :error-at="syntaxErrorAt" @run="run" />
+    <ScriptEditor v-model="script" :read-only="replaying" :error-at="syntaxErrorAt"
+      :highlight="sourceHighlight"
+      @run="run" />
     <UnsupportedApiNotice :apis="unsupportedApis" />
     <p v-if="replaying" data-testid="replay-banner">
       Read-only during replay.
