@@ -38,6 +38,13 @@ export function createEngine262Adapter(): EngineAdapter {
   const frameIds = new WeakMap<object, FrameInfo>()
   const callbacks = new WeakMap<CallbackHandle, EngineValue>()
   let jobCounter = 0
+  let promiseCounter = 0
+  const promiseIds = new WeakMap<object, string>()
+  const promiseId = (promise: object): string => {
+    let id = promiseIds.get(promise)
+    if (!id) promiseIds.set(promise, (id = `promise-${++promiseCounter}`))
+    return id
+  }
   const jobIds = new WeakMap<EngineJob, string>()
 
   /** FIFO microtask queue that tells the host about every Job as it is enqueued. */
@@ -203,6 +210,14 @@ export function createEngine262Adapter(): EngineAdapter {
       hooks = engineHooks
       const agent = new E.Agent({
         eventLoopRunType: 'manual',
+        hostHooks: {
+          HostPromiseRejectionTrackers: new Set<E.HostPromiseRejectionTracker>([
+            (promise, op) => {
+              if (hostDepth) return
+              hooks.onRejectionTrack(promiseId(promise), op, errorMessage(promise.PromiseResult ?? E.Value.undefined))
+            },
+          ]),
+        },
         jobQueue,
         onNodeEvaluation(node) {
           if (hostDepth) return
