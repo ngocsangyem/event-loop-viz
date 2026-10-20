@@ -22,7 +22,7 @@ overrides:
 
 patchedDependencies:
   '@engine262/engine262':
-    hash: 85aba1d873239364357aa89527959f9d999032e95761dfeae97a2cb20e74a3bc
+    hash: 3a8232dc483c0e1a75cdde3f4659a8d519aa50254fd4bf4ad6946e22a9e0aebd
     path: patches/@engine262__engine262.patch
 
 importers:
@@ -50,7 +50,7 @@ importers:
     devDependencies:
       '@engine262/engine262':
         specifier: 0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba
-        version: 0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=85aba1d873239364357aa89527959f9d999032e95761dfeae97a2cb20e74a3bc)
+        version: 0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=3a8232dc483c0e1a75cdde3f4659a8d519aa50254fd4bf4ad6946e22a9e0aebd)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.64.1
@@ -2498,7 +2498,7 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.2': {}
 
-  '@engine262/engine262@0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=85aba1d873239364357aa89527959f9d999032e95761dfeae97a2cb20e74a3bc)': {}
+  '@engine262/engine262@0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=3a8232dc483c0e1a75cdde3f4659a8d519aa50254fd4bf4ad6946e22a9e0aebd)': {}
 
   '@eslint-community/eslint-utils@4.10.1(eslint@10.13.0(jiti@2.7.0))':
     dependencies:

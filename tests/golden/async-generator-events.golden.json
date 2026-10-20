@@ -1,0 +1,30 @@
+{
+  "yield awaits its operand": [
+    "asyncgen:resume gid=g1",
+    "promise:reaction via=await",
+    "await:suspend fid=frame-3",
+    "job:begin jobId=job-1",
+    "await:resume fid=frame-3 mode=next",
+    "asyncgen:yield gid=g1"
+  ],
+  "return on a fresh generator awaits the value": [
+    "asyncgen:return-await gid=g1",
+    "promise:reaction via=asyncgen",
+    "job:begin jobId=job-1"
+  ],
+  "for await over a sync iterable of promises": [
+    "promise:reaction via=from-sync",
+    "promise:reaction via=await",
+    "await:suspend fid=frame-7",
+    "job:begin jobId=job-1",
+    "job:begin jobId=job-2",
+    "await:resume fid=frame-7 mode=next",
+    "console text=x",
+    "promise:reaction via=from-sync",
+    "promise:reaction via=await",
+    "await:suspend fid=frame-7",
+    "job:begin jobId=job-3",
+    "job:begin jobId=job-4",
+    "await:resume fid=frame-7 mode=next"
+  ]
+}

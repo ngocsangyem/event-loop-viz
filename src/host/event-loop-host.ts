@@ -53,6 +53,7 @@ const ES_PROMISE_CREATE = 'ES:#sec-promise-executor'
 const ES_PERFORM_THEN = 'ES:#sec-performpromisethen'
 const ES_RESOLVE_FUNCTIONS = 'ES:#sec-promise-resolve-functions'
 const ES_AWAIT = 'ES:#await'
+const ES_ASYNC_GENERATOR = 'ES:#sec-asyncgenerator-objects'
 const ES_FULFILL = 'ES:#sec-fulfillpromise'
 const ES_REJECT = 'ES:#sec-rejectpromise'
 const HTML_QUEUE_MICROTASK = 'HTML:#dom-queuemicrotask'
@@ -168,6 +169,9 @@ export function runHost(
       onAwaitEvent(event) {
         if (event.type === 'suspend') emit({ k: 'await:suspend', fid: event.fid, awaitedPid: event.awaitedPid }, ES_AWAIT)
         else emit({ k: 'await:resume', fid: event.fid, mode: event.mode }, ES_AWAIT)
+      },
+      onAsyncGeneratorEvent(event) {
+        emit({ k: `asyncgen:${event.type}`, gid: event.gid }, ES_ASYNC_GENERATOR)
       },
       onJobEnqueue(jobId, jobKind, pid, outcome) {
         jobEnqueueSeq.set(jobId, events.length)

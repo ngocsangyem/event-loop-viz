@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
+import TransportBar from '@/renderer/transport-bar.vue'
 import UnsupportedApiNotice from '@/renderer/unsupported-api-notice.vue'
 import { scanUnsupportedApis } from '@/runner/unsupported-api-scan'
 import { startWorkerRun } from '@/runner/worker-run-client'
@@ -33,20 +34,13 @@ const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
 const player = computed(() => (trace.value ? createPlayer(trace.value) : null))
-const atStart = computed(() => !player.value || position.value <= player.value.first())
-const atEnd = computed(() => !player.value || position.value >= player.value.last())
-
-function step(direction: 'next' | 'prev') {
-  if (player.value) position.value = player.value[direction](position.value)
-}
-
 // Source ranges at the playhead; host-internal events carry none, which clears the highlight.
 const sourceHighlight = computed(() => {
   const state = player.value?.stateAt(position.value)
   return state ? { source: state.sourceRange, cause: state.causeRange } : null
 })
-
-const visibleEvents = computed(() => events.value.slice(0, position.value + 1))
+// The console is folded by the player; the UI never folds events itself.
+const consoleOutput = computed(() => player.value?.stateAt(position.value).console ?? [])
 // During replay the Trace header is authoritative; before a Run the live scan of the editor text.
 const unsupportedApis = computed(() =>
   trace.value ? trace.value.header.unsupportedApis : scanUnsupportedApis(script.value),
@@ -140,8 +134,7 @@ onMounted(() => {
     />
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
-    <button type="button" :disabled="!replaying || atStart" @click="step('prev')">Prev</button>
-    <button type="button" :disabled="!replaying || atEnd" @click="step('next')">Next</button>
+    <TransportBar v-model="position" :player="player" />
 
     <template v-if="trace">
       <ol data-testid="event-list">
@@ -155,7 +148,7 @@ onMounted(() => {
         </li>
       </ol>
 
-      <ConsolePanel :events="visibleEvents" />
+      <ConsolePanel :output="consoleOutput" />
     </template>
   </main>
 </template>
