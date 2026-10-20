@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
 import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
+import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
+import type { SharedSettings } from '@/share/share-link-codec'
 import { deriveObservableOutput } from '@/trace/derive-observable-output'
 import type { ObservableEntry } from '@/trace/observable-output'
 import type { Trace } from '@/trace/trace-event'
 
-const script = ref("setTimeout(() => console.log('timer'), 10)\nconsole.log('sync')")
+const shared = decodeShareFragment(window.location.hash)
+const script = ref(
+  shared?.script ?? "setTimeout(() => console.log('timer'), 10)\nconsole.log('sync')",
+)
+/** Run settings travel with a share link so the recipient reproduces the same Trace. */
+const settings = ref<SharedSettings>(shared?.settings ?? {})
+const shareUrl = ref<string | null>(null)
 const trace = ref<Trace | null>(null)
 const syntaxError = ref<string | null>(null)
 /** Index of the current event in the Trace. The Trace is immutable; position is the only state. */
@@ -44,14 +52,17 @@ async function run() {
   trace.value = null
   position.value = 0
   running.value = true
-  activeRun = startWorkerRun(script.value, {}, { watchdogMs })
+  // Plain copy: reactive proxies cannot be posted to a Worker.
+  const plainSettings = JSON.parse(JSON.stringify(settings.value)) as SharedSettings
+  activeRun = startWorkerRun(script.value, plainSettings, { watchdogMs })
   try {
     const result = await activeRun.result
     if (result.kind === 'ran') trace.value = result.trace
     else if (result.kind === 'syntax-error') {
       syntaxError.value = `${result.message} (line ${result.line}, column ${result.column})`
     } else if (result.kind === 'watchdog-killed') {
-      syntaxError.value = 'The run was stopped by the watchdog: it took too long, so no Trace exists.'
+      syntaxError.value =
+        'The run was stopped by the watchdog: it took too long, so no Trace exists.'
     }
   } catch (error) {
     syntaxError.value = `The run could not start: ${error instanceof Error ? error.message : error}`
@@ -64,6 +75,23 @@ async function run() {
 function cancel() {
   activeRun?.cancel()
 }
+
+async function share() {
+  const url = new URL(window.location.href)
+  url.hash = encodeShareFragment({ script: script.value, settings: settings.value })
+  shareUrl.value = url.href
+  history.replaceState(null, '', url)
+  try {
+    await navigator.clipboard.writeText(url.href)
+  } catch {
+    // Clipboard may be denied; the URL stays visible and in the address bar.
+  }
+}
+
+// Opening a share link runs it immediately: the link carries inputs, not a Trace.
+onMounted(() => {
+  if (shared) void run()
+})
 </script>
 
 <template>
@@ -78,6 +106,14 @@ function cancel() {
       <progress aria-label="Running">Running…</progress>
       <button type="button" @click="cancel">Cancel</button>
     </template>
+    <button type="button" @click="share">Share</button>
+    <input
+      v-if="shareUrl"
+      data-testid="share-url"
+      aria-label="Share URL"
+      :value="shareUrl"
+      readonly
+    />
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
     <button type="button" :disabled="!replaying || position <= 0" @click="position--">Prev</button>
