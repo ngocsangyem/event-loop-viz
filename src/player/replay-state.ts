@@ -56,9 +56,13 @@ export interface ReplayState {
   /** Task queue: queued, not yet begun. */
   tasks: QueuedTask[]
   currentTask: string | null
+  /** Where the running Task came from; the queue entry is gone once it begins. */
+  currentTaskSource: QueuedTask['source'] | null
   /** Microtask queue: Jobs enqueued, not yet begun. */
   jobs: QueuedJob[]
   currentJob: string | null
+  /** What the running Job is; the queue entry is gone once it begins. */
+  currentJobKind: JobKind | null
   /** Tick of the running Job (1 = enqueued by Script code); null outside Jobs. */
   tick: number | null
   inCheckpoint: boolean
@@ -83,8 +87,10 @@ export function createInitialState(): ReplayState {
     stack: [],
     tasks: [],
     currentTask: null,
+    currentTaskSource: null,
     jobs: [],
     currentJob: null,
+    currentJobKind: null,
     tick: null,
     inCheckpoint: false,
     timers: [],

@@ -25,11 +25,13 @@ export function applyEvent(
       })
       break
     case 'task:begin':
+      state.currentTaskSource = state.tasks.find((t) => t.taskId === event.taskId)?.source ?? null
       state.tasks = state.tasks.filter((t) => t.taskId !== event.taskId)
       state.currentTask = event.taskId
       break
     case 'task:end':
       state.currentTask = null
+      state.currentTaskSource = null
       break
     case 'checkpoint:begin':
       state.inCheckpoint = true
@@ -48,6 +50,7 @@ export function applyEvent(
       state.jobTicks[event.jobId] = (state.tick ?? 0) + 1
       break
     case 'job:begin':
+      state.currentJobKind = state.jobs.find((j) => j.jobId === event.jobId)?.jobKind ?? null
       state.jobs = state.jobs.filter((j) => j.jobId !== event.jobId)
       state.currentJob = event.jobId
       state.tick = state.jobTicks[event.jobId] ?? 1
@@ -55,6 +58,7 @@ export function applyEvent(
       break
     case 'job:end':
       state.currentJob = null
+      state.currentJobKind = null
       state.tick = null
       break
     case 'frame:push':
