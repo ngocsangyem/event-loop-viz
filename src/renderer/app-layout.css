@@ -1,6 +1,6 @@
 /*
  * App shell layout. Desktop: editor beside the Scene, with the transport directly under the
- * Scene and the Event/detail/Console panels in a row below. Phone width stacks everything in
+ * Scene and the bottom panel (Console and Events tabs, with the detail pane beside the Events list) below. Phone width stacks everything in
  * one column: editor, Scene, transport, panels. Grid children get min-width: 0 so long
  * content (code lines, payloads) scrolls inside its own box instead of widening the page.
  */
@@ -26,13 +26,6 @@
 }
 .pane-panels {
   grid-area: panels;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  align-items: start;
-}
-.pane-panels > * {
-  min-width: 0;
 }
 .app-shell pre {
   max-width: 100%;
@@ -49,10 +42,6 @@
     gap: 12px;
     padding: 12px;
   }
-  .pane-panels {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   /* Touch targets: 44 px minimum for everything tappable in the shell. */
   .app-shell button,
   .app-shell select,

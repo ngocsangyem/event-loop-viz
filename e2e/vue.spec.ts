@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { openBottomTab } from './bottom-tabs'
 
 const SCRIPT = `setTimeout(() => console.log('timer'), 10); console.log('sync')`
 
@@ -12,6 +13,7 @@ test('steps through a Trace to the end and shows the Run Observable Output', asy
   await expect(next).toBeEnabled()
   while (await next.isEnabled()) await next.click()
 
+  await openBottomTab(page, 'Console')
   await expect(page.getByTestId('console-panel').locator('li')).toHaveText([
     'log: sync',
     'log: timer',
@@ -25,6 +27,7 @@ test('Prev returns to the earlier event position and console content', async ({ 
 
   const next = page.getByRole('button', { name: 'Next' })
   const prev = page.getByRole('button', { name: 'Prev' })
+  await openBottomTab(page, 'Console')
   const current = page.locator('[data-testid="event-list"] [aria-current="true"]')
   const consoleLines = page.getByTestId('console-panel').locator('li')
 

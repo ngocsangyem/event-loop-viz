@@ -8,6 +8,7 @@ const lines = computed(() => formatConsoleLines(props.output))
 </script>
 
 <template>
+  <p v-if="lines.length === 0" class="console-empty">No console output at this step.</p>
   <ul data-testid="console-panel">
     <li v-for="(line, i) in lines" :key="i" :class="{ 'console-error': line.kind === 'error' }">
       {{ line.text }}
@@ -16,6 +17,10 @@ const lines = computed(() => formatConsoleLines(props.output))
 </template>
 
 <style scoped>
+.console-empty {
+  color: var(--anatomy-muted);
+  margin: 0;
+}
 .console-error {
   color: var(--anatomy-error-text);
 }

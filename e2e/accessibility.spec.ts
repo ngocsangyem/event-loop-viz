@@ -49,6 +49,9 @@ for (const theme of THEMES) {
       // The end of the Trace shows every console line, including the error line.
       await page.getByRole('button', { name: 'Go to end' }).click()
       expect(await seriousViolations(page)).toEqual([])
+      await page.getByRole('tab', { name: 'Console' }).click()
+      await expect(page.getByTestId('console-panel').locator('li').first()).toBeVisible()
+      expect(await seriousViolations(page)).toEqual([])
     })
 
     test('halted and error states have no serious violations', async ({ page }) => {

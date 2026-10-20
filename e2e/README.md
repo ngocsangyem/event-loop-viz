@@ -73,10 +73,10 @@ oracle or lint tests (non-e2e).
 | 36 | Reduced motion | `scene-transitions.spec.ts › with reduced motion the Scene changes state without any animation` |
 | 37 | Event list synced to playhead | `event-detail.spec.ts › show all events makes Bookkeeping Events steppable` |
 | 38 | Click an event to jump | `event-detail.spec.ts › selecting an event shows its explanation, spec link and cause` |
-| 39 | Family filter chips | `event-detail.spec.ts › family chips hide and show events` |
+| 39 | Family filter chips (Events tab) | `event-detail.spec.ts › family chips hide and show events` |
 | 40 | Show all events toggle | `event-detail.spec.ts › show all events makes Bookkeeping Events steppable` |
 | 41 | Detail pane (spec link, payload, cause) | `event-detail.spec.ts › selecting an event shows its explanation, spec link and cause` |
-| 42 | Console panel with `Uncaught` lines | `learner-stories.spec.ts › the console shows unhandled rejections as Uncaught (in promise) lines` |
+| 42 | Console tab with `Uncaught` lines | `learner-stories.spec.ts › the console shows unhandled rejections as Uncaught (in promise) lines` |
 | 43 | Console uses the canonical format | `learner-stories.spec.ts › console values use the canonical text format` |
 | 44 | Deterministic Halt with named Budget | `learner-stories.spec.ts › infinite loop Halt › the same Script halts at the same point every time` |
 | 45 | Halted Trace stays replayable | `learner-stories.spec.ts › infinite loop Halt › the partial Trace of a halted Run can be replayed backward and forward` |
@@ -95,3 +95,8 @@ oracle or lint tests (non-e2e).
 
 Cross-cutting specs without a single story: `accessibility.spec.ts` (axe in both themes),
 `responsive-layout.spec.ts` (phone width, tap targets), `keyboard-only.spec.ts` (no-mouse flow).
+
+`bottom-panel-tabs.spec.ts` covers the bottom panel layout (Console and Events tabs, detail pane
+beside the Events list, arrow-key navigation). Only the selected tab's panel is visible, so specs
+that read the console or the event list call `openBottomTab` from `bottom-tabs.ts` first; Events is
+selected by default after a Run.
