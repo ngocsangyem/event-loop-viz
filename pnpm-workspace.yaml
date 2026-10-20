@@ -17,3 +17,6 @@ overrides:
 peerDependencyRules:
   allowAny:
     - 'vue'
+
+patchedDependencies:
+  '@engine262/engine262': patches/@engine262__engine262.patch

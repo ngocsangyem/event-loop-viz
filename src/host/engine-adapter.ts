@@ -1,4 +1,4 @@
-import type { JobKind, SourceLocation } from '../trace/trace-event'
+import type { JobKind, PromiseReactionVia, SourceLocation } from '../trace/trace-event'
 
 /**
  * Engine-neutral seam between the host and a JavaScript engine (ADR-0001, ADR-0005).
@@ -43,14 +43,25 @@ export interface FrameInfo {
   builtin: boolean
 }
 
+/** A promise lifecycle step; `pid` is stable for the life of a Run. */
+export type PromiseEventInfo =
+  | { type: 'create'; pid: string }
+  | { type: 'reaction'; pid: string; via: PromiseReactionVia; pending: boolean }
+  | { type: 'resolve'; pid: string; with: 'value' | 'thenable' | 'self' }
+  | { type: 'settle'; pid: string; state: 'fulfilled' | 'rejected' }
+
 /** Notifications the engine adapter sends to the host while it executes. */
 export interface EngineHooks {
   /** One AST node was evaluated: the host advances the Virtual Clock. */
   onNode(loc: SourceLocation): void
   onFramePush(frame: FrameInfo): void
   onFramePop(frame: FrameInfo): void
-  /** A Job joined the microtask queue (FIFO). */
-  onJobEnqueue(jobId: string, kind: JobKind): void
+  onPromiseEvent(event: PromiseEventInfo): void
+  /**
+   * A Job joined the microtask queue (FIFO). Promise Jobs name their target promise;
+   * the engine reports the promise event that scheduled the Job just before this call.
+   */
+  onJobEnqueue(jobId: string, jobKind: JobKind, pid?: string, outcome?: 'fulfill' | 'reject'): void
   /**
    * HostPromiseRejectionTracker: `pid` identifies the promise, `message` is its
    * rejection reason formatted for display.

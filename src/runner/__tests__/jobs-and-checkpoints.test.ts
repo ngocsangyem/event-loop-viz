@@ -86,9 +86,9 @@ describe('Jobs and Checkpoints', () => {
     `)
     const enqueues = trace.events.filter((e) => e.k === 'job:enqueue')
     const begins = trace.events.filter((e) => e.k === 'job:begin')
-    expect(enqueues.map((e) => (e.k === 'job:enqueue' ? e.kind : ''))).toEqual([
-      'queue-microtask',
-      'promise',
+    expect(enqueues.map((e) => (e.k === 'job:enqueue' ? e.jobKind : ''))).toEqual([
+      'microtask',
+      'reaction',
     ])
     expect(begins.map((e) => e.cause)).toEqual(enqueues.map((e) => e.seq))
   })
