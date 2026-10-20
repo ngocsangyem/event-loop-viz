@@ -30,8 +30,8 @@ export const REGIONS = {
   taskQueue: { x: 30, y: 44, w: 96, d: 52, r: 6 } satisfies Plan,
   /** Back centre lane for timers and the Virtual Clock. */
   timers: { x: -90, y: -108, w: 110, d: 80, r: 6 } satisfies Plan,
-  /** Right front corner for promises, awaits and async generators. */
-  promises: { x: 138, y: 44, w: 74, d: 52, r: 6 } satisfies Plan,
+  /** Right-hand lane, front to mid-plate, for promises, awaits and async generators. */
+  promises: { x: 138, y: -20, w: 74, d: 116, r: 6 } satisfies Plan,
 }
 
 /** Tallest thing in the world (the spindle), used to fit the camera. */

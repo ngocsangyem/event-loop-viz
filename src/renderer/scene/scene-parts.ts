@@ -5,6 +5,9 @@ import { callStackOf } from './call-stack-model'
 import ConsolePart from './console-part.vue'
 import { consoleScreenOf } from './console-screen-model'
 import JobQueuePart from './job-queue-part.vue'
+import PromiseRackPart from './promise-rack-part.vue'
+import { promiseRackOf } from './promise-rack-model'
+import { ROW_COUNT } from './promise-rack-geometry'
 import TaskQueuePart from './task-queue-part.vue'
 import TimerShelfPart from './timer-shelf-part.vue'
 
@@ -58,5 +61,17 @@ export const SCENE_PARTS: readonly ScenePart[] = [
     id: 'task-queue',
     component: TaskQueuePart,
     readout: (state) => (state.tasks.length === 0 ? null : `tasks ${state.tasks.length}`),
+  },
+  {
+    id: 'promises',
+    component: PromiseRackPart,
+    readout(state) {
+      const { rows, hiddenPromises } = promiseRackOf(state, { rows: ROW_COUNT, generators: 0 })
+      const parked = state.suspendedAwaits.length
+      if (rows.length + hiddenPromises === 0) return null
+      return parked === 0
+        ? `promises ${rows.length + hiddenPromises}`
+        : `promises ${rows.length + hiddenPromises} · ${parked} awaiting`
+    },
   },
 ]
