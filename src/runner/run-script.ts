@@ -3,6 +3,7 @@ import { scanUnsupportedApis } from './unsupported-api-scan'
 import { runHost } from '../host/event-loop-host'
 import type { HostSettings } from '../host/event-loop-host'
 import type { ObservableOutput } from '../trace/observable-output'
+import { DEFAULT_BUDGETS, DEFAULT_NODE_COST_US } from '../trace/default-budgets'
 import type { Trace, TraceBudgets } from '../trace/trace-event'
 
 export type RunResult =
@@ -17,17 +18,12 @@ export interface RunSettings {
   randomSeed?: number
 }
 
-export const DEFAULT_BUDGETS: TraceBudgets = {
-  nodes: 2_000_000,
-  tasks: 10_000,
-  virtualMs: 60_000,
-  events: 200_000,
-}
+export { DEFAULT_BUDGETS }
 
 /** Runs a Script to Halt under the simulated event loop (ADR-0001, ADR-0003). */
 export async function runScript(script: string, settings: RunSettings = {}): Promise<RunResult> {
   const hostSettings: HostSettings = {
-    nodeCostUs: settings.nodeCostUs ?? 1,
+    nodeCostUs: settings.nodeCostUs ?? DEFAULT_NODE_COST_US,
     randomSeed: settings.randomSeed ?? 0,
     budgets: { ...DEFAULT_BUDGETS, ...settings.budgets },
   }

@@ -97,3 +97,23 @@ export function createInitialState(): ReplayState {
     jobTicks: {},
   }
 }
+
+/**
+ * Copies a state for snapshots and seeks. Containers are copied, their entries are shared:
+ * the reducer only pushes, filters and reassigns entries, never mutates one in place, and
+ * `structuredClone` of a large console or promise table made Player construction quadratic.
+ */
+export function cloneReplayState(state: ReplayState): ReplayState {
+  return {
+    ...state,
+    stack: state.stack.slice(),
+    tasks: state.tasks.slice(),
+    jobs: state.jobs.slice(),
+    timers: state.timers.slice(),
+    promises: { ...state.promises },
+    suspendedAwaits: state.suspendedAwaits.slice(),
+    console: state.console.slice(),
+    halted: state.halted && { ...state.halted },
+    jobTicks: { ...state.jobTicks },
+  }
+}
