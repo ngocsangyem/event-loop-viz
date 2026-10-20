@@ -78,7 +78,7 @@ export function runHost(
   const header = {
     schemaVersion: TRACE_SCHEMA_VERSION as 1,
     engine: { name: 'engine262' as const, ...identity },
-    hostProfile: 'chrome-155' as const,
+    hostProfile: settings.hostProfile,
     budgets: settings.budgets,
     nodeCostUs: settings.nodeCostUs,
     randomSeed: settings.randomSeed,

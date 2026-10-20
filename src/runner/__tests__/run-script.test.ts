@@ -68,6 +68,12 @@ describe('runScript: Trace shape', () => {
     expect(trace.events[trace.events.length - 1]).toMatchObject({ k: 'run:halted', reason: 'natural' })
   })
 
+  it('records the Host Profile requested in the settings in the header', async () => {
+    const result = await runScript(`console.log(1)`, { hostProfile: 'chrome-155' })
+    if (result.kind !== 'ran') throw new Error('expected a finished run')
+    expect(result.trace.header.hostProfile).toBe('chrome-155')
+  })
+
   it('wraps each Task in task:begin/task:end followed by a Checkpoint', async () => {
     const { trace } = await ran(`setTimeout(() => {}, 0)`)
     const flow = kinds(trace).filter((k) => /^(task|checkpoint|timer):/.test(k))

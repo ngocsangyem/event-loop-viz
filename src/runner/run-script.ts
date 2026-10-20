@@ -16,6 +16,8 @@ export interface RunSettings {
   /** Virtual Clock cost per evaluated node, in microseconds. */
   nodeCostUs?: number
   randomSeed?: number
+  /** The only Host Profile in v1; recorded in the Trace header. */
+  hostProfile?: 'chrome-155'
 }
 
 export { DEFAULT_BUDGETS }
@@ -25,6 +27,7 @@ export async function runScript(script: string, settings: RunSettings = {}): Pro
   const hostSettings: HostSettings = {
     nodeCostUs: settings.nodeCostUs ?? DEFAULT_NODE_COST_US,
     randomSeed: settings.randomSeed ?? 0,
+    hostProfile: settings.hostProfile ?? 'chrome-155',
     budgets: { ...DEFAULT_BUDGETS, ...settings.budgets },
   }
   return runHost(

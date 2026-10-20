@@ -10,6 +10,7 @@ import type { BudgetMeter } from './budget-meter'
 export interface HostSettings {
   nodeCostUs: number
   randomSeed: number
+  hostProfile: 'chrome-155'
   budgets: TraceBudgets
 }
 
