@@ -150,7 +150,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <main>
+  <main class="app-shell">
+    <div class="pane-editor">
     <ScriptEditor
       v-model="script"
       :read-only="replaying"
@@ -180,16 +181,19 @@ onMounted(() => {
     />
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
-    <HaltBanner :halt="halt" />
-    <TransportBar v-model="position" :player="player" :events="events" />
+    </div>
 
-    <SceneView :state="replayState" :previous="previousReplayState" />
+    <div class="pane-scene">
+      <HaltBanner :halt="halt" />
+      <SceneView :state="replayState" :previous="previousReplayState" />
+      <TransportBar v-model="position" :player="player" :events="events" />
+    </div>
 
-    <template v-if="trace">
+    <div v-if="trace" class="pane-panels">
       <EventList v-model="position" v-model:show-all="showAll" :events="events" />
       <EventDetail :events="events" :position="position" @select="position = $event" />
 
       <ConsolePanel :output="consoleOutput" />
-    </template>
+    </div>
   </main>
 </template>

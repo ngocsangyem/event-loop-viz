@@ -98,3 +98,31 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     <TimelineScrubber v-model="position" :player="player" :events="events" @scrub="pause" />
   </div>
 </template>
+
+<style scoped>
+[data-testid='transport-bar'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+[data-testid='transport-bar'] :deep(.scrubber) {
+  flex: 1 1 100%;
+}
+@media (max-width: 640px) {
+  [data-testid='transport-bar'] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  [data-testid='transport-bar'] > :deep(.scrubber),
+  [data-testid='transport-bar'] > label {
+    grid-column: 1 / -1;
+  }
+  [data-testid='transport-bar'] > label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+</style>
