@@ -1,4 +1,4 @@
-import { createEngine262Adapter, ENGINE262_COMMIT } from '../engine/engine262-adapter'
+import { createEngine262Adapter, ENGINE262_COMMIT, ENGINE262_PATCH } from '../engine/engine262-adapter'
 import { scanUnsupportedApis } from './unsupported-api-scan'
 import { runHost } from '../host/event-loop-host'
 import type { HostSettings } from '../host/event-loop-host'
@@ -37,7 +37,7 @@ export async function runScript(script: string, settings: RunSettings = {}): Pro
     hostSettings,
     {
       commit: ENGINE262_COMMIT,
-      patch: 'none',
+      patch: ENGINE262_PATCH,
     },
     scanUnsupportedApis(script),
   )
