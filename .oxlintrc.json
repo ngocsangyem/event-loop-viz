@@ -7,7 +7,7 @@
   "categories": {
     "correctness": "error"
   },
-  "ignorePatterns": ["oracle/fixtures/**"],
+  "ignorePatterns": ["oracle/fixtures/**", ".claude/worktrees/**"],
   "overrides": [
     {
       "files": ["oracle/oracle.test.ts"],
