@@ -25,7 +25,7 @@ describe('example library', () => {
   })
 
   for (const example of EXAMPLES) {
-    describe(example.id, () => {
+    describe(`example ${example.id}`, () => {
       it('is exactly the text of its Fixture', () => {
         expect(example.script).toBe(readFileSync(fixturesDir + example.fixture, 'utf8'))
       })
@@ -34,11 +34,10 @@ describe('example library', () => {
         const goldenPath = fixturesDir + example.fixture.replace(/\.js$/, '.golden.json')
         expect(existsSync(goldenPath)).toBe(true)
         const golden = JSON.parse(readFileSync(goldenPath, 'utf8'))
-        if (golden.status === 'skip') {
-          expect(skippedExpectationsSource).toContain(`'${example.fixture}'`)
-        } else {
-          expect(golden.status).toBe('recorded')
-        }
+        const covered =
+          golden.status === 'recorded' ||
+          (golden.status === 'skip' && skippedExpectationsSource.includes(`'${example.fixture}'`))
+        expect(covered).toBe(true)
       })
 
       it('runs to a Trace', async () => {
