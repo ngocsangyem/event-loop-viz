@@ -5,6 +5,7 @@ import pluginPlaywright from 'eslint-plugin-playwright'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginOxlint from 'eslint-plugin-oxlint'
 import skipFormatting from 'eslint-config-prettier/flat'
+import { importBoundaryConfigs } from './eslint-import-boundaries'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -31,6 +32,8 @@ export default defineConfigWithVueTs(
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
   },
+
+  ...importBoundaryConfigs,
 
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
 
