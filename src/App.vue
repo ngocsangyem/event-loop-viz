@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
 import UnsupportedApiNotice from '@/renderer/unsupported-api-notice.vue'
@@ -8,6 +8,7 @@ import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import type { SharedSettings } from '@/share/share-link-codec'
+import { createPlayer } from '@/player/player'
 import type { Trace } from '@/trace/trace-event'
 
 const shared = decodeShareFragment(window.location.hash)
@@ -17,7 +18,8 @@ const script = ref(
 /** Run settings travel with a share link so the recipient reproduces the same Trace. */
 const settings = ref<SharedSettings>(shared?.settings ?? {})
 const shareUrl = ref<string | null>(null)
-const trace = ref<Trace | null>(null)
+// Shallow: the Trace is immutable and large, deep proxies would only cost.
+const trace = shallowRef<Trace | null>(null)
 const syntaxError = ref<string | null>(null)
 /** Where the engine rejected the Script; drives the editor marker. Cleared on edit. */
 const syntaxErrorAt = ref<{ line: number; column: number } | null>(null)
@@ -30,7 +32,14 @@ const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')
 
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
-const lastPosition = computed(() => events.value.length - 1)
+const player = computed(() => (trace.value ? createPlayer(trace.value) : null))
+const atStart = computed(() => !player.value || position.value <= player.value.first())
+const atEnd = computed(() => !player.value || position.value >= player.value.last())
+
+function step(direction: 'next' | 'prev') {
+  if (player.value) position.value = player.value[direction](position.value)
+}
+
 const visibleEvents = computed(() => events.value.slice(0, position.value + 1))
 // During replay the Trace header is authoritative; before a Run the live scan of the editor text.
 const unsupportedApis = computed(() =>
@@ -60,8 +69,10 @@ async function run() {
   activeRun = startWorkerRun(script.value, plainSettings, { watchdogMs })
   try {
     const result = await activeRun.result
-    if (result.kind === 'ran') trace.value = result.trace
-    else if (result.kind === 'syntax-error') {
+    if (result.kind === 'ran') {
+      trace.value = result.trace
+      position.value = player.value?.first() ?? 0
+    } else if (result.kind === 'syntax-error') {
       syntaxError.value = `${result.message} (line ${result.line}, column ${result.column})`
       syntaxErrorAt.value = { line: result.line, column: result.column }
     } else if (result.kind === 'watchdog-killed') {
@@ -121,10 +132,8 @@ onMounted(() => {
     />
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
-    <button type="button" :disabled="!replaying || position <= 0" @click="position--">Prev</button>
-    <button type="button" :disabled="!replaying || position >= lastPosition" @click="position++">
-      Next
-    </button>
+    <button type="button" :disabled="!replaying || atStart" @click="step('prev')">Prev</button>
+    <button type="button" :disabled="!replaying || atEnd" @click="step('next')">Next</button>
 
     <template v-if="trace">
       <ol data-testid="event-list">
