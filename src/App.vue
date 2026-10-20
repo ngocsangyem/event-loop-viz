@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import ScriptEditor from '@/renderer/script-editor.vue'
 import { runScript } from '@/runner/run-script'
 import { deriveObservableOutput } from '@/trace/derive-observable-output'
 import type { ObservableEntry } from '@/trace/observable-output'
@@ -12,6 +13,7 @@ const syntaxError = ref<string | null>(null)
 const position = ref(0)
 
 const events = computed(() => trace.value?.events ?? [])
+const replaying = computed(() => trace.value !== null)
 const lastPosition = computed(() => events.value.length - 1)
 // Derived from the Trace prefix so the console can never disagree with the event list.
 const consoleEntries = computed(() =>
@@ -22,6 +24,12 @@ function describeEntry(entry: ObservableEntry): string {
   return entry.kind === 'console'
     ? `${entry.level}: ${entry.text}`
     : `${entry.kind}: ${entry.message}`
+}
+
+/** Editing ends the replay: the Trace belongs to the Script that produced it. */
+function discardTrace() {
+  trace.value = null
+  position.value = 0
 }
 
 async function run() {
@@ -38,15 +46,20 @@ async function run() {
 
 <template>
   <main>
-    <label for="script">Script</label>
-    <textarea id="script" v-model="script" rows="8" cols="80" />
+    <ScriptEditor v-model="script" :read-only="replaying" @run="run" />
+    <p v-if="replaying" data-testid="replay-banner">
+      Read-only during replay.
+      <button type="button" @click="discardTrace">Edit (discards Trace)</button>
+    </p>
     <button type="button" @click="run">Run</button>
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
-    <template v-if="trace">
-      <button type="button" :disabled="position <= 0" @click="position--">Prev</button>
-      <button type="button" :disabled="position >= lastPosition" @click="position++">Next</button>
+    <button type="button" :disabled="!replaying || position <= 0" @click="position--">Prev</button>
+    <button type="button" :disabled="!replaying || position >= lastPosition" @click="position++">
+      Next
+    </button>
 
+    <template v-if="trace">
       <ol data-testid="event-list">
         <li
           v-for="event in events"
