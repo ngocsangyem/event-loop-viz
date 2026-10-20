@@ -3,7 +3,9 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
 import TransportBar from '@/renderer/transport-bar.vue'
+import ExamplePicker from '@/renderer/example-picker.vue'
 import UnsupportedApiNotice from '@/renderer/unsupported-api-notice.vue'
+import { EXAMPLES, findExample } from '@/examples/example-library'
 import { scanUnsupportedApis } from '@/runner/unsupported-api-scan'
 import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
@@ -54,6 +56,14 @@ watch(script, () => {
 function discardTrace() {
   trace.value = null
   position.value = 0
+}
+
+function loadExample(id: string) {
+  const example = findExample(id)
+  if (!example) return
+  discardTrace()
+  syntaxError.value = null
+  script.value = example.script
 }
 
 async function run() {
@@ -114,6 +124,7 @@ onMounted(() => {
     <ScriptEditor v-model="script" :read-only="replaying" :error-at="syntaxErrorAt"
       :highlight="sourceHighlight"
       @run="run" />
+    <ExamplePicker :examples="EXAMPLES" @load="loadExample" />
     <UnsupportedApiNotice :apis="unsupportedApis" />
     <p v-if="replaying" data-testid="replay-banner">
       Read-only during replay.
