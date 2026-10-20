@@ -92,6 +92,26 @@ export function applyEvent(
     case 'promise:settle':
       state.promises[event.pid] = event.state
       break
+    case 'await:suspend':
+      state.suspendedAwaits = state.suspendedAwaits.filter((a) => a.fid !== event.fid)
+      state.suspendedAwaits.push({
+        fid: event.fid,
+        label: state.stack.find((f) => f.frameId === event.fid)?.label ?? event.fid,
+        ...(event.awaitedPid !== undefined && { pid: event.awaitedPid }),
+      })
+      break
+    case 'await:resume':
+      state.suspendedAwaits = state.suspendedAwaits.filter((a) => a.fid !== event.fid)
+      break
+    case 'asyncgen:yield':
+      state.asyncGens[event.gid] = 'yielded'
+      break
+    case 'asyncgen:resume':
+      state.asyncGens[event.gid] = 'running'
+      break
+    case 'asyncgen:return-await':
+      state.asyncGens[event.gid] = 'awaiting-return'
+      break
     case 'console':
       state.console.push({ kind: 'console', level: event.level, text: event.text })
       break

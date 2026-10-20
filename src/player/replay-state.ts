@@ -32,12 +32,18 @@ export interface PendingTimer {
 export type PromiseView = 'pending' | 'fulfilled' | 'rejected'
 
 /**
- * An `await` whose async function is parked until a promise settles. Nothing in the
- * current Trace schema marks suspension, so this stays empty until await events exist.
+ * An async function parked at an `await`: `fid` is the frame id it runs under (the same id
+ * before and after the await), `pid` the promise it waits on when the Trace names one.
  */
 export interface SuspendedAwait {
-  pid: string
+  fid: string
+  /** Label of the function's frame; the frame id when its frame is not on the stack. */
+  label: string
+  pid?: string
 }
+
+/** Where an async generator is: handed a value out, running, or awaiting a `return()` value. */
+export type AsyncGenView = 'yielded' | 'running' | 'awaiting-return'
 
 /**
  * Everything the Scene and panels need at one position of a Trace (Glossary: Scene is a
@@ -64,6 +70,8 @@ export interface ReplayState {
   timers: PendingTimer[]
   promises: Record<string, PromiseView>
   suspendedAwaits: SuspendedAwait[]
+  /** Async generators seen so far, by generator id. */
+  asyncGens: Record<string, AsyncGenView>
   /** Observable Output so far (the console panel). */
   console: ObservableOutput
   /** Source range of the current event. */
@@ -91,6 +99,7 @@ export function createInitialState(): ReplayState {
     timers: [],
     promises: {},
     suspendedAwaits: [],
+    asyncGens: {},
     console: [],
     sourceRange: null,
     causeRange: null,
@@ -113,6 +122,7 @@ export function cloneReplayState(state: ReplayState): ReplayState {
     timers: state.timers.slice(),
     promises: { ...state.promises },
     suspendedAwaits: state.suspendedAwaits.slice(),
+    asyncGens: { ...state.asyncGens },
     console: state.console.slice(),
     halted: state.halted && { ...state.halted },
     jobTicks: { ...state.jobTicks },
