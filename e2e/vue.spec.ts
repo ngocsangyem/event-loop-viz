@@ -8,6 +8,8 @@ test('steps through a Trace to the end and shows the Run Observable Output', asy
   await page.getByRole('button', { name: 'Run' }).click()
 
   const next = page.getByRole('button', { name: 'Next' })
+  // The Run is asynchronous: wait for the Trace before stepping.
+  await expect(next).toBeEnabled()
   while (await next.isEnabled()) await next.click()
 
   await expect(page.getByTestId('console-panel').locator('li')).toHaveText([
@@ -26,6 +28,7 @@ test('Prev returns to the earlier event position and console content', async ({ 
   const current = page.locator('[data-testid="event-list"] [aria-current="true"]')
   const consoleLines = page.getByTestId('console-panel').locator('li')
 
+  await expect(next).toBeEnabled()
   // Step until the first console line shows, remember that position.
   while ((await consoleLines.count()) < 1) await next.click()
   const earlierIndex = await current.getAttribute('data-seq')
