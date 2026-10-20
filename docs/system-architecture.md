@@ -1,0 +1,66 @@
+# System architecture
+
+The Trace is the only contract between execution and presentation (ADR-0005, ADR-0003). A Run
+produces one immutable Trace in a Web Worker; the main thread replays it.
+
+```
+renderer -> player -> trace <- host <- engine adapter        runner ties them together
+```
+
+## Modules (`src/`)
+
+| Module | Responsibility | May import | Runs in |
+|---|---|---|---|
+| `trace/` | Trace Event and header types, runtime schema, default Budgets, Observable Output derivation. Pure TS, relative imports only. | nothing | anywhere |
+| `engine/` | engine262 adapter implementing the host-owned `EngineAdapter` interface: realm, host globals, `MessageChannel` global, Unsupported API stubs, promise-job descriptors (ADR-0009 patch). The only place that imports `@engine262/**`. | trace, host (the interface) | Worker |
+| `host/` | HTML event loop for one Host Profile (`chrome-155`): task queues, Virtual Clock, timers, Checkpoints, rejection tracker, port-message task source, seeded `Math.random`, Budget meter, timing-sensitivity detection. Emits Trace Events; talks to the engine only through `EngineAdapter`. | trace | Worker |
+| `runner/` | `runScript` and its Worker entry, the main-thread `worker-run-client` (wall-clock watchdog, cancel), and the pre-run Unsupported API scan. | trace, host, engine | both |
+| `player/` | Pure replay logic over a Trace: `stateAt` folds events into a `ReplayState`, snapshots, Visible Event indexing, navigation (event, Tick, Task, start/end, seek), per-event explanations. No Vue, no timers. | trace | anywhere |
+| `renderer/` | Vue app shell: editor (CodeMirror 6), transport bar, scrubber, event list and detail, console panel, banners, run settings. Holds the playhead and playback clock; asks the player for state. | player, trace | main thread |
+| `renderer/scene/` | Isometric SVG Scene (call stack, console, microtask and task queues, timer shelf). A pure function of `ReplayState`; no Trace or store access. | own files, `vue`, player types | main thread |
+| `share/` | Share-link codec: Script and settings in the URL fragment. | none | main thread |
+| `examples/` | Built-in example Scripts backed by oracle fixtures. | none | main thread |
+
+`src/stores/`, `src/main.ts` and `src/App.vue` are app glue outside the module graph.
+
+## Execution flow
+
+1. The renderer calls `worker-run-client`, which starts a Worker (created on first Run) and arms the
+   30 s wall-clock watchdog.
+2. The pre-run scan (`runner/unsupported-api-scan.ts`) lists referenced Unsupported APIs.
+3. In the Worker, `run-script-worker` calls `runScript`: the host drives the engine262 adapter,
+   advancing the Virtual Clock per evaluated node and emitting Trace Events until the loop is empty
+   or a Budget is exhausted (a Halt; the partial Trace stays valid).
+4. The result is a union: `ran` (Trace plus Observable Output), `syntax-error`, or
+   `watchdog-killed`. Observable Output is derived from the Trace by one pure function, so the UI
+   console and the oracle comparison cannot disagree.
+5. The renderer builds a `Player` over the Trace and renders `stateAt(position)`. Any position gives
+   the same Scene whether reached by play, step or scrub.
+
+## Import-boundary lint
+
+`eslint-import-boundaries.ts` (wired into `eslint.config.ts`) enforces the graph with
+`no-restricted-imports`, matching literal specifiers so it needs no resolver:
+
+- `trace` imports no other module and no third-party code (outside tests).
+- `engine` may not import runner, player, renderer. `host` may not import engine, runner, player,
+  renderer. `runner` may not import player or renderer. `player` may not import engine, host,
+  runner or renderer, and no Vue or Pinia (outside tests). `renderer` may not import engine, host,
+  runner.
+- `@engine262/**` may be imported only under `src/engine/`.
+- `renderer/scene/` may import only its own files, `vue` and player *types*.
+- `src/__tests__/import-boundaries.test.ts` exercises the rules.
+
+## Determinism and correctness
+
+- No wall-clock time in a Run: the Virtual Clock advances 1 us per evaluated node (configurable);
+  `Math.random` is seeded and the seed is recorded in the Trace header (ADR-0007, ADR-0004).
+- Budgets (nodes, tasks, virtual ms, events) halt a Run deterministically.
+- `oracle/` holds fixtures and Chrome-recorded goldens; `oracle.test.ts` compares simulator output
+  to them, and a version guard fails if a golden's Chrome major differs from the Host Profile
+  (ADR-0008). `tests/golden/` holds golden Traces and the frozen Trace schema v1 snapshot.
+
+## Build
+
+Vite 8, Vue 3, Pinia. The engine ships only in the Worker chunk; `keepNames` preserves built-in
+frame labels; `pnpm run check:build` gates both. See `docs/deployment-guide.md`.
