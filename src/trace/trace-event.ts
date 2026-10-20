@@ -75,7 +75,13 @@ export type TraceEventBody =
   | { k: 'rejection:track'; pid: string; op: 'reject' | 'handle' }
   /** A queued notification Task fired: `unhandled` (unhandledrejection) or `handled` (rejectionhandled). */
   | { k: 'rejection:notify'; pid: string; outcome: 'unhandled' | 'handled'; message: string }
-  | { k: 'exception:report'; origin: 'script' | 'task-callback' | 'microtask-callback'; message: string }
+  | {
+      k: 'exception:report'
+      origin: 'script' | 'task-callback' | 'microtask-callback'
+      message: string
+      /** Set when the exception is an UnsupportedApiError; names the API. */
+      unsupportedApi?: string
+    }
   | { k: 'console'; level: 'log' | 'info' | 'warn' | 'error'; text: string }
 
 export type TraceEvent = EventBase & TraceEventBody

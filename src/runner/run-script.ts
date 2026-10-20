@@ -1,4 +1,5 @@
 import { createEngine262Adapter, ENGINE262_COMMIT } from '../engine/engine262-adapter'
+import { scanUnsupportedApis } from './unsupported-api-scan'
 import { runHost } from '../host/event-loop-host'
 import type { HostSettings } from '../host/event-loop-host'
 import type { ObservableOutput } from '../trace/observable-output'
@@ -30,8 +31,14 @@ export async function runScript(script: string, settings: RunSettings = {}): Pro
     randomSeed: settings.randomSeed ?? 0,
     budgets: { ...DEFAULT_BUDGETS, ...settings.budgets },
   }
-  return runHost(createEngine262Adapter(), script, hostSettings, {
-    commit: ENGINE262_COMMIT,
-    patch: 'none',
-  })
+  return runHost(
+    createEngine262Adapter(),
+    script,
+    hostSettings,
+    {
+      commit: ENGINE262_COMMIT,
+      patch: 'none',
+    },
+    scanUnsupportedApis(script),
+  )
 }

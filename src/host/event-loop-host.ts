@@ -201,8 +201,16 @@ export function runHost(
     for (;;) {
       const jobId = engine.runNextJob(
         (id) => emit({ k: 'job:begin', jobId: id }, HTML_CHECKPOINT, true, jobEnqueueSeq.get(id)),
-        (message) =>
-          emit({ k: 'exception:report', origin: 'microtask-callback', message }, HTML_REPORT),
+        (message, unsupportedApi) =>
+          emit(
+            {
+              k: 'exception:report',
+              origin: 'microtask-callback',
+              message,
+              ...(unsupportedApi && { unsupportedApi }),
+            },
+            HTML_REPORT,
+          ),
       )
       if (jobId === undefined) break
       emit({ k: 'job:end', jobId }, HTML_CHECKPOINT)
@@ -251,7 +259,15 @@ export function runHost(
     return outcome
   }
   if (outcome.kind === 'threw') {
-    emit({ k: 'exception:report', origin: 'script', message: outcome.message }, HTML_REPORT)
+    emit(
+      {
+        k: 'exception:report',
+        origin: 'script',
+        message: outcome.message,
+        ...(outcome.unsupportedApi && { unsupportedApi: outcome.unsupportedApi }),
+      },
+      HTML_REPORT,
+    )
   }
   emit({ k: 'task:end', taskId: scriptTaskId }, HTML_LOOP)
   checkpoint('script-end')
@@ -278,7 +294,15 @@ export function runHost(
     if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
     const result = engine.invokeCallback(next.callback)
     if (result.kind === 'threw') {
-      emit({ k: 'exception:report', origin: 'task-callback', message: result.message }, HTML_REPORT)
+      emit(
+        {
+          k: 'exception:report',
+          origin: 'task-callback',
+          message: result.message,
+          ...(result.unsupportedApi && { unsupportedApi: result.unsupportedApi }),
+        },
+        HTML_REPORT,
+      )
     }
     emit({ k: 'task:end', taskId: next.taskId }, HTML_LOOP)
     currentNesting = 0

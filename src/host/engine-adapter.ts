@@ -11,7 +11,10 @@ export interface CallbackHandle {
   readonly __callbackHandle: true
 }
 
-export type CallOutcome = { kind: 'ok' } | { kind: 'threw'; message: string }
+/** `unsupportedApi` names the Unsupported API when the error is an UnsupportedApiError. */
+export type CallOutcome =
+  | { kind: 'ok' }
+  | { kind: 'threw'; message: string; unsupportedApi?: string }
 
 export type ScriptOutcome =
   | CallOutcome
@@ -59,5 +62,5 @@ export interface EngineAdapter {
    * Runs the oldest queued Job and returns its id, or undefined when the queue is empty.
    * `onBegin` fires just before the Job's code runs. The host loops this to drain a Checkpoint.
    */
-  runNextJob(onBegin: (jobId: string) => void, onUncaught: (message: string) => void): string | undefined
+  runNextJob(onBegin: (jobId: string) => void, onUncaught: (message: string, unsupportedApi?: string) => void): string | undefined
 }
