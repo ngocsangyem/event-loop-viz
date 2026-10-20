@@ -25,6 +25,8 @@ export interface HostBindings {
   writeConsole(level: 'log' | 'info' | 'warn' | 'error', text: string): void
   /** Seeded source for `Math.random`, in [0, 1). */
   random(): number
+  /** Virtual Clock reading in milliseconds since the Run began (fractional). */
+  virtualNowMs(): number
 }
 
 export interface FrameInfo {
