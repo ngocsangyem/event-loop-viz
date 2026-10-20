@@ -11,7 +11,10 @@ import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import type { SharedSettings } from '@/share/share-link-codec'
+import EventList from '@/renderer/event-list.vue'
+import EventDetail from '@/renderer/event-detail.vue'
 import { createPlayer } from '@/player/player'
+import { withStepOptions } from '@/player/with-step-options'
 import type { Trace } from '@/trace/trace-event'
 
 const shared = decodeShareFragment(window.location.hash)
@@ -35,7 +38,11 @@ const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')
 
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
-const player = computed(() => (trace.value ? createPlayer(trace.value) : null))
+/** "Show all events" makes Bookkeeping Events steppable, not only visible in the list. */
+const showAll = ref(false)
+const player = computed(() =>
+  trace.value ? withStepOptions(createPlayer(trace.value), { showAll: showAll.value }) : null,
+)
 // Source ranges at the playhead; host-internal events carry none, which clears the highlight.
 const sourceHighlight = computed(() => {
   const state = player.value?.stateAt(position.value)
@@ -47,6 +54,11 @@ const consoleOutput = computed(() => player.value?.stateAt(position.value).conso
 const unsupportedApis = computed(() =>
   trace.value ? trace.value.header.unsupportedApis : scanUnsupportedApis(script.value),
 )
+
+// Hiding Bookkeeping Events must not leave the playhead parked on one.
+watch(showAll, (on) => {
+  if (!on && player.value) position.value = player.value.seek(position.value)
+})
 
 watch(script, () => {
   syntaxErrorAt.value = null
@@ -148,16 +160,8 @@ onMounted(() => {
     <TransportBar v-model="position" :player="player" :events="events" />
 
     <template v-if="trace">
-      <ol data-testid="event-list">
-        <li
-          v-for="event in events"
-          :key="event.seq"
-          :data-seq="event.seq"
-          :aria-current="event.seq === position"
-        >
-          {{ event.seq }} {{ event.k }}
-        </li>
-      </ol>
+      <EventList v-model="position" v-model:show-all="showAll" :events="events" />
+      <EventDetail :events="events" :position="position" @select="position = $event" />
 
       <ConsolePanel :output="consoleOutput" />
     </template>
