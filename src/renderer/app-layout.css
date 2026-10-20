@@ -1,0 +1,80 @@
+/*
+ * App shell layout. Desktop: editor beside the Scene, with the transport directly under the
+ * Scene and the Event/detail/Console panels in a row below. Phone width stacks everything in
+ * one column: editor, Scene, transport, panels. Grid children get min-width: 0 so long
+ * content (code lines, payloads) scrolls inside its own box instead of widening the page.
+ */
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas:
+    'editor scene'
+    'panels panels';
+  gap: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.app-shell > * {
+  min-width: 0;
+}
+.pane-editor {
+  grid-area: editor;
+}
+.pane-scene {
+  grid-area: scene;
+}
+.pane-panels {
+  grid-area: panels;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.pane-panels > * {
+  min-width: 0;
+}
+.app-shell pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'editor'
+      'scene'
+      'panels';
+    gap: 12px;
+    padding: 12px;
+  }
+  .pane-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Touch targets: 44 px minimum for everything tappable in the shell. */
+  .app-shell button,
+  .app-shell select,
+  .app-shell summary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .app-shell summary {
+    display: flex;
+    align-items: center;
+  }
+  .app-shell label:has(input[type='checkbox']) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+  .app-shell input[type='checkbox'] {
+    width: 24px;
+    height: 24px;
+  }
+  .app-shell input[type='range'] {
+    min-height: 44px;
+  }
+}
