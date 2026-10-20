@@ -141,14 +141,16 @@ describe('Job kinds and Tick numbers', () => {
     return Promise.all(
       fixtures.map(async (file) => {
         const result = await runScript(readFileSync(dir + file, 'utf8'))
-        if (result.kind !== 'ran') return
-        for (const e of eventsOf(result.trace, 'job:enqueue')) {
-          expect(['reaction', 'thenable', 'microtask'], file).toContain(e.jobKind)
-          if (e.jobKind !== 'microtask') expect(e.pid, file).toMatch(/^p\d+$/)
-          if (e.jobKind === 'reaction') expect(['fulfill', 'reject'], file).toContain(e.outcome)
-        }
+        if (result.kind !== 'ran') return []
+        return eventsOf(result.trace, 'job:enqueue')
+          .filter((e) => {
+            if (!['reaction', 'thenable', 'microtask'].includes(e.jobKind)) return true
+            if (e.jobKind !== 'microtask' && !/^p\d+$/.test(e.pid ?? '')) return true
+            return e.jobKind === 'reaction' && !['fulfill', 'reject'].includes(e.outcome ?? '')
+          })
+          .map((e) => `${file}: ${JSON.stringify(e)}`)
       }),
-    )
+    ).then((bad) => expect(bad.flat()).toEqual([]))
   })
 })
 
@@ -197,6 +199,13 @@ describe('promise events', () => {
       ['p1', false],
       ['p2', true],
     ])
+  })
+
+  it('uses one id per promise across promise and rejection events', async () => {
+    const trace = await traceOf(`Promise.reject(new Error('x'))`)
+    const create = eventsOf(trace, 'promise:create')[0]!
+    const tracked = eventsOf(trace, 'rejection:track')[0]!
+    expect(tracked.pid).toBe(create.pid)
   })
 
   it('freezes events so a Trace can be shared without copying', async () => {
@@ -263,6 +272,7 @@ describe('golden Traces', () => {
     const next: Record<string, string[]> = {}
     for (const c of TICK_CASES) next[c.name] = project(await traceOf(c.script))
     writeFileSync(goldenPath, JSON.stringify(next, null, 2) + '\n')
+    expect(Object.keys(next)).toHaveLength(TICK_CASES.length)
   })
 
   for (const c of TICK_CASES) {

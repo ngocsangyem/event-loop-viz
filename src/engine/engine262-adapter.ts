@@ -24,6 +24,9 @@ interface Frame {
   callSite: { getFunctionName(): string | null; isNative(): boolean }
 }
 
+/** Fixed epoch so `Date.now()` is deterministic across Runs (2023-11-14T22:13:20Z). */
+const VIRTUAL_EPOCH_MS = 1_700_000_000_000
+
 /** Pinned engine262 build; keep in sync with package.json. */
 export const ENGINE262_COMMIT = '2d7d8d988c77e94473ba0377122cdfccdfe243ba'
 
@@ -195,6 +198,32 @@ export function createEngine262Adapter(): EngineAdapter {
         return E.Value.undefined
       })
     }
+    const mathObject = global.properties.get(E.Value('Math'))?.Value
+    if (mathObject instanceof E.ObjectValue) {
+      defineGlobal(mathObject, 'random', function* () {
+        return E.Value(bindings.random())
+      })
+    }
+    // Wall-clock reads must come from the Virtual Clock so busy-waits terminate deterministically (ADR-0007).
+    const dateConstructor = global.properties.get(E.Value('Date'))?.Value
+    if (dateConstructor instanceof E.ObjectValue) {
+      defineGlobal(dateConstructor, 'now', function* () {
+        return E.Value(VIRTUAL_EPOCH_MS + Math.floor(bindings.virtualNowMs()))
+      })
+    }
+    const performanceObject = E.OrdinaryObjectCreate(realm.Intrinsics['%Object.prototype%'])
+    defineGlobal(performanceObject, 'now', function* () {
+      return E.Value(bindings.virtualNowMs())
+    })
+    global.properties.set(
+      E.Value('performance'),
+      E.Descriptor({
+        Configurable: true,
+        Enumerable: false,
+        Writable: true,
+        Value: performanceObject,
+      }),
+    )
     global.properties.set(
       E.Value('console'),
       E.Descriptor({
@@ -219,6 +248,14 @@ export function createEngine262Adapter(): EngineAdapter {
       hooks = engineHooks
       const agent = new E.Agent({
         eventLoopRunType: 'manual',
+        hostHooks: {
+          HostPromiseRejectionTrackers: new Set<E.HostPromiseRejectionTracker>([
+            (promise, op) => {
+              if (hostDepth) return
+              hooks.onRejectionTrack(promiseId(promise), op, errorMessage(promise.PromiseResult ?? E.Value.undefined))
+            },
+          ]),
+        },
         jobQueue,
         onPromiseEvent: reportPromiseEvent,
         onNodeEvaluation(node) {

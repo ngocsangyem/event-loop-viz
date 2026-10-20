@@ -71,6 +71,8 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       # CI serves the production build via `vite preview` (playwright.config.ts).
       - run: pnpm run build-only
+      # Engine split out of the main chunk, real built-in names kept in the Worker chunk.
+      - run: pnpm run check:build
       - run: pnpm exec playwright test
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -3,6 +3,7 @@ import { finalizeEvents } from './finalize-events'
 import { TRACE_SCHEMA_VERSION } from '../trace/trace-event'
 import type {
   SourceLocation,
+  HaltReason,
   Trace,
   TraceBudgets,
   TraceEvent,
@@ -10,6 +11,11 @@ import type {
 } from '../trace/trace-event'
 import type { ObservableOutput } from '../trace/observable-output'
 import type { CallbackHandle, EngineAdapter } from './engine-adapter'
+import { BudgetHalt, createBudgetMeter } from './budget-meter'
+import { createSeededRandom } from './seeded-random'
+import { createRejectionTracker } from './rejection-tracker'
+import type { NotificationTask } from './rejection-tracker'
+import { createTimingSensitivityTracker } from './timing-sensitivity'
 
 export interface HostSettings {
   nodeCostUs: number
@@ -48,6 +54,8 @@ const ES_RESOLVE_FUNCTIONS = 'ES:#sec-promise-resolve-functions'
 const ES_FULFILL = 'ES:#sec-fulfillpromise'
 const ES_REJECT = 'ES:#sec-rejectpromise'
 const HTML_QUEUE_MICROTASK = 'HTML:#dom-queuemicrotask'
+const HTML_REJECTION_TRACKER = 'HTML:#the-hostpromiserejectiontracker-implementation'
+const HTML_NOTIFY_REJECTED = 'HTML:#notify-about-rejected-promises'
 const ES_CONTEXTS = 'ES:#sec-execution-contexts'
 
 /** Nesting level above which Chrome clamps timers to 4 ms (HTML timer initialization steps). */
@@ -74,6 +82,10 @@ export function runHost(
   let order = 0
   let currentNesting = 0
   const timers = new Map<number, PendingTimer>()
+  const meter = createBudgetMeter(settings.budgets)
+  const rejections = createRejectionTracker()
+  const timing = createTimingSensitivityTracker()
+  const pendingDueUs = () => [...timers.values()].map((t) => t.dueUs)
 
   /** seq of each Job's job:enqueue event, so job:begin can point back to it. */
   const jobEnqueueSeq = new Map<string, number>()
@@ -86,6 +98,9 @@ export function runHost(
     visible = true,
     cause?: number,
   ) => {
+    // Engine frames unwinding after a Halt must not append to the Trace.
+    if (meter.tripped) return
+    meter.checkEvents(events.length)
     events.push({
       seq: events.length,
       t: nowUs,
@@ -96,7 +111,10 @@ export function runHost(
       ...body,
     })
   }
-  const newTaskId = () => `task-${++taskCounter}`
+  const newTaskId = () => {
+    meter.countTask()
+    return `task-${++taskCounter}`
+  }
 
   engine.start(
     {
@@ -109,11 +127,15 @@ export function runHost(
       writeConsole(level, text) {
         emit({ k: 'console', level, text }, HTML_LOOP)
       },
+      random: createSeededRandom(settings.randomSeed),
+      virtualNowMs: () => nowUs / 1000,
     },
     {
       onNode(nodeLoc) {
         loc = nodeLoc
+        meter.countNode()
         nowUs += settings.nodeCostUs
+        meter.checkVirtualTime(nowUs)
       },
       onFramePush: (f) => emit({ k: 'frame:push', ...f }, ES_CONTEXTS),
       onFramePop: (f) => emit({ k: 'frame:pop', ...f }, ES_CONTEXTS),
@@ -148,8 +170,37 @@ export function runHost(
           cause,
         )
       },
+      onRejectionTrack(pid, op, message) {
+        emit({ k: 'rejection:track', pid, op }, HTML_REJECTION_TRACKER, false)
+        const handledLater = rejections.track(pid, op, message)
+        if (handledLater) queueNotification(handledLater, 'handled')
+      },
     },
   )
+
+  function queueNotification(
+    rejected: { pid: string; message: string },
+    outcome: NotificationTask['outcome'],
+  ) {
+    const task: NotificationTask = { ...rejected, taskId: newTaskId(), dueUs: nowUs, outcome }
+    emit(
+      { k: 'task:queue', taskId: task.taskId, source: 'dom-manipulation' },
+      HTML_NOTIFY_REJECTED,
+    )
+    rejections.enqueue(task)
+  }
+
+  /** Runs a queued unhandledrejection / rejectionhandled notification as its own Task. */
+  function runNotification(task: NotificationTask) {
+    loc = undefined
+    emit({ k: 'task:begin', taskId: task.taskId }, HTML_LOOP)
+    emit(
+      { k: 'rejection:notify', pid: task.pid, outcome: task.outcome, message: task.message },
+      HTML_NOTIFY_REJECTED,
+    )
+    emit({ k: 'task:end', taskId: task.taskId }, HTML_LOOP)
+    checkpoint('task-end')
+  }
 
   function initTimer(callback: CallbackHandle, requestedMs: number, repeat: boolean, tid: number) {
     const clampedMs =
@@ -188,6 +239,8 @@ export function runHost(
       if (jobId === undefined) break
       emit({ k: 'job:end', jobId }, HTML_CHECKPOINT)
     }
+    // Notify about rejected promises runs after the Jobs drain (HTML perform a microtask checkpoint).
+    for (const rejected of rejections.takeAboutToBeNotified()) queueNotification(rejected, 'unhandled')
     emit({ k: 'checkpoint:end', reason }, HTML_CHECKPOINT)
   }
 
@@ -200,14 +253,32 @@ export function runHost(
     randomSeed: settings.randomSeed,
     source: script,
     unsupportedApis,
-    timingSensitive: false,
   }
 
+  const finish = (reason: HaltReason, limit?: number): HostRunResult => {
+    loc = undefined
+    // Bypasses the event Budget: the Halt itself always closes the Trace.
+    events.push({
+      seq: events.length,
+      t: nowUs,
+      ref: HTML_LOOP,
+      visible: true,
+      k: 'run:halted',
+      reason,
+      ...(limit !== undefined && { limit }),
+    })
+    finalizeEvents(events)
+    const traceHeader = { ...header, timingSensitive: timing.timingSensitive }
+    return { kind: 'ran', trace: { header: traceHeader, events }, observableOutput: deriveObservableOutput(events) }
+  }
+
+  try {
   emit({ k: 'run:start' }, HTML_LOOP)
 
   const scriptTaskId = newTaskId()
   emit({ k: 'task:queue', taskId: scriptTaskId, source: 'script' }, HTML_LOOP)
   emit({ k: 'task:begin', taskId: scriptTaskId }, HTML_LOOP)
+  const scriptStartUs = nowUs
   const outcome = engine.evaluateScript(script)
   if (outcome.kind === 'syntax-error') {
     return outcome
@@ -217,15 +288,24 @@ export function runHost(
   }
   emit({ k: 'task:end', taskId: scriptTaskId }, HTML_LOOP)
   checkpoint('script-end')
+  timing.taskEnded(scriptStartUs, nowUs, pendingDueUs())
 
   for (;;) {
     const next = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
+    // Chrome runs a timer that is already due before the notification Task; a later timer waits.
+    const notification = rejections.peek()
+    if (notification && (!next || next.dueUs > notification.dueUs)) {
+      runNotification(rejections.dequeue()!)
+      continue
+    }
     if (!next) break
     if (next.dueUs > nowUs) nowUs = next.dueUs
+    meter.checkVirtualTime(nowUs)
     loc = undefined
     timers.delete(next.tid)
     currentNesting = next.nesting
     emit({ k: 'task:begin', taskId: next.taskId }, HTML_LOOP)
+    const taskStartUs = nowUs
     emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
     // An interval re-arms before its callback runs (HTML timer task steps).
     if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
@@ -236,11 +316,12 @@ export function runHost(
     emit({ k: 'task:end', taskId: next.taskId }, HTML_LOOP)
     currentNesting = 0
     checkpoint('task-end')
+    timing.taskEnded(taskStartUs, nowUs, pendingDueUs())
   }
 
-  loc = undefined
-  emit({ k: 'run:halted', reason: 'natural' }, HTML_LOOP)
-  finalizeEvents(events)
-  const trace: Trace = { header, events }
-  return { kind: 'ran', trace, observableOutput: deriveObservableOutput(events) }
+  return finish('natural')
+  } catch (error) {
+    if (error instanceof BudgetHalt) return finish(error.reason, error.limit)
+    throw error
+  }
 }

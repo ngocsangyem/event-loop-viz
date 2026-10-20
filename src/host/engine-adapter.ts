@@ -23,6 +23,10 @@ export interface HostBindings {
   setTimer(callback: CallbackHandle, delayMs: number, repeat: boolean): number
   clearTimer(id: number): void
   writeConsole(level: 'log' | 'info' | 'warn' | 'error', text: string): void
+  /** Seeded source for `Math.random`, in [0, 1). */
+  random(): number
+  /** Virtual Clock reading in milliseconds since the Run began (fractional). */
+  virtualNowMs(): number
 }
 
 export interface FrameInfo {
@@ -50,6 +54,11 @@ export interface EngineHooks {
    * the engine reports the promise event that scheduled the Job just before this call.
    */
   onJobEnqueue(jobId: string, jobKind: JobKind, pid?: string, outcome?: 'fulfill' | 'reject'): void
+  /**
+   * HostPromiseRejectionTracker: `pid` identifies the promise, `message` is its
+   * rejection reason formatted for display.
+   */
+  onRejectionTrack(pid: string, op: 'reject' | 'handle', message: string): void
 }
 
 export interface EngineAdapter {

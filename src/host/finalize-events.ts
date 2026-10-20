@@ -12,6 +12,8 @@ export function finalizeEvents(events: TraceEvent[]): void {
       e.k === 'promise:reaction' ||
       e.k === 'promise:resolve' ||
       e.k === 'promise:settle' ||
+      e.k === 'rejection:track' ||
+      e.k === 'rejection:notify' ||
       (e.k === 'job:enqueue' && e.pid !== undefined)
     ) {
       observed.add(e.pid!)
