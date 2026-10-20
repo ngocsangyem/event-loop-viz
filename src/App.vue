@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
 import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import type { SharedSettings } from '@/share/share-link-codec'
-import { deriveObservableOutput } from '@/trace/derive-observable-output'
+import { createPlayer } from '@/player/player'
 import type { ObservableEntry } from '@/trace/observable-output'
 import type { Trace } from '@/trace/trace-event'
 
@@ -16,7 +16,8 @@ const script = ref(
 /** Run settings travel with a share link so the recipient reproduces the same Trace. */
 const settings = ref<SharedSettings>(shared?.settings ?? {})
 const shareUrl = ref<string | null>(null)
-const trace = ref<Trace | null>(null)
+// Shallow: the Trace is immutable and large, deep proxies would only cost.
+const trace = shallowRef<Trace | null>(null)
 const syntaxError = ref<string | null>(null)
 /** Index of the current event in the Trace. The Trace is immutable; position is the only state. */
 const position = ref(0)
@@ -27,11 +28,16 @@ const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')
 
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
-const lastPosition = computed(() => events.value.length - 1)
-// Derived from the Trace prefix so the console can never disagree with the event list.
-const consoleEntries = computed(() =>
-  deriveObservableOutput(events.value.slice(0, position.value + 1)),
-)
+const player = computed(() => (trace.value ? createPlayer(trace.value) : null))
+// The player folds the Trace, so the console can never disagree with the position.
+const replayState = computed(() => player.value?.stateAt(position.value) ?? null)
+const consoleEntries = computed(() => replayState.value?.console ?? [])
+const atStart = computed(() => !player.value || position.value <= player.value.first())
+const atEnd = computed(() => !player.value || position.value >= player.value.last())
+
+function step(direction: 'next' | 'prev') {
+  if (player.value) position.value = player.value[direction](position.value)
+}
 
 function describeEntry(entry: ObservableEntry): string {
   return entry.kind === 'console'
@@ -57,7 +63,10 @@ async function run() {
   activeRun = startWorkerRun(script.value, plainSettings, { watchdogMs })
   try {
     const result = await activeRun.result
-    if (result.kind === 'ran') trace.value = result.trace
+    if (result.kind === 'ran') {
+      trace.value = result.trace
+      position.value = player.value?.first() ?? 0
+    }
     else if (result.kind === 'syntax-error') {
       syntaxError.value = `${result.message} (line ${result.line}, column ${result.column})`
     } else if (result.kind === 'watchdog-killed') {
@@ -116,10 +125,8 @@ onMounted(() => {
     />
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
-    <button type="button" :disabled="!replaying || position <= 0" @click="position--">Prev</button>
-    <button type="button" :disabled="!replaying || position >= lastPosition" @click="position++">
-      Next
-    </button>
+    <button type="button" :disabled="!replaying || atStart" @click="step('prev')">Prev</button>
+    <button type="button" :disabled="!replaying || atEnd" @click="step('next')">Next</button>
 
     <template v-if="trace">
       <ol data-testid="event-list">
