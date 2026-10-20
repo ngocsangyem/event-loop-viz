@@ -1,0 +1,181 @@
+import { deriveObservableOutput } from '../trace/derive-observable-output'
+import { TRACE_SCHEMA_VERSION } from '../trace/trace-event'
+import type {
+  SourceLocation,
+  Trace,
+  TraceBudgets,
+  TraceEvent,
+  TraceEventBody,
+} from '../trace/trace-event'
+import type { ObservableOutput } from '../trace/observable-output'
+import type { CallbackHandle, EngineAdapter } from './engine-adapter'
+
+export interface HostSettings {
+  nodeCostUs: number
+  randomSeed: number
+  budgets: TraceBudgets
+}
+
+export interface EngineIdentity {
+  commit: string
+  patch: string
+}
+
+export type HostRunResult =
+  | { kind: 'ran'; trace: Trace; observableOutput: ObservableOutput }
+  | { kind: 'syntax-error'; message: string; line: number; column: number }
+
+interface PendingTimer {
+  tid: number
+  callback: CallbackHandle
+  delayMs: number
+  repeat: boolean
+  taskId: string
+  dueUs: number
+  order: number
+  nesting: number
+}
+
+const HTML_LOOP = 'HTML:#event-loop-processing-model'
+const HTML_TIMERS = 'HTML:#timer-initialisation-steps'
+const HTML_CHECKPOINT = 'HTML:#perform-a-microtask-checkpoint'
+const HTML_REPORT = 'HTML:#report-the-exception'
+const ES_CONTEXTS = 'ES:#sec-execution-contexts'
+
+/** Nesting level above which Chrome clamps timers to 4 ms (HTML timer initialization steps). */
+const NESTING_CLAMP_LEVEL = 5
+const NESTING_CLAMP_MIN_MS = 4
+
+/**
+ * The HTML event loop for Host Profile chrome-155, restricted to a script Task,
+ * a timer task source and Checkpoints. Time is virtual: it advances only by
+ * evaluated nodes and by jumping to the next due timer.
+ */
+export function runHost(
+  engine: EngineAdapter,
+  script: string,
+  settings: HostSettings,
+  identity: EngineIdentity,
+  unsupportedApis: string[] = [],
+): HostRunResult {
+  const events: TraceEvent[] = []
+  let nowUs = 0
+  let loc: SourceLocation | undefined
+  let taskCounter = 0
+  let timerCounter = 0
+  let order = 0
+  let currentNesting = 0
+  const timers = new Map<number, PendingTimer>()
+
+  const emit = (body: TraceEventBody, ref: TraceEvent['ref'], visible = true) => {
+    events.push({ seq: events.length, t: nowUs, ref, visible, ...(loc && { loc }), ...body })
+  }
+  const newTaskId = () => `task-${++taskCounter}`
+
+  engine.start(
+    {
+      setTimer(callback, delayMs, repeat) {
+        return initTimer(callback, delayMs, repeat, ++timerCounter)
+      },
+      clearTimer(id) {
+        if (timers.delete(id)) emit({ k: 'timer:clear', tid: String(id) }, HTML_TIMERS)
+      },
+      writeConsole(level, text) {
+        emit({ k: 'console', level, text }, HTML_LOOP)
+      },
+    },
+    {
+      onNode(nodeLoc) {
+        loc = nodeLoc
+        nowUs += settings.nodeCostUs
+      },
+      onFramePush: (f) => emit({ k: 'frame:push', ...f }, ES_CONTEXTS),
+      onFramePop: (f) => emit({ k: 'frame:pop', ...f }, ES_CONTEXTS),
+    },
+  )
+
+  function initTimer(callback: CallbackHandle, requestedMs: number, repeat: boolean, tid: number) {
+    const clampedMs =
+      currentNesting > NESTING_CLAMP_LEVEL && requestedMs < NESTING_CLAMP_MIN_MS
+        ? NESTING_CLAMP_MIN_MS
+        : requestedMs
+    const nesting = currentNesting + 1
+    emit(
+      { k: 'timer:init', tid: String(tid), requestedMs, clampedMs, nesting, repeat },
+      HTML_TIMERS,
+    )
+    const timer: PendingTimer = {
+      tid,
+      callback,
+      delayMs: requestedMs,
+      repeat,
+      taskId: newTaskId(),
+      dueUs: nowUs + clampedMs * 1000,
+      order: ++order,
+      nesting,
+    }
+    emit({ k: 'task:queue', taskId: timer.taskId, source: 'timer', dueUs: timer.dueUs }, HTML_TIMERS)
+    timers.set(tid, timer)
+    return tid
+  }
+
+  const checkpoint = (reason: 'task-end' | 'script-end') => {
+    emit({ k: 'checkpoint:begin', reason }, HTML_CHECKPOINT)
+    engine.drainMicrotasks((message) =>
+      emit({ k: 'exception:report', origin: 'microtask-callback', message }, HTML_REPORT),
+    )
+    emit({ k: 'checkpoint:end', reason }, HTML_CHECKPOINT)
+  }
+
+  const header = {
+    schemaVersion: TRACE_SCHEMA_VERSION as 1,
+    engine: { name: 'engine262' as const, ...identity },
+    hostProfile: 'chrome-155' as const,
+    budgets: settings.budgets,
+    nodeCostUs: settings.nodeCostUs,
+    randomSeed: settings.randomSeed,
+    source: script,
+    unsupportedApis,
+    timingSensitive: false,
+  }
+
+  emit({ k: 'run:start' }, HTML_LOOP)
+
+  const scriptTaskId = newTaskId()
+  emit({ k: 'task:queue', taskId: scriptTaskId, source: 'script' }, HTML_LOOP)
+  emit({ k: 'task:begin', taskId: scriptTaskId }, HTML_LOOP)
+  const outcome = engine.evaluateScript(script)
+  if (outcome.kind === 'syntax-error') {
+    return outcome
+  }
+  if (outcome.kind === 'threw') {
+    emit({ k: 'exception:report', origin: 'script', message: outcome.message }, HTML_REPORT)
+  }
+  emit({ k: 'task:end', taskId: scriptTaskId }, HTML_LOOP)
+  checkpoint('script-end')
+
+  for (;;) {
+    const next = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
+    if (!next) break
+    if (next.dueUs > nowUs) nowUs = next.dueUs
+    loc = undefined
+    timers.delete(next.tid)
+    currentNesting = next.nesting
+    emit({ k: 'task:begin', taskId: next.taskId }, HTML_LOOP)
+    emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
+    // An interval re-arms before its callback runs (HTML timer task steps).
+    if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
+    const result = engine.invokeCallback(next.callback)
+    if (result.kind === 'threw') {
+      emit({ k: 'exception:report', origin: 'task-callback', message: result.message }, HTML_REPORT)
+    }
+    emit({ k: 'task:end', taskId: next.taskId }, HTML_LOOP)
+    currentNesting = 0
+    checkpoint('task-end')
+  }
+
+  loc = undefined
+  emit({ k: 'run:halted', reason: 'natural' }, HTML_LOOP)
+  const trace: Trace = { header, events }
+  return { kind: 'ran', trace, observableOutput: deriveObservableOutput(events) }
+}
