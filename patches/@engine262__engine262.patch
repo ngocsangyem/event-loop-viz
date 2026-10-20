@@ -1,0 +1,464 @@
+diff --git a/declaration/abstract-ops/promise-operations.d.mts b/declaration/abstract-ops/promise-operations.d.mts
+index afc4ccc42a5309cd6cab3fde51142382f781a35b..95cf23af1adc0261f6c9a866106945b8dfa1fd39 100644
+--- a/declaration/abstract-ops/promise-operations.d.mts
++++ b/declaration/abstract-ops/promise-operations.d.mts
+@@ -43,7 +43,7 @@ export declare function IsPromise(x: Value): boolean;
+ /** https://tc39.es/ecma262/#sec-promise-resolve */
+ export declare function PromiseResolve(constructor: ObjectValue, resolution: Value): ValueEvaluator<PromiseObject>;
+ /** https://tc39.es/ecma262/#sec-performpromisethen */
+-export declare function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, onRejected: Value, resultCapability: PromiseCapabilityRecord): PromiseObject;
+-export declare function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, onRejected: Value, resultCapability?: undefined): undefined;
+-export declare function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, onRejected: Value, resultCapability?: PromiseCapabilityRecord | undefined): PromiseObject | undefined;
++export declare function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, onRejected: Value, resultCapability: PromiseCapabilityRecord, via?: string): PromiseObject;
++export declare function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, onRejected: Value, resultCapability?: undefined, via?: string): undefined;
++export declare function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, onRejected: Value, resultCapability?: PromiseCapabilityRecord | undefined, via?: string): PromiseObject | undefined;
+ //# sourceMappingURL=promise-operations.d.mts.map
+\ No newline at end of file
+diff --git a/declaration/execution-context/Job.d.mts b/declaration/execution-context/Job.d.mts
+index 85cb86c6b790fa48d58607be416e34971f5549f6..9038377463b525b90b326c6a67fa0c705183093f 100644
+--- a/declaration/execution-context/Job.d.mts
++++ b/declaration/execution-context/Job.d.mts
+@@ -6,7 +6,17 @@ export interface Job {
+     readonly job: () => PlainEvaluator<unknown>;
+     readonly callerRealm: Realm | undefined;
+     readonly callerScriptOrModule: AbstractModuleRecord | ScriptRecord | null;
++    /** Set on promise Jobs: what the Job does and which promise it targets. */
++    readonly meta?: PromiseJobMeta;
+ }
++export type PromiseJobMeta = {
++    kind: 'reaction';
++    promise: object;
++    outcome: 'fulfill' | 'reject';
++} | {
++    kind: 'thenable';
++    promise: object;
++};
+ /** https://tc39.es/ecma262/#sec-jobcallback-records */
+ export interface JobCallbackRecord {
+     Callback: FunctionObject & {
+@@ -19,5 +29,5 @@ export declare function HostMakeJobCallback(callback: FunctionObject): JobCallba
+ /** https://tc39.es/ecma262/#sec-hostcalljobcallback */
+ export declare function HostCallJobCallback(jobCallback: JobCallbackRecord, V: Value, argumentsList: Arguments): ValueEvaluator;
+ /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
+-export declare function HostEnqueuePromiseJob(job: () => PlainEvaluator, realm: Realm | null): void;
++export declare function HostEnqueuePromiseJob(job: () => PlainEvaluator, realm: Realm | null, meta?: PromiseJobMeta): void;
+ //# sourceMappingURL=Job.d.mts.map
+\ No newline at end of file
+diff --git a/declaration/host-defined/engine.d.mts b/declaration/host-defined/engine.d.mts
+index 9326e5942b8611852a7167d57527c8e26c585552..c301b161b667387dba5b6a6ba6dbf6d616d6af1c 100644
+--- a/declaration/host-defined/engine.d.mts
++++ b/declaration/host-defined/engine.d.mts
+@@ -77,6 +77,8 @@ export interface AgentHostDefined {
+     startEventLoop?: boolean;
+     onDebugger?(reason?: DebuggerPauseReason): void;
+     onNodeEvaluation?(node: ParseNode, realm: Realm): void;
++    /** Observes promise lifecycle events (create, reaction, resolve, settle). */
++    onPromiseEvent?(event: PromiseEvent): void;
+     onRealmCreated?(realm: ManagedRealm): void;
+     onScriptParsed?(script: ScriptRecord | SourceTextModuleRecord | DynamicParsedCodeRecord, scriptId: string): void;
+     resizableArrayBufferMaxByteLength?: number;
+@@ -131,3 +133,21 @@ export interface Markable {
+     mark(marker: GCMarker): void;
+ }
+ //# sourceMappingURL=engine.d.mts.map
++/** A promise lifecycle event reported through `onPromiseEvent`. */
++export type PromiseEvent = {
++    type: 'create';
++    promise: object;
++} | {
++    type: 'reaction';
++    promise: object;
++    via: 'then' | 'await' | 'asyncgen' | 'from-sync';
++    pending: boolean;
++} | {
++    type: 'resolve';
++    promise: object;
++    with: 'value' | 'thenable' | 'self';
++} | {
++    type: 'settle';
++    promise: object;
++    state: 'fulfilled' | 'rejected';
++};
+diff --git a/lib/engine262.js b/lib/engine262.js
+index a5a527197a1c8ae13b056d308720af7bf2bcca57..bb6d4c33f9cc70ec02dba078cf6e2a77a28ca4df 100644
+--- a/lib/engine262.js
++++ b/lib/engine262.js
+@@ -29380,7 +29380,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     const onRejected = CreateBuiltinFunction(rejectedClosure, 1, Value(''), []);
+     // @ts-expect-error TODO(ts): CreateBuiltinFunction should return a specalized type FunctionObjectValue that has a kAsyncContext on it.
+     onRejected[kAsyncContext] = asyncContext;
+-    PerformPromiseThen(promise, onFulfilled, onRejected);
++  PerformPromiseThen(promise, onFulfilled, onRejected, undefined, 'await');
+     return yield* RunCallerContext({
+       suspend: 'await'
+     });
+@@ -31430,7 +31430,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     // 10. Let onRejected be CreateBuiltinFunction(rejectedClosure, 1, "", « »).
+     const onRejected = CreateBuiltinFunction(rejectedClosure, 1, Value(''), []);
+     // 11. Perform PerformPromiseThen(promise, onFulfilled, onRejected).
+-    PerformPromiseThen(promise, onFulfilled, onRejected);
++  PerformPromiseThen(promise, onFulfilled, onRejected, undefined, 'asyncgen');
+   }
+   AsyncGeneratorAwaitReturn.section = 'https://tc39.es/ecma262/#sec-asyncgeneratorawaitreturn';
+ 
+@@ -45205,7 +45205,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     promise.PromiseRejectReactions = [];
+     // 7. Set promise.[[PromiseIsHandled]] to false.
+     promise.PromiseIsHandled = false;
+-    // 8. Let resolvingFunctions be CreateResolvingFunctions(promise).
++  emitPromiseEvent({ type: 'create', promise });
++  // 8. Let resolvingFunctions be CreateResolvingFunctions(promise).
+     const resolvingFunctions = CreateResolvingFunctions(promise);
+     // 9. Let completion be Call(executor, undefined, « resolvingFunctions.[[Resolve]], resolvingFunctions.[[Reject]] »).
+     const completion = yield* Call(executor, Value.undefined, [resolvingFunctions.Resolve, resolvingFunctions.Reject]);
+@@ -46905,7 +46906,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       });
+       onRejected = CreateBuiltinFunction(closeIterator, 1, Value(''), []);
+     }
+-    PerformPromiseThen(valueWrapper, onFullfilled, onRejected, promiseCapability);
++    PerformPromiseThen(valueWrapper, onFullfilled, onRejected, promiseCapability, 'from-sync');
+     return promiseCapability.Promise;
+   }
+   AsyncFromSyncIteratorContinuation.section = 'https://tc39.es/ecma262/#sec-asyncfromsynciteratorcontinuation';
+@@ -50017,7 +50018,19 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+   // Atomics: HostEnqueueGenericJob
+ 
+   /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
+-  function HostEnqueuePromiseJob(job, realm) {
++  /** Reports a promise lifecycle event to the host (observation only; no effect without a hook). */
++function emitPromiseEvent(event) {
++  const hook = exports.surroundingAgent.hostDefinedOptions.onPromiseEvent;
++  if (hook && !exports.surroundingAgent.debugger_isPreviewing) hook(event);
++}
++function reactionMeta(promise, reaction) {
++  return {
++    kind: 'reaction',
++    promise,
++    outcome: reaction.Type === 'Fulfill' ? 'fulfill' : 'reject'
++  };
++}
++function HostEnqueuePromiseJob(job, realm, meta) {
+     if (exports.surroundingAgent.debugger_isPreviewing) {
+       return;
+     }
+@@ -50027,8 +50040,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       queueName: 'PromiseJobs',
+       job,
+       callerRealm,
+-      callerScriptOrModule: scriptOrModule
+-    });
++      callerScriptOrModule: scriptOrModule,
++    meta
++  });
+   }
+   HostEnqueuePromiseJob.section = 'https://tc39.es/ecma262/#sec-hostenqueuepromisejob';
+ 
+@@ -50089,17 +50103,19 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       if (SameValue(resolution, promise)) {
+         // a. Let selfResolutionError be a newly created TypeError object.
+         const selfResolutionError = Throw.TypeError('Cannot resolve a promise $1 with itself', promise).Value;
+-        // b. Return RejectPromise(promise, selfResolutionError).
++        emitPromiseEvent({ type: 'resolve', promise, with: 'self' });
++      // b. Return RejectPromise(promise, selfResolutionError).
+         RejectPromise(promise, selfResolutionError);
+         return Value.undefined;
+       }
+       // 8. If Type(resolution) is not Object, then
+       if (!(resolution instanceof ObjectValue)) {
+-        // a. Return FulfillPromise(promise, resolution).
+-        FulfillPromise(promise, resolution);
+-        return Value.undefined;
+-      }
+-      // 9. Let then be Get(resolution, "then").
++        emitPromiseEvent({ type: 'resolve', promise, with: 'value' });
++      // a. Return FulfillPromise(promise, resolution).
++      FulfillPromise(promise, resolution);
++      return Value.undefined;
++    }
++    // 9. Let then be Get(resolution, "then").
+       const then = EnsureCompletion(yield* Get(resolution, 'then'));
+       // 10. If then is an abrupt completion, then
+       if (then instanceof AbruptCompletion) {
+@@ -50111,11 +50127,12 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       const thenAction = then.Value;
+       // 12. If IsCallable(thenAction) is false, then
+       if (!IsCallable(thenAction)) {
+-        // a. Return FulfillPromise(promise, resolution).
+-        FulfillPromise(promise, resolution);
+-        return Value.undefined;
+-      }
+-      if (exports.surroundingAgent.debugger_isPreviewing) {
++        emitPromiseEvent({ type: 'resolve', promise, with: 'value' });
++      // a. Return FulfillPromise(promise, resolution).
++      FulfillPromise(promise, resolution);
++      return Value.undefined;
++    }
++    if (exports.surroundingAgent.debugger_isPreviewing) {
+         return Value.undefined;
+       }
+       // 13. Let thenJobCallback be HostMakeJobCallback(thenAction).
+@@ -50123,8 +50140,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       // 14. Let job be NewPromiseResolveThenableJob(promise, resolution, thenJobCallback).
+       const job = NewPromiseResolveThenableJob(promise, resolution, thenJobCallback);
+       // 15. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+-      HostEnqueuePromiseJob(job.Job, job.Realm);
+-      // 16. Return undefined.
++      emitPromiseEvent({ type: 'resolve', promise, with: 'thenable' });
++    HostEnqueuePromiseJob(job.Job, job.Realm, { kind: 'thenable', promise });
++    // 16. Return undefined.
+       return Value.undefined;
+     };
+     // 4. Let resolve be CreateBuiltinFunction(resolveSteps, 1, "", « »).
+@@ -50205,7 +50223,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     promise.PromiseFulfillReactions = undefined;
+     promise.PromiseRejectReactions = undefined;
+     promise.PromiseState = 'fulfilled';
+-    return TriggerPromiseReactions(reactions, value);
++  emitPromiseEvent({ type: 'settle', promise, state: 'fulfilled' });
++  return TriggerPromiseReactions(reactions, value, promise);
+   }
+   FulfillPromise.section = 'https://tc39.es/ecma262/#sec-fulfillpromise';
+ 
+@@ -50278,22 +50297,23 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     promise.PromiseFulfillReactions = undefined;
+     promise.PromiseRejectReactions = undefined;
+     promise.PromiseState = 'rejected';
+-    if (!promise.PromiseIsHandled) {
++  emitPromiseEvent({ type: 'settle', promise, state: 'rejected' });
++  if (!promise.PromiseIsHandled) {
+       HostPromiseRejectionTracker(promise, 'reject');
+-    }
+-    return TriggerPromiseReactions(reactions, reason);
++  }
++  return TriggerPromiseReactions(reactions, reason, promise);
+   }
+   RejectPromise.section = 'https://tc39.es/ecma262/#sec-rejectpromise';
+ 
+   /** https://tc39.es/ecma262/#sec-triggerpromisereactions */
+-  function TriggerPromiseReactions(reactions, argument) {
++  function TriggerPromiseReactions(reactions, argument, promise) {
+     // 1. For each reaction in reactions, do
+     reactions.forEach(reaction => {
+       // a. Let job be NewPromiseReactionJob(reaction, argument).
+       const job = NewPromiseReactionJob(reaction, argument);
+       // b. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+-      HostEnqueuePromiseJob(job.Job, job.Realm);
+-    });
++    HostEnqueuePromiseJob(job.Job, job.Realm, reactionMeta(promise, reaction));
++  });
+     // 2. Return undefined.
+     return Value.undefined;
+   }
+@@ -50429,7 +50449,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+ 
+   /** https://tc39.es/ecma262/#sec-performpromisethen */
+ 
+-  function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) {
++  function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability, via) {
+     /* Assert */ /* node:coverage ignore next */ // 1. Assert: IsPromise(promise) is true.
+     if (!IsPromise(promise)) throw new Assert.Error("IsPromise(promise)");
+     // 2. If resultCapability is not present, then
+@@ -50468,8 +50488,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       Type: 'Reject',
+       Handler: onRejectedJobCallback
+     });
+-    // 9. If promise.[[PromiseState]] is pending, then
+-    if (promise.PromiseState === 'pending') {
++    emitPromiseEvent({ type: 'reaction', promise, via: via || 'then', pending: promise.PromiseState === 'pending' });
++  // 9. If promise.[[PromiseState]] is pending, then
++  if (promise.PromiseState === 'pending') {
+       exports.surroundingAgent.debugger_tryTouchDuringPreview(promise);
+       // a. Append fulfillReaction as the last element of the List that is promise.[[PromiseFulfillReactions]].
+       promise.PromiseFulfillReactions.push(fulfillReaction);
+@@ -50481,7 +50502,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       // b. Let fulfillJob be NewPromiseReactionJob(fulfillReaction, value).
+       const fulfillJob = NewPromiseReactionJob(fulfillReaction, value);
+       // c. Perform HostEnqueuePromiseJob(fulfillJob.[[Job]], fulfillJob.[[Realm]]).
+-      HostEnqueuePromiseJob(fulfillJob.Job, fulfillJob.Realm);
++      HostEnqueuePromiseJob(fulfillJob.Job, fulfillJob.Realm, reactionMeta(promise, fulfillReaction));
+     } else {
+       /* Assert */ /* node:coverage ignore next */ // a. Assert: The value of promise.[[PromiseState]] is rejected.
+       if (!(promise.PromiseState === 'rejected')) throw new Assert.Error("promise.PromiseState === 'rejected'");
+@@ -50494,7 +50515,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+       // d. Let rejectJob be NewPromiseReactionJob(rejectReaction, reason).
+       const rejectJob = NewPromiseReactionJob(rejectReaction, reason);
+       // e. Perform HostEnqueuePromiseJob(rejectJob.[[Job]], rejectJob.[[Realm]]).
+-      HostEnqueuePromiseJob(rejectJob.Job, rejectJob.Realm);
++      HostEnqueuePromiseJob(rejectJob.Job, rejectJob.Realm, reactionMeta(promise, rejectReaction));
+     }
+     // 12. Set promise.[[PromiseIsHandled]] to true.
+     promise.PromiseIsHandled = true;
+diff --git a/lib/engine262.mjs b/lib/engine262.mjs
+index 3af81eec05f7e5b6279b48c5687e77cec6315e36..34ed0629c09b12f3bab6779e1bb0184da94898b4 100644
+--- a/lib/engine262.mjs
++++ b/lib/engine262.mjs
+@@ -29374,7 +29374,7 @@ function* Await(arg) {
+   const onRejected = CreateBuiltinFunction(rejectedClosure, 1, Value(''), []);
+   // @ts-expect-error TODO(ts): CreateBuiltinFunction should return a specalized type FunctionObjectValue that has a kAsyncContext on it.
+   onRejected[kAsyncContext] = asyncContext;
+-  PerformPromiseThen(promise, onFulfilled, onRejected);
++  PerformPromiseThen(promise, onFulfilled, onRejected, undefined, 'await');
+   return yield* RunCallerContext({
+     suspend: 'await'
+   });
+@@ -31424,7 +31424,7 @@ function* AsyncGeneratorAwaitReturn(generator) {
+   // 10. Let onRejected be CreateBuiltinFunction(rejectedClosure, 1, "", « »).
+   const onRejected = CreateBuiltinFunction(rejectedClosure, 1, Value(''), []);
+   // 11. Perform PerformPromiseThen(promise, onFulfilled, onRejected).
+-  PerformPromiseThen(promise, onFulfilled, onRejected);
++  PerformPromiseThen(promise, onFulfilled, onRejected, undefined, 'asyncgen');
+ }
+ AsyncGeneratorAwaitReturn.section = 'https://tc39.es/ecma262/#sec-asyncgeneratorawaitreturn';
+ 
+@@ -45199,6 +45199,7 @@ function* PromiseConstructor([executor = Value.undefined], {
+   promise.PromiseRejectReactions = [];
+   // 7. Set promise.[[PromiseIsHandled]] to false.
+   promise.PromiseIsHandled = false;
++  emitPromiseEvent({ type: 'create', promise });
+   // 8. Let resolvingFunctions be CreateResolvingFunctions(promise).
+   const resolvingFunctions = CreateResolvingFunctions(promise);
+   // 9. Let completion be Call(executor, undefined, « resolvingFunctions.[[Resolve]], resolvingFunctions.[[Reject]] »).
+@@ -46899,7 +46900,7 @@ function* AsyncFromSyncIteratorContinuation(result, promiseCapability, syncItera
+     });
+     onRejected = CreateBuiltinFunction(closeIterator, 1, Value(''), []);
+   }
+-  PerformPromiseThen(valueWrapper, onFullfilled, onRejected, promiseCapability);
++  PerformPromiseThen(valueWrapper, onFullfilled, onRejected, promiseCapability, 'from-sync');
+   return promiseCapability.Promise;
+ }
+ AsyncFromSyncIteratorContinuation.section = 'https://tc39.es/ecma262/#sec-asyncfromsynciteratorcontinuation';
+@@ -50011,7 +50012,19 @@ HostCallJobCallback.section = 'https://tc39.es/ecma262/#sec-hostcalljobcallback'
+ // Atomics: HostEnqueueGenericJob
+ 
+ /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
+-function HostEnqueuePromiseJob(job, realm) {
++/** Reports a promise lifecycle event to the host (observation only; no effect without a hook). */
++function emitPromiseEvent(event) {
++  const hook = surroundingAgent.hostDefinedOptions.onPromiseEvent;
++  if (hook && !surroundingAgent.debugger_isPreviewing) hook(event);
++}
++function reactionMeta(promise, reaction) {
++  return {
++    kind: 'reaction',
++    promise,
++    outcome: reaction.Type === 'Fulfill' ? 'fulfill' : 'reject'
++  };
++}
++function HostEnqueuePromiseJob(job, realm, meta) {
+   if (surroundingAgent.debugger_isPreviewing) {
+     return;
+   }
+@@ -50021,7 +50034,8 @@ function HostEnqueuePromiseJob(job, realm) {
+     queueName: 'PromiseJobs',
+     job,
+     callerRealm,
+-    callerScriptOrModule: scriptOrModule
++    callerScriptOrModule: scriptOrModule,
++    meta
+   });
+ }
+ HostEnqueuePromiseJob.section = 'https://tc39.es/ecma262/#sec-hostenqueuepromisejob';
+@@ -50083,12 +50097,14 @@ function CreateResolvingFunctions(toResolve) {
+     if (SameValue(resolution, promise)) {
+       // a. Let selfResolutionError be a newly created TypeError object.
+       const selfResolutionError = Throw.TypeError('Cannot resolve a promise $1 with itself', promise).Value;
++      emitPromiseEvent({ type: 'resolve', promise, with: 'self' });
+       // b. Return RejectPromise(promise, selfResolutionError).
+       RejectPromise(promise, selfResolutionError);
+       return Value.undefined;
+     }
+     // 8. If Type(resolution) is not Object, then
+     if (!(resolution instanceof ObjectValue)) {
++      emitPromiseEvent({ type: 'resolve', promise, with: 'value' });
+       // a. Return FulfillPromise(promise, resolution).
+       FulfillPromise(promise, resolution);
+       return Value.undefined;
+@@ -50105,6 +50121,7 @@ function CreateResolvingFunctions(toResolve) {
+     const thenAction = then.Value;
+     // 12. If IsCallable(thenAction) is false, then
+     if (!IsCallable(thenAction)) {
++      emitPromiseEvent({ type: 'resolve', promise, with: 'value' });
+       // a. Return FulfillPromise(promise, resolution).
+       FulfillPromise(promise, resolution);
+       return Value.undefined;
+@@ -50117,7 +50134,8 @@ function CreateResolvingFunctions(toResolve) {
+     // 14. Let job be NewPromiseResolveThenableJob(promise, resolution, thenJobCallback).
+     const job = NewPromiseResolveThenableJob(promise, resolution, thenJobCallback);
+     // 15. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+-    HostEnqueuePromiseJob(job.Job, job.Realm);
++    emitPromiseEvent({ type: 'resolve', promise, with: 'thenable' });
++    HostEnqueuePromiseJob(job.Job, job.Realm, { kind: 'thenable', promise });
+     // 16. Return undefined.
+     return Value.undefined;
+   };
+@@ -50199,7 +50217,8 @@ function FulfillPromise(promise, value) {
+   promise.PromiseFulfillReactions = undefined;
+   promise.PromiseRejectReactions = undefined;
+   promise.PromiseState = 'fulfilled';
+-  return TriggerPromiseReactions(reactions, value);
++  emitPromiseEvent({ type: 'settle', promise, state: 'fulfilled' });
++  return TriggerPromiseReactions(reactions, value, promise);
+ }
+ FulfillPromise.section = 'https://tc39.es/ecma262/#sec-fulfillpromise';
+ 
+@@ -50272,21 +50291,22 @@ function RejectPromise(promise, reason) {
+   promise.PromiseFulfillReactions = undefined;
+   promise.PromiseRejectReactions = undefined;
+   promise.PromiseState = 'rejected';
++  emitPromiseEvent({ type: 'settle', promise, state: 'rejected' });
+   if (!promise.PromiseIsHandled) {
+     HostPromiseRejectionTracker(promise, 'reject');
+   }
+-  return TriggerPromiseReactions(reactions, reason);
++  return TriggerPromiseReactions(reactions, reason, promise);
+ }
+ RejectPromise.section = 'https://tc39.es/ecma262/#sec-rejectpromise';
+ 
+ /** https://tc39.es/ecma262/#sec-triggerpromisereactions */
+-function TriggerPromiseReactions(reactions, argument) {
++function TriggerPromiseReactions(reactions, argument, promise) {
+   // 1. For each reaction in reactions, do
+   reactions.forEach(reaction => {
+     // a. Let job be NewPromiseReactionJob(reaction, argument).
+     const job = NewPromiseReactionJob(reaction, argument);
+     // b. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+-    HostEnqueuePromiseJob(job.Job, job.Realm);
++    HostEnqueuePromiseJob(job.Job, job.Realm, reactionMeta(promise, reaction));
+   });
+   // 2. Return undefined.
+   return Value.undefined;
+@@ -50423,7 +50443,7 @@ NewPromiseReactionJob.section = 'https://tc39.es/ecma262/#sec-newpromisereaction
+ 
+ /** https://tc39.es/ecma262/#sec-performpromisethen */
+ 
+-function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) {
++function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability, via) {
+   /* Assert */ /* node:coverage ignore next */ // 1. Assert: IsPromise(promise) is true.
+   if (!IsPromise(promise)) throw new Assert.Error("IsPromise(promise)");
+   // 2. If resultCapability is not present, then
+@@ -50462,6 +50482,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+     Type: 'Reject',
+     Handler: onRejectedJobCallback
+   });
++  emitPromiseEvent({ type: 'reaction', promise, via: via || 'then', pending: promise.PromiseState === 'pending' });
+   // 9. If promise.[[PromiseState]] is pending, then
+   if (promise.PromiseState === 'pending') {
+     surroundingAgent.debugger_tryTouchDuringPreview(promise);
+@@ -50475,7 +50496,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+     // b. Let fulfillJob be NewPromiseReactionJob(fulfillReaction, value).
+     const fulfillJob = NewPromiseReactionJob(fulfillReaction, value);
+     // c. Perform HostEnqueuePromiseJob(fulfillJob.[[Job]], fulfillJob.[[Realm]]).
+-    HostEnqueuePromiseJob(fulfillJob.Job, fulfillJob.Realm);
++    HostEnqueuePromiseJob(fulfillJob.Job, fulfillJob.Realm, reactionMeta(promise, fulfillReaction));
+   } else {
+     /* Assert */ /* node:coverage ignore next */ // a. Assert: The value of promise.[[PromiseState]] is rejected.
+     if (!(promise.PromiseState === 'rejected')) throw new Assert.Error("promise.PromiseState === 'rejected'");
+@@ -50488,7 +50509,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+     // d. Let rejectJob be NewPromiseReactionJob(rejectReaction, reason).
+     const rejectJob = NewPromiseReactionJob(rejectReaction, reason);
+     // e. Perform HostEnqueuePromiseJob(rejectJob.[[Job]], rejectJob.[[Realm]]).
+-    HostEnqueuePromiseJob(rejectJob.Job, rejectJob.Realm);
++    HostEnqueuePromiseJob(rejectJob.Job, rejectJob.Realm, reactionMeta(promise, rejectReaction));
+   }
+   // 12. Set promise.[[PromiseIsHandled]] to true.
+   promise.PromiseIsHandled = true;
