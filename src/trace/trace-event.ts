@@ -48,6 +48,9 @@ interface EventBase {
   visible: boolean
 }
 
+/** Where a Job came from: a promise reaction/thenable Job or a queueMicrotask callback. */
+export type JobKind = 'promise' | 'queue-microtask'
+
 export type HaltReason = 'natural' | 'nodes' | 'tasks' | 'virtual-time' | 'events'
 
 export type TraceEventBody =
@@ -56,6 +59,8 @@ export type TraceEventBody =
   | { k: 'task:queue'; taskId: string; source: 'script' | 'timer'; dueUs?: number }
   | { k: 'task:begin' | 'task:end'; taskId: string }
   | { k: 'checkpoint:begin' | 'checkpoint:end'; reason: 'task-end' | 'script-end' | 'callback-end' }
+  | { k: 'job:enqueue'; jobId: string; kind: JobKind }
+  | { k: 'job:begin' | 'job:end'; jobId: string }
   | { k: 'frame:push'; frameId: string; label: string; builtin: boolean }
   | { k: 'frame:pop'; frameId: string; label: string; builtin: boolean }
   | {

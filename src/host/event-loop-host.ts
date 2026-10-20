@@ -43,6 +43,8 @@ const HTML_LOOP = 'HTML:#event-loop-processing-model'
 const HTML_TIMERS = 'HTML:#timer-initialisation-steps'
 const HTML_CHECKPOINT = 'HTML:#perform-a-microtask-checkpoint'
 const HTML_REPORT = 'HTML:#report-the-exception'
+const ES_ENQUEUE_JOB = 'ES:#sec-hostenqueuepromisejob'
+const HTML_QUEUE_MICROTASK = 'HTML:#dom-queuemicrotask'
 const ES_CONTEXTS = 'ES:#sec-execution-contexts'
 
 /** Nesting level above which Chrome clamps timers to 4 ms (HTML timer initialization steps). */
@@ -71,11 +73,27 @@ export function runHost(
   const timers = new Map<number, PendingTimer>()
   const meter = createBudgetMeter(settings.budgets)
 
-  const emit = (body: TraceEventBody, ref: TraceEvent['ref'], visible = true) => {
+  /** seq of each Job's job:enqueue event, so job:begin can point back to it. */
+  const jobEnqueueSeq = new Map<string, number>()
+
+  const emit = (
+    body: TraceEventBody,
+    ref: TraceEvent['ref'],
+    visible = true,
+    cause?: number,
+  ) => {
     // Engine frames unwinding after a Halt must not append to the Trace.
     if (meter.tripped) return
     meter.checkEvents(events.length)
-    events.push({ seq: events.length, t: nowUs, ref, visible, ...(loc && { loc }), ...body })
+    events.push({
+      seq: events.length,
+      t: nowUs,
+      ref,
+      visible,
+      ...(loc && { loc }),
+      ...(cause !== undefined && { cause }),
+      ...body,
+    })
   }
   const newTaskId = () => {
     meter.countTask()
@@ -104,6 +122,13 @@ export function runHost(
       },
       onFramePush: (f) => emit({ k: 'frame:push', ...f }, ES_CONTEXTS),
       onFramePop: (f) => emit({ k: 'frame:pop', ...f }, ES_CONTEXTS),
+      onJobEnqueue(jobId, kind) {
+        jobEnqueueSeq.set(jobId, events.length)
+        emit(
+          { k: 'job:enqueue', jobId, kind },
+          kind === 'queue-microtask' ? HTML_QUEUE_MICROTASK : ES_ENQUEUE_JOB,
+        )
+      },
     },
   )
 
@@ -134,9 +159,16 @@ export function runHost(
 
   const checkpoint = (reason: 'task-end' | 'script-end') => {
     emit({ k: 'checkpoint:begin', reason }, HTML_CHECKPOINT)
-    engine.drainMicrotasks((message) =>
-      emit({ k: 'exception:report', origin: 'microtask-callback', message }, HTML_REPORT),
-    )
+    // Jobs enqueued while a Job runs join the back of the queue and run in this same Checkpoint.
+    for (;;) {
+      const jobId = engine.runNextJob(
+        (id) => emit({ k: 'job:begin', jobId: id }, HTML_CHECKPOINT, true, jobEnqueueSeq.get(id)),
+        (message) =>
+          emit({ k: 'exception:report', origin: 'microtask-callback', message }, HTML_REPORT),
+      )
+      if (jobId === undefined) break
+      emit({ k: 'job:end', jobId }, HTML_CHECKPOINT)
+    }
     emit({ k: 'checkpoint:end', reason }, HTML_CHECKPOINT)
   }
 

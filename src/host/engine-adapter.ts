@@ -1,4 +1,4 @@
-import type { SourceLocation } from '../trace/trace-event'
+import type { JobKind, SourceLocation } from '../trace/trace-event'
 
 /**
  * Engine-neutral seam between the host and a JavaScript engine (ADR-0001, ADR-0005).
@@ -39,6 +39,8 @@ export interface EngineHooks {
   onNode(loc: SourceLocation): void
   onFramePush(frame: FrameInfo): void
   onFramePop(frame: FrameInfo): void
+  /** A Job joined the microtask queue (FIFO). */
+  onJobEnqueue(jobId: string, kind: JobKind): void
 }
 
 export interface EngineAdapter {
@@ -46,6 +48,9 @@ export interface EngineAdapter {
   start(bindings: HostBindings, hooks: EngineHooks): void
   evaluateScript(source: string): ScriptOutcome
   invokeCallback(callback: CallbackHandle): CallOutcome
-  /** Runs queued Jobs until the microtask queue is empty. */
-  drainMicrotasks(onUncaught: (message: string) => void): void
+  /**
+   * Runs the oldest queued Job and returns its id, or undefined when the queue is empty.
+   * `onBegin` fires just before the Job's code runs. The host loops this to drain a Checkpoint.
+   */
+  runNextJob(onBegin: (jobId: string) => void, onUncaught: (message: string) => void): string | undefined
 }
