@@ -1,7 +1,7 @@
 import type { Trace } from '../trace/trace-event'
 import { applyEvent } from './apply-event'
-import { createInitialState } from './replay-state'
-import type { ReplayState } from './replay-state'
+import { cloneReplayState, createInitialState } from './replay-state'
+import type { PromiseView, ReplayState } from './replay-state'
 
 /** A snapshot of the folded state is kept every this many events, so seeking replays at most this many. */
 export const SNAPSHOT_INTERVAL = 500
@@ -45,7 +45,11 @@ export function createPlayer(trace: Trace): Player {
   const { events } = trace
   const eventAt = (seq: number) => events[seq]
 
+  // Snapshots leave the promise table empty and keep only what changed since the previous one:
+  // copying a table of tens of thousands of promises per snapshot made construction quadratic.
   const snapshots: ReplayState[] = []
+  const promiseDeltas: Record<string, PromiseView>[] = []
+  let dirtyPids = new Set<string>()
   const visible: number[] = []
   const all: number[] = []
   const taskStarts: number[] = []
@@ -57,7 +61,13 @@ export function createPlayer(trace: Trace): Player {
   let lastTickInCheckpoint: number | null = null
   events.forEach((event, i) => {
     applyEvent(running, event, eventAt)
-    if (i % SNAPSHOT_INTERVAL === 0) snapshots.push(structuredClone(running))
+    const pid = (event as { pid?: string }).pid
+    if (pid !== undefined && pid in running.promises) dirtyPids.add(pid)
+    if (i % SNAPSHOT_INTERVAL === 0) {
+      promiseDeltas.push(Object.fromEntries([...dirtyPids].map((p) => [p, running.promises[p]!])))
+      dirtyPids = new Set()
+      snapshots.push(cloneReplayState({ ...running, promises: {} }))
+    }
     all.push(i)
     if (event.visible) visible.push(i)
     if (event.k === 'task:begin') taskStarts.push(i)
@@ -75,7 +85,8 @@ export function createPlayer(trace: Trace): Player {
     if (events.length === 0) return createInitialState()
     const target = clamp(position)
     const base = Math.floor(target / SNAPSHOT_INTERVAL)
-    const state = structuredClone(snapshots[base]!)
+    const state = cloneReplayState(snapshots[base]!)
+    for (let b = 0; b <= base; b++) Object.assign(state.promises, promiseDeltas[b])
     for (let i = base * SNAPSHOT_INTERVAL + 1; i <= target; i++) {
       applyEvent(state, events[i]!, eventAt)
     }
