@@ -11,6 +11,8 @@ import type {
 } from '../host/engine-adapter'
 import type { JobKind } from '../trace/trace-event'
 import { promiseJobDescriptor } from './promise-job-descriptor'
+import { installUnsupportedApiStubs, unsupportedApiOf } from './unsupported-api-stubs'
+import { installMessageChannel } from './message-channel-global'
 
 type EngineValue = E.Value
 type NativeSteps = Parameters<typeof E.CreateBuiltinFunction.from>[0]
@@ -191,6 +193,17 @@ export function createEngine262Adapter(): EngineAdapter {
       return E.Value.undefined
     })
 
+    installMessageChannel({
+      realm,
+      defineFunction: defineGlobal,
+      enqueuePortMessage: bindings.enqueuePortMessage,
+      registerCallback(fn) {
+        const handle = { __callbackHandle: true } as const
+        callbacks.set(handle, fn)
+        return handle
+      },
+    })
+
     const consoleObject = E.OrdinaryObjectCreate(realm.Intrinsics['%Object.prototype%'])
     for (const level of ['log', 'info', 'warn', 'error'] as const) {
       defineGlobal(consoleObject, level, function* (...args) {
@@ -235,12 +248,20 @@ export function createEngine262Adapter(): EngineAdapter {
     )
   }
 
-  const runAsJob = (steps: () => unknown, onError: (message: string) => void): void => {
+  const runAsJob = (
+    steps: () => unknown,
+    onError: (message: string, unsupportedApi?: string) => void,
+  ): void => {
     E.runSingleJobInQueue(
       { queueName: 'task', job: steps as unknown as () => ReturnType<typeof E.Call> & never, callerRealm: realm, callerScriptOrModule: null },
-      (error) => onError(errorMessage(error)),
+      (error) => onError(errorMessage(error), unsupportedApiOf(error)),
       () => {},
     )
+  }
+
+  const withUnsupportedApi = (outcome: { kind: 'threw'; message: string }, error: EngineValue): CallOutcome => {
+    const unsupportedApi = unsupportedApiOf(error)
+    return unsupportedApi ? { ...outcome, unsupportedApi } : outcome
   }
 
   return {
@@ -288,7 +309,10 @@ export function createEngine262Adapter(): EngineAdapter {
         if (!hostDepth) hooks.onFramePop(frameInfo(ctx))
       }
 
-      withHostContext(() => installGlobals(bindings))
+      withHostContext(() => {
+        installGlobals(bindings)
+        installUnsupportedApiStubs(realm)
+      })
     },
 
     evaluateScript(source): ScriptOutcome {
@@ -307,7 +331,7 @@ export function createEngine262Adapter(): EngineAdapter {
       const completion = E.EnsureCompletion(realm.evaluateScriptSkipDebugger(E.ValueOfNormalCompletion(compiled)),
       )
       return completion instanceof E.ThrowCompletion
-        ? { kind: 'threw', message: errorMessage(completion.Value) }
+        ? withUnsupportedApi({ kind: 'threw', message: errorMessage(completion.Value) }, completion.Value)
         : { kind: 'ok' }
     },
 
@@ -317,7 +341,8 @@ export function createEngine262Adapter(): EngineAdapter {
       let outcome: CallOutcome = { kind: 'ok' }
       runAsJob(
         () => E.Call(fn, E.Value.undefined, []),
-        (message) => (outcome = { kind: 'threw', message }),
+        (message, unsupportedApi) =>
+          (outcome = { kind: 'threw', message, ...(unsupportedApi && { unsupportedApi }) }),
       )
       return outcome
     },
@@ -327,7 +352,7 @@ export function createEngine262Adapter(): EngineAdapter {
       if (!job) return undefined
       const jobId = jobIds.get(job) ?? `job-${++jobCounter}`
       onBegin(jobId)
-      E.runSingleJobInQueue(job, (error) => onUncaught(errorMessage(error)), () => {})
+      E.runSingleJobInQueue(job, (error) => onUncaught(errorMessage(error), unsupportedApiOf(error)), () => {})
       return jobId
     },
   }

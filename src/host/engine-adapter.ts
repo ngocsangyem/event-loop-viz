@@ -11,7 +11,10 @@ export interface CallbackHandle {
   readonly __callbackHandle: true
 }
 
-export type CallOutcome = { kind: 'ok' } | { kind: 'threw'; message: string }
+/** `unsupportedApi` names the Unsupported API when the error is an UnsupportedApiError. */
+export type CallOutcome =
+  | { kind: 'ok' }
+  | { kind: 'threw'; message: string; unsupportedApi?: string }
 
 export type ScriptOutcome =
   | CallOutcome
@@ -22,6 +25,11 @@ export interface HostBindings {
   /** Returns the timer id handed to the Script. */
   setTimer(callback: CallbackHandle, delayMs: number, repeat: boolean): number
   clearTimer(id: number): void
+  /**
+   * A message was posted to a started MessagePort: queue a Task on the port-message source.
+   * The host later calls `deliver` like any task callback.
+   */
+  enqueuePortMessage(deliver: CallbackHandle): void
   writeConsole(level: 'log' | 'info' | 'warn' | 'error', text: string): void
   /** Seeded source for `Math.random`, in [0, 1). */
   random(): number
@@ -70,5 +78,5 @@ export interface EngineAdapter {
    * Runs the oldest queued Job and returns its id, or undefined when the queue is empty.
    * `onBegin` fires just before the Job's code runs. The host loops this to drain a Checkpoint.
    */
-  runNextJob(onBegin: (jobId: string) => void, onUncaught: (message: string) => void): string | undefined
+  runNextJob(onBegin: (jobId: string) => void, onUncaught: (message: string, unsupportedApi?: string) => void): string | undefined
 }
