@@ -75,3 +75,35 @@ describe('snapshots and halts', () => {
     expect(visited.slice(0, begins.length)).toEqual(begins)
   })
 })
+
+describe.each(Object.entries(GOLDEN))('jump boundaries in golden Trace: %s', (_name, trace) => {
+  /** Walks a jump function from the start until it stops moving. */
+  function landings(jump: (p: number) => number, start: number): number[] {
+    const out: number[] = []
+    for (let p = jump(start); p > (out[out.length - 1] ?? start); p = jump(p)) out.push(p)
+    return out
+  }
+
+  it('Task jumps land on task:begin events in order, then clamp to the end', () => {
+    const player = createPlayer(trace)
+    const begins = trace.events
+      .filter((e) => e.k === 'task:begin' && e.visible && e.seq > player.first())
+      .map((e) => e.seq)
+    const forward = landings(player.nextTask, player.first())
+    expect(forward.slice(0, begins.length)).toEqual(begins)
+    // prevTask from each landing returns to the previous boundary.
+    for (let i = 1; i < begins.length; i++) {
+      expect(player.prevTask(begins[i]!)).toBe(begins[i - 1])
+    }
+  })
+
+  it('Tick jumps land on the first job:begin of a Tick', () => {
+    const player = createPlayer(trace)
+    for (const p of landings(player.nextTick, player.first())) {
+      if (p === player.last() && trace.events[p]!.k !== 'job:begin') continue
+      expect(trace.events[p]!.k).toBe('job:begin')
+      // The Job just before the landing belongs to an earlier Tick (or there is none).
+      expect(player.stateAt(p).tick).not.toBe(player.stateAt(p - 1).tick)
+    }
+  })
+})

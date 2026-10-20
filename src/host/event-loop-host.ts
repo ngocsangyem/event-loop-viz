@@ -71,6 +71,18 @@ const NESTING_CLAMP_MIN_MS = 4
  * a timer task source and Checkpoints. Time is virtual: it advances only by
  * evaluated nodes and by jumping to the next due timer.
  */
+/** Steps the host performs itself: no Script code runs, so they carry no source location. */
+const HOST_ONLY_KINDS: ReadonlySet<string> = new Set([
+  'run:start',
+  'run:halted',
+  'task:begin',
+  'task:end',
+  'checkpoint:begin',
+  'checkpoint:end',
+  'job:begin',
+  'job:end',
+])
+
 export function runHost(
   engine: EngineAdapter,
   script: string,
@@ -96,6 +108,8 @@ export function runHost(
   const jobEnqueueSeq = new Map<string, number>()
   /** The latest promise event, which is the cause of a Job enqueued right after it. */
   let lastPromiseEvent: { seq: number; pid: string } | undefined
+  /** seq of each Task's task:queue event, so task:begin can point back to the code that scheduled it. */
+  const taskQueueSeq = new Map<string, number>()
 
   const emit = (
     body: TraceEventBody,
@@ -106,12 +120,13 @@ export function runHost(
     // Engine frames unwinding after a Halt must not append to the Trace.
     if (meter.tripped) return
     meter.checkEvents(events.length)
+    if (body.k === 'task:queue') taskQueueSeq.set(body.taskId, events.length)
     events.push({
       seq: events.length,
       t: nowUs,
       ref,
       visible,
-      ...(loc && { loc }),
+      ...(loc && !HOST_ONLY_KINDS.has(body.k) && { loc }),
       ...(cause !== undefined && { cause }),
       ...body,
     })
@@ -344,13 +359,13 @@ export function runHost(
     if (useMessage) {
       portMessages.shift()
       callback = nextMessage.deliver
-      emit({ k: 'task:begin', taskId }, HTML_LOOP)
+      emit({ k: 'task:begin', taskId }, HTML_LOOP, true, taskQueueSeq.get(taskId))
     } else {
       const next = nextTimer!
       timers.delete(next.tid)
       currentNesting = next.nesting
       callback = next.callback
-      emit({ k: 'task:begin', taskId }, HTML_LOOP)
+      emit({ k: 'task:begin', taskId }, HTML_LOOP, true, taskQueueSeq.get(taskId))
       emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
       // An interval re-arms before its callback runs (HTML timer task steps).
       if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
