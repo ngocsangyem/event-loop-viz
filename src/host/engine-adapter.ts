@@ -55,6 +55,9 @@ export type AwaitEventInfo =
   | { type: 'suspend'; fid: string; awaitedPid: string }
   | { type: 'resume'; fid: string; mode: 'next' | 'throw' }
 
+/** An async generator yielding, continuing or awaiting a return value; `gid` is stable per generator object. */
+export type AsyncGeneratorEventInfo = { type: 'yield' | 'resume' | 'return-await'; gid: string }
+
 /** Notifications the engine adapter sends to the host while it executes. */
 export interface EngineHooks {
   /** One AST node was evaluated: the host advances the Virtual Clock. */
@@ -63,6 +66,7 @@ export interface EngineHooks {
   onFramePop(frame: FrameInfo): void
   onPromiseEvent(event: PromiseEventInfo): void
   onAwaitEvent(event: AwaitEventInfo): void
+  onAsyncGeneratorEvent(event: AsyncGeneratorEventInfo): void
   /**
    * A Job joined the microtask queue (FIFO). Promise Jobs name their target promise;
    * the engine reports the promise event that scheduled the Job just before this call.

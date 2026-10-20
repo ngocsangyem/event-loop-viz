@@ -45,10 +45,10 @@ index 85cb86c6b790fa48d58607be416e34971f5549f6..9038377463b525b90b326c6a67fa0c70
  //# sourceMappingURL=Job.d.mts.map
 \ No newline at end of file
 diff --git a/declaration/host-defined/engine.d.mts b/declaration/host-defined/engine.d.mts
-index 9326e5942b8611852a7167d57527c8e26c585552..4f22f6a4f4d9a791fdfca9efde42ab070b23dc64 100644
+index 9326e5942b8611852a7167d57527c8e26c585552..8bd71ccf0ec611f1d827b48ec529296868de3586 100644
 --- a/declaration/host-defined/engine.d.mts
 +++ b/declaration/host-defined/engine.d.mts
-@@ -77,6 +77,10 @@ export interface AgentHostDefined {
+@@ -77,6 +77,12 @@ export interface AgentHostDefined {
      startEventLoop?: boolean;
      onDebugger?(reason?: DebuggerPauseReason): void;
      onNodeEvaluation?(node: ParseNode, realm: Realm): void;
@@ -56,10 +56,12 @@ index 9326e5942b8611852a7167d57527c8e26c585552..4f22f6a4f4d9a791fdfca9efde42ab07
 +    onPromiseEvent?(event: PromiseEvent): void;
 +    /** Observes async functions suspending at and resuming after an await. */
 +    onAwaitEvent?(event: AwaitEvent): void;
++    /** Observes async generators yielding, resuming and awaiting a return value. */
++    onAsyncGeneratorEvent?(event: AsyncGeneratorEvent): void;
      onRealmCreated?(realm: ManagedRealm): void;
      onScriptParsed?(script: ScriptRecord | SourceTextModuleRecord | DynamicParsedCodeRecord, scriptId: string): void;
      resizableArrayBufferMaxByteLength?: number;
-@@ -131,3 +135,30 @@ export interface Markable {
+@@ -131,3 +137,35 @@ export interface Markable {
      mark(marker: GCMarker): void;
  }
  //# sourceMappingURL=engine.d.mts.map
@@ -81,6 +83,11 @@ index 9326e5942b8611852a7167d57527c8e26c585552..4f22f6a4f4d9a791fdfca9efde42ab07
 +    promise: object;
 +    state: 'fulfilled' | 'rejected';
 +};/** An await lifecycle event reported through `onAwaitEvent`; `context` is the async function's execution context. */
++export type AsyncGeneratorEvent = {
++    type: 'yield' | 'resume' | 'return-await';
++    generator: object;
++};
++/** An await lifecycle event reported through `onAwaitEvent`. */
 +export type AwaitEvent = {
 +    type: 'suspend';
 +    context: object;
@@ -91,7 +98,7 @@ index 9326e5942b8611852a7167d57527c8e26c585552..4f22f6a4f4d9a791fdfca9efde42ab07
 +    mode: 'next' | 'throw';
 +};
 diff --git a/lib/engine262.js b/lib/engine262.js
-index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9efcba78a51 100644
+index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23a96e4178 100644
 --- a/lib/engine262.js
 +++ b/lib/engine262.js
 @@ -29355,6 +29355,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
@@ -120,7 +127,35 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      return yield* RunCallerContext({
        suspend: 'await'
      });
-@@ -31430,7 +31433,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -31303,6 +31306,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     const genContext = generator.AsyncGeneratorContext;
+     // 3. Set generator.[[AsyncGeneratorState]] to executing.
+     generator.AsyncGeneratorState = 'executing';
++    emitAsyncGeneratorEvent({ type: 'resume', generator });
+     // 4. Perform ! RunSuspendedContext(genContext, completion).
+     /* X */let _temp6 = yield* RunSuspendedContext(genContext, {
+       resume: 'async-yield',
+@@ -31355,9 +31359,11 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     const previousContext = exports.surroundingAgent.executionContextStack[exports.surroundingAgent.executionContextStack.length - 2];
+     const previousRealm = previousContext.Realm;
+     AsyncGeneratorCompleteStep(gen, completion, false, previousRealm);
++    emitAsyncGeneratorEvent({ type: 'yield', generator: gen });
+     const queue = gen.AsyncGeneratorQueue;
+     if (queue.length) {
+       // a. NOTE: Execution continues without suspending the generator.
++      emitAsyncGeneratorEvent({ type: 'resume', generator: gen });
+       const toYield = queue[0];
+       const resumptionValue = toYield.Completion;
+       return yield* AsyncGeneratorUnwrapYieldResumption(resumptionValue);
+@@ -31383,6 +31389,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+     const completion = next.Completion;
+     // 5. Assert: completion.[[Type]] is return.
+     /* Assert */ /* node:coverage ignore next */if (!(completion instanceof ReturnCompletion)) throw new Assert.Error("completion instanceof ReturnCompletion");
++    emitAsyncGeneratorEvent({ type: 'return-await', generator });
+     // 6. Let promise be PromiseResolve(%Promise%, completion.[[Value]]).
+     let promiseCompletion = yield* PromiseResolve(exports.surroundingAgent.intrinsic('%Promise%'), completion.Value);
+     if (promiseCompletion instanceof AbruptCompletion) {
+@@ -31430,7 +31437,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
      // 10. Let onRejected be CreateBuiltinFunction(rejectedClosure, 1, "", « »).
      const onRejected = CreateBuiltinFunction(rejectedClosure, 1, Value(''), []);
      // 11. Perform PerformPromiseThen(promise, onFulfilled, onRejected).
@@ -129,7 +164,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
    }
    AsyncGeneratorAwaitReturn.section = 'https://tc39.es/ecma262/#sec-asyncgeneratorawaitreturn';
  
-@@ -45205,7 +45208,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -45205,7 +45212,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
      promise.PromiseRejectReactions = [];
      // 7. Set promise.[[PromiseIsHandled]] to false.
      promise.PromiseIsHandled = false;
@@ -139,7 +174,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      const resolvingFunctions = CreateResolvingFunctions(promise);
      // 9. Let completion be Call(executor, undefined, « resolvingFunctions.[[Resolve]], resolvingFunctions.[[Reject]] »).
      const completion = yield* Call(executor, Value.undefined, [resolvingFunctions.Resolve, resolvingFunctions.Reject]);
-@@ -46905,7 +46909,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -46905,7 +46913,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        });
        onRejected = CreateBuiltinFunction(closeIterator, 1, Value(''), []);
      }
@@ -148,7 +183,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      return promiseCapability.Promise;
    }
    AsyncFromSyncIteratorContinuation.section = 'https://tc39.es/ecma262/#sec-asyncfromsynciteratorcontinuation';
-@@ -50017,7 +50021,24 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50017,7 +50025,29 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
    // Atomics: HostEnqueueGenericJob
  
    /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
@@ -163,6 +198,11 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
 +  const hook = exports.surroundingAgent.hostDefinedOptions.onAwaitEvent;
 +  if (hook && !exports.surroundingAgent.debugger_isPreviewing) hook(event);
 +}
++/** Reports an async generator yielding to its consumer, continuing, or awaiting a return value (observation only). */
++function emitAsyncGeneratorEvent(event) {
++  const hook = surroundingAgent.hostDefinedOptions.onAsyncGeneratorEvent;
++  if (hook && !surroundingAgent.debugger_isPreviewing) hook(event);
++}
 +function reactionMeta(promise, reaction) {
 +  return {
 +    kind: 'reaction',
@@ -174,7 +214,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      if (exports.surroundingAgent.debugger_isPreviewing) {
        return;
      }
-@@ -50027,8 +50048,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50027,8 +50057,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        queueName: 'PromiseJobs',
        job,
        callerRealm,
@@ -186,7 +226,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
    }
    HostEnqueuePromiseJob.section = 'https://tc39.es/ecma262/#sec-hostenqueuepromisejob';
  
-@@ -50089,17 +50111,19 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50089,17 +50120,19 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        if (SameValue(resolution, promise)) {
          // a. Let selfResolutionError be a newly created TypeError object.
          const selfResolutionError = Throw.TypeError('Cannot resolve a promise $1 with itself', promise).Value;
@@ -212,7 +252,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
        const then = EnsureCompletion(yield* Get(resolution, 'then'));
        // 10. If then is an abrupt completion, then
        if (then instanceof AbruptCompletion) {
-@@ -50111,11 +50135,12 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50111,11 +50144,12 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        const thenAction = then.Value;
        // 12. If IsCallable(thenAction) is false, then
        if (!IsCallable(thenAction)) {
@@ -230,7 +270,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
          return Value.undefined;
        }
        // 13. Let thenJobCallback be HostMakeJobCallback(thenAction).
-@@ -50123,8 +50148,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50123,8 +50157,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        // 14. Let job be NewPromiseResolveThenableJob(promise, resolution, thenJobCallback).
        const job = NewPromiseResolveThenableJob(promise, resolution, thenJobCallback);
        // 15. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
@@ -242,7 +282,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
        return Value.undefined;
      };
      // 4. Let resolve be CreateBuiltinFunction(resolveSteps, 1, "", « »).
-@@ -50205,7 +50231,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50205,7 +50240,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
      promise.PromiseFulfillReactions = undefined;
      promise.PromiseRejectReactions = undefined;
      promise.PromiseState = 'fulfilled';
@@ -252,7 +292,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
    }
    FulfillPromise.section = 'https://tc39.es/ecma262/#sec-fulfillpromise';
  
-@@ -50278,22 +50305,23 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50278,22 +50314,23 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
      promise.PromiseFulfillReactions = undefined;
      promise.PromiseRejectReactions = undefined;
      promise.PromiseState = 'rejected';
@@ -282,7 +322,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      // 2. Return undefined.
      return Value.undefined;
    }
-@@ -50429,7 +50457,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50429,7 +50466,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
  
    /** https://tc39.es/ecma262/#sec-performpromisethen */
  
@@ -291,7 +331,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      /* Assert */ /* node:coverage ignore next */ // 1. Assert: IsPromise(promise) is true.
      if (!IsPromise(promise)) throw new Assert.Error("IsPromise(promise)");
      // 2. If resultCapability is not present, then
-@@ -50468,8 +50496,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50468,8 +50505,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        Type: 'Reject',
        Handler: onRejectedJobCallback
      });
@@ -303,7 +343,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
        exports.surroundingAgent.debugger_tryTouchDuringPreview(promise);
        // a. Append fulfillReaction as the last element of the List that is promise.[[PromiseFulfillReactions]].
        promise.PromiseFulfillReactions.push(fulfillReaction);
-@@ -50481,7 +50510,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50481,7 +50519,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        // b. Let fulfillJob be NewPromiseReactionJob(fulfillReaction, value).
        const fulfillJob = NewPromiseReactionJob(fulfillReaction, value);
        // c. Perform HostEnqueuePromiseJob(fulfillJob.[[Job]], fulfillJob.[[Realm]]).
@@ -312,7 +352,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      } else {
        /* Assert */ /* node:coverage ignore next */ // a. Assert: The value of promise.[[PromiseState]] is rejected.
        if (!(promise.PromiseState === 'rejected')) throw new Assert.Error("promise.PromiseState === 'rejected'");
-@@ -50494,7 +50523,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50494,7 +50532,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        // d. Let rejectJob be NewPromiseReactionJob(rejectReaction, reason).
        const rejectJob = NewPromiseReactionJob(rejectReaction, reason);
        // e. Perform HostEnqueuePromiseJob(rejectJob.[[Job]], rejectJob.[[Realm]]).
@@ -322,7 +362,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..b5372757f9a81160d4e8941b3925a9ef
      // 12. Set promise.[[PromiseIsHandled]] to true.
      promise.PromiseIsHandled = true;
 diff --git a/lib/engine262.mjs b/lib/engine262.mjs
-index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14fdfb815f 100644
+index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044f803c935 100644
 --- a/lib/engine262.mjs
 +++ b/lib/engine262.mjs
 @@ -29349,6 +29349,7 @@ function* Await(arg) {
@@ -351,7 +391,35 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    return yield* RunCallerContext({
      suspend: 'await'
    });
-@@ -31424,7 +31427,7 @@ function* AsyncGeneratorAwaitReturn(generator) {
+@@ -31297,6 +31300,7 @@ function* AsyncGeneratorResume(generator, completion) {
+   const genContext = generator.AsyncGeneratorContext;
+   // 3. Set generator.[[AsyncGeneratorState]] to executing.
+   generator.AsyncGeneratorState = 'executing';
++  emitAsyncGeneratorEvent({ type: 'resume', generator });
+   // 4. Perform ! RunSuspendedContext(genContext, completion).
+   /* X */let _temp6 = yield* RunSuspendedContext(genContext, {
+     resume: 'async-yield',
+@@ -31349,9 +31353,11 @@ function* AsyncGeneratorYield(arg) {
+   const previousContext = surroundingAgent.executionContextStack[surroundingAgent.executionContextStack.length - 2];
+   const previousRealm = previousContext.Realm;
+   AsyncGeneratorCompleteStep(gen, completion, false, previousRealm);
++  emitAsyncGeneratorEvent({ type: 'yield', generator: gen });
+   const queue = gen.AsyncGeneratorQueue;
+   if (queue.length) {
+     // a. NOTE: Execution continues without suspending the generator.
++    emitAsyncGeneratorEvent({ type: 'resume', generator: gen });
+     const toYield = queue[0];
+     const resumptionValue = toYield.Completion;
+     return yield* AsyncGeneratorUnwrapYieldResumption(resumptionValue);
+@@ -31377,6 +31383,7 @@ function* AsyncGeneratorAwaitReturn(generator) {
+   const completion = next.Completion;
+   // 5. Assert: completion.[[Type]] is return.
+   /* Assert */ /* node:coverage ignore next */if (!(completion instanceof ReturnCompletion)) throw new Assert.Error("completion instanceof ReturnCompletion");
++  emitAsyncGeneratorEvent({ type: 'return-await', generator });
+   // 6. Let promise be PromiseResolve(%Promise%, completion.[[Value]]).
+   let promiseCompletion = yield* PromiseResolve(surroundingAgent.intrinsic('%Promise%'), completion.Value);
+   if (promiseCompletion instanceof AbruptCompletion) {
+@@ -31424,7 +31431,7 @@ function* AsyncGeneratorAwaitReturn(generator) {
    // 10. Let onRejected be CreateBuiltinFunction(rejectedClosure, 1, "", « »).
    const onRejected = CreateBuiltinFunction(rejectedClosure, 1, Value(''), []);
    // 11. Perform PerformPromiseThen(promise, onFulfilled, onRejected).
@@ -360,7 +428,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
  }
  AsyncGeneratorAwaitReturn.section = 'https://tc39.es/ecma262/#sec-asyncgeneratorawaitreturn';
  
-@@ -45199,6 +45202,7 @@ function* PromiseConstructor([executor = Value.undefined], {
+@@ -45199,6 +45206,7 @@ function* PromiseConstructor([executor = Value.undefined], {
    promise.PromiseRejectReactions = [];
    // 7. Set promise.[[PromiseIsHandled]] to false.
    promise.PromiseIsHandled = false;
@@ -368,7 +436,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    // 8. Let resolvingFunctions be CreateResolvingFunctions(promise).
    const resolvingFunctions = CreateResolvingFunctions(promise);
    // 9. Let completion be Call(executor, undefined, « resolvingFunctions.[[Resolve]], resolvingFunctions.[[Reject]] »).
-@@ -46899,7 +46903,7 @@ function* AsyncFromSyncIteratorContinuation(result, promiseCapability, syncItera
+@@ -46899,7 +46907,7 @@ function* AsyncFromSyncIteratorContinuation(result, promiseCapability, syncItera
      });
      onRejected = CreateBuiltinFunction(closeIterator, 1, Value(''), []);
    }
@@ -377,7 +445,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    return promiseCapability.Promise;
  }
  AsyncFromSyncIteratorContinuation.section = 'https://tc39.es/ecma262/#sec-asyncfromsynciteratorcontinuation';
-@@ -50011,7 +50015,24 @@ HostCallJobCallback.section = 'https://tc39.es/ecma262/#sec-hostcalljobcallback'
+@@ -50011,7 +50019,29 @@ HostCallJobCallback.section = 'https://tc39.es/ecma262/#sec-hostcalljobcallback'
  // Atomics: HostEnqueueGenericJob
  
  /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
@@ -392,6 +460,11 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
 +  const hook = surroundingAgent.hostDefinedOptions.onAwaitEvent;
 +  if (hook && !surroundingAgent.debugger_isPreviewing) hook(event);
 +}
++/** Reports an async generator yielding to its consumer, continuing, or awaiting a return value (observation only). */
++function emitAsyncGeneratorEvent(event) {
++  const hook = surroundingAgent.hostDefinedOptions.onAsyncGeneratorEvent;
++  if (hook && !surroundingAgent.debugger_isPreviewing) hook(event);
++}
 +function reactionMeta(promise, reaction) {
 +  return {
 +    kind: 'reaction',
@@ -403,7 +476,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    if (surroundingAgent.debugger_isPreviewing) {
      return;
    }
-@@ -50021,7 +50042,8 @@ function HostEnqueuePromiseJob(job, realm) {
+@@ -50021,7 +50051,8 @@ function HostEnqueuePromiseJob(job, realm) {
      queueName: 'PromiseJobs',
      job,
      callerRealm,
@@ -413,7 +486,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    });
  }
  HostEnqueuePromiseJob.section = 'https://tc39.es/ecma262/#sec-hostenqueuepromisejob';
-@@ -50083,12 +50105,14 @@ function CreateResolvingFunctions(toResolve) {
+@@ -50083,12 +50114,14 @@ function CreateResolvingFunctions(toResolve) {
      if (SameValue(resolution, promise)) {
        // a. Let selfResolutionError be a newly created TypeError object.
        const selfResolutionError = Throw.TypeError('Cannot resolve a promise $1 with itself', promise).Value;
@@ -428,7 +501,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
        // a. Return FulfillPromise(promise, resolution).
        FulfillPromise(promise, resolution);
        return Value.undefined;
-@@ -50105,6 +50129,7 @@ function CreateResolvingFunctions(toResolve) {
+@@ -50105,6 +50138,7 @@ function CreateResolvingFunctions(toResolve) {
      const thenAction = then.Value;
      // 12. If IsCallable(thenAction) is false, then
      if (!IsCallable(thenAction)) {
@@ -436,7 +509,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
        // a. Return FulfillPromise(promise, resolution).
        FulfillPromise(promise, resolution);
        return Value.undefined;
-@@ -50117,7 +50142,8 @@ function CreateResolvingFunctions(toResolve) {
+@@ -50117,7 +50151,8 @@ function CreateResolvingFunctions(toResolve) {
      // 14. Let job be NewPromiseResolveThenableJob(promise, resolution, thenJobCallback).
      const job = NewPromiseResolveThenableJob(promise, resolution, thenJobCallback);
      // 15. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
@@ -446,7 +519,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
      // 16. Return undefined.
      return Value.undefined;
    };
-@@ -50199,7 +50225,8 @@ function FulfillPromise(promise, value) {
+@@ -50199,7 +50234,8 @@ function FulfillPromise(promise, value) {
    promise.PromiseFulfillReactions = undefined;
    promise.PromiseRejectReactions = undefined;
    promise.PromiseState = 'fulfilled';
@@ -456,7 +529,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
  }
  FulfillPromise.section = 'https://tc39.es/ecma262/#sec-fulfillpromise';
  
-@@ -50272,21 +50299,22 @@ function RejectPromise(promise, reason) {
+@@ -50272,21 +50308,22 @@ function RejectPromise(promise, reason) {
    promise.PromiseFulfillReactions = undefined;
    promise.PromiseRejectReactions = undefined;
    promise.PromiseState = 'rejected';
@@ -482,7 +555,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    });
    // 2. Return undefined.
    return Value.undefined;
-@@ -50423,7 +50451,7 @@ NewPromiseReactionJob.section = 'https://tc39.es/ecma262/#sec-newpromisereaction
+@@ -50423,7 +50460,7 @@ NewPromiseReactionJob.section = 'https://tc39.es/ecma262/#sec-newpromisereaction
  
  /** https://tc39.es/ecma262/#sec-performpromisethen */
  
@@ -491,7 +564,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    /* Assert */ /* node:coverage ignore next */ // 1. Assert: IsPromise(promise) is true.
    if (!IsPromise(promise)) throw new Assert.Error("IsPromise(promise)");
    // 2. If resultCapability is not present, then
-@@ -50462,6 +50490,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+@@ -50462,6 +50499,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
      Type: 'Reject',
      Handler: onRejectedJobCallback
    });
@@ -499,7 +572,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    // 9. If promise.[[PromiseState]] is pending, then
    if (promise.PromiseState === 'pending') {
      surroundingAgent.debugger_tryTouchDuringPreview(promise);
-@@ -50475,7 +50504,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+@@ -50475,7 +50513,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
      // b. Let fulfillJob be NewPromiseReactionJob(fulfillReaction, value).
      const fulfillJob = NewPromiseReactionJob(fulfillReaction, value);
      // c. Perform HostEnqueuePromiseJob(fulfillJob.[[Job]], fulfillJob.[[Realm]]).
@@ -508,7 +581,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4c21856a30925c0fc1103abd1fff6e14
    } else {
      /* Assert */ /* node:coverage ignore next */ // a. Assert: The value of promise.[[PromiseState]] is rejected.
      if (!(promise.PromiseState === 'rejected')) throw new Assert.Error("promise.PromiseState === 'rejected'");
-@@ -50488,7 +50517,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+@@ -50488,7 +50526,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
      // d. Let rejectJob be NewPromiseReactionJob(rejectReaction, reason).
      const rejectJob = NewPromiseReactionJob(rejectReaction, reason);
      // e. Perform HostEnqueuePromiseJob(rejectJob.[[Job]], rejectJob.[[Realm]]).

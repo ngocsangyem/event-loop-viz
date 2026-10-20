@@ -92,6 +92,11 @@ export type TraceEventBody =
   | { k: 'promise:settle'; pid: string; state: 'fulfilled' | 'rejected' }
   /** An async function parks at an await (`fid` = its frame id) / continues once the awaited promise settles. */
   | { k: 'await:suspend' | 'await:resume'; fid: string; awaitedPid?: string; mode?: 'next' | 'throw' }
+  /**
+   * An async generator (`gid`) hands a value to its consumer, continues for the next request,
+   * or awaits the value of a `return()` request. Distinct from the generator's own awaits.
+   */
+  | { k: 'asyncgen:yield' | 'asyncgen:resume' | 'asyncgen:return-await'; gid: string }
   | { k: 'timer:fire' | 'timer:clear'; tid: string }
   | { k: 'rejection:track'; pid: string; op: 'reject' | 'handle' }
   /** A queued notification Task fired: `unhandled` (unhandledrejection) or `handled` (rejectionhandled). */
