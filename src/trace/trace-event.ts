@@ -56,7 +56,12 @@ export type HaltReason = 'natural' | 'nodes' | 'tasks' | 'virtual-time' | 'event
 export type TraceEventBody =
   | { k: 'run:start' }
   | { k: 'run:halted'; reason: HaltReason; limit?: number }
-  | { k: 'task:queue'; taskId: string; source: 'script' | 'timer' | 'port-message'; dueUs?: number }
+  | {
+      k: 'task:queue'
+      taskId: string
+      source: 'script' | 'timer' | 'port-message' | 'dom-manipulation'
+      dueUs?: number
+    }
   | { k: 'task:begin' | 'task:end'; taskId: string }
   | { k: 'checkpoint:begin' | 'checkpoint:end'; reason: 'task-end' | 'script-end' | 'callback-end' }
   | { k: 'job:enqueue'; jobId: string; kind: JobKind }
@@ -72,6 +77,9 @@ export type TraceEventBody =
       repeat: boolean
     }
   | { k: 'timer:fire' | 'timer:clear'; tid: string }
+  | { k: 'rejection:track'; pid: string; op: 'reject' | 'handle' }
+  /** A queued notification Task fired: `unhandled` (unhandledrejection) or `handled` (rejectionhandled). */
+  | { k: 'rejection:notify'; pid: string; outcome: 'unhandled' | 'handled'; message: string }
   | { k: 'exception:report'; origin: 'script' | 'task-callback' | 'microtask-callback'; message: string }
   | { k: 'console'; level: 'log' | 'info' | 'warn' | 'error'; text: string }
 

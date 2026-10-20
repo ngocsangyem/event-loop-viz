@@ -48,6 +48,11 @@ export interface EngineHooks {
   onFramePop(frame: FrameInfo): void
   /** A Job joined the microtask queue (FIFO). */
   onJobEnqueue(jobId: string, kind: JobKind): void
+  /**
+   * HostPromiseRejectionTracker: `pid` identifies the promise, `message` is its
+   * rejection reason formatted for display.
+   */
+  onRejectionTrack(pid: string, op: 'reject' | 'handle', message: string): void
 }
 
 export interface EngineAdapter {
