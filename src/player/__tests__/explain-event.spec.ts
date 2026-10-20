@@ -50,10 +50,10 @@ describe('explainEvent', () => {
     for (const kind of Object.keys(TRACE_EVENT_SCHEMA)) {
       for (const event of variantsOf(kind)) {
         const { text } = explainEvent(event, [event])
-        expect(text.length, kind).toBeGreaterThan(10)
-        expect(text, kind).not.toMatch(/undefined|NaN|\[object|null/)
+        expect(text.length).toBeGreaterThan(10)
+        expect(text).not.toMatch(/undefined|NaN|\[object|null/)
       }
-      expect(EVENT_FAMILIES, kind).toContain(eventFamily(kind as TraceEvent['k']))
+      expect(EVENT_FAMILIES).toContain(eventFamily(kind as TraceEvent['k']))
     }
   })
 

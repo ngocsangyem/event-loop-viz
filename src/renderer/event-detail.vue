@@ -15,7 +15,10 @@ const cause = computed(() =>
 /** Kind-specific fields only; the common ones are shown as their own rows. */
 const payload = computed(() => {
   if (!event.value) return ''
-  const { seq: _s, t: _t, ref: _r, loc: _l, cause: _c, visible: _v, ...rest } = event.value
+  const common = new Set(['seq', 't', 'ref', 'loc', 'cause', 'visible'])
+  const rest = Object.fromEntries(
+    Object.entries(event.value).filter(([name]) => !common.has(name)),
+  )
   return JSON.stringify(rest, null, 2)
 })
 

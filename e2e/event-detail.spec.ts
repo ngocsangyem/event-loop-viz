@@ -48,7 +48,7 @@ test('family chips hide and show events', async ({ page }) => {
 test('show all events makes Bookkeeping Events steppable', async ({ page }) => {
   await runScript(page)
   const visibleCount = await rows(page).count()
-  expect(await page.locator('[data-testid=event-list] li[data-visible=false]').count()).toBe(0)
+  await expect(page.locator('[data-testid=event-list] li[data-visible=false]')).toHaveCount(0)
 
   await page.getByLabel('Show all events').check()
   const allCount = await rows(page).count()
@@ -57,16 +57,15 @@ test('show all events makes Bookkeeping Events steppable', async ({ page }) => {
   // Step through everything: the playhead must land on at least one Bookkeeping Event.
   await page.locator('body').click()
   await page.keyboard.press('Home')
-  let landedOnBookkeeping = false
+  let landedOnBookkeeping = 0
   for (let i = 0; i < allCount; i++) {
-    const bookkeeping = await page
+    landedOnBookkeeping += await page
       .locator('[data-testid=event-list] li[aria-current=true][data-visible=false]')
       .count()
-    if (bookkeeping > 0) landedOnBookkeeping = true
     await page.keyboard.press('ArrowRight')
   }
-  expect(landedOnBookkeeping).toBe(true)
+  expect(landedOnBookkeeping).toBeGreaterThan(0)
 
   await page.getByLabel('Show all events').uncheck()
-  expect(await rows(page).count()).toBe(visibleCount)
+  await expect(rows(page)).toHaveCount(visibleCount)
 })
