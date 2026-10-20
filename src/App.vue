@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
+import ConsolePanel from '@/renderer/console-panel.vue'
+import UnsupportedApiNotice from '@/renderer/unsupported-api-notice.vue'
+import { scanUnsupportedApis } from '@/runner/unsupported-api-scan'
 import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import type { SharedSettings } from '@/share/share-link-codec'
-import { deriveObservableOutput } from '@/trace/derive-observable-output'
-import type { ObservableEntry } from '@/trace/observable-output'
 import type { Trace } from '@/trace/trace-event'
 
 const shared = decodeShareFragment(window.location.hash)
@@ -18,6 +19,8 @@ const settings = ref<SharedSettings>(shared?.settings ?? {})
 const shareUrl = ref<string | null>(null)
 const trace = ref<Trace | null>(null)
 const syntaxError = ref<string | null>(null)
+/** Where the engine rejected the Script; drives the editor marker. Cleared on edit. */
+const syntaxErrorAt = ref<{ line: number; column: number } | null>(null)
 /** Index of the current event in the Trace. The Trace is immutable; position is the only state. */
 const position = ref(0)
 const running = ref(false)
@@ -28,16 +31,15 @@ const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
 const lastPosition = computed(() => events.value.length - 1)
-// Derived from the Trace prefix so the console can never disagree with the event list.
-const consoleEntries = computed(() =>
-  deriveObservableOutput(events.value.slice(0, position.value + 1)),
+const visibleEvents = computed(() => events.value.slice(0, position.value + 1))
+// During replay the Trace header is authoritative; before a Run the live scan of the editor text.
+const unsupportedApis = computed(() =>
+  trace.value ? trace.value.header.unsupportedApis : scanUnsupportedApis(script.value),
 )
 
-function describeEntry(entry: ObservableEntry): string {
-  return entry.kind === 'console'
-    ? `${entry.level}: ${entry.text}`
-    : `${entry.kind}: ${entry.message}`
-}
+watch(script, () => {
+  syntaxErrorAt.value = null
+})
 
 /** Editing ends the replay: the Trace belongs to the Script that produced it. */
 function discardTrace() {
@@ -49,6 +51,7 @@ async function run() {
   // The editor shortcut can fire while a Run is in flight.
   if (running.value) return
   syntaxError.value = null
+  syntaxErrorAt.value = null
   trace.value = null
   position.value = 0
   running.value = true
@@ -60,6 +63,7 @@ async function run() {
     if (result.kind === 'ran') trace.value = result.trace
     else if (result.kind === 'syntax-error') {
       syntaxError.value = `${result.message} (line ${result.line}, column ${result.column})`
+      syntaxErrorAt.value = { line: result.line, column: result.column }
     } else if (result.kind === 'watchdog-killed') {
       syntaxError.value =
         'The run was stopped by the watchdog: it took too long, so no Trace exists.'
@@ -96,7 +100,8 @@ onMounted(() => {
 
 <template>
   <main>
-    <ScriptEditor v-model="script" :read-only="replaying" @run="run" />
+    <ScriptEditor v-model="script" :read-only="replaying" :error-at="syntaxErrorAt" @run="run" />
+    <UnsupportedApiNotice :apis="unsupportedApis" />
     <p v-if="replaying" data-testid="replay-banner">
       Read-only during replay.
       <button type="button" @click="discardTrace">Edit (discards Trace)</button>
@@ -133,9 +138,7 @@ onMounted(() => {
         </li>
       </ol>
 
-      <ul data-testid="console-panel">
-        <li v-for="(entry, i) in consoleEntries" :key="i">{{ describeEntry(entry) }}</li>
-      </ul>
+      <ConsolePanel :events="visibleEvents" />
     </template>
   </main>
 </template>
