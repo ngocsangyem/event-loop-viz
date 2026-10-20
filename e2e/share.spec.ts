@@ -30,7 +30,7 @@ test('a share link opened in a fresh context reproduces the Trace and output', a
   await expect(fresh.getByTestId('event-list')).toBeVisible()
   await expect(fresh.getByTestId('event-list').locator('li')).toHaveCount(originalEvents)
   for (let i = 1; i < originalEvents; i++) await fresh.getByRole('button', { name: 'Next' }).click()
-  expect(await fresh.getByTestId('console-panel').innerText()).toBe(originalConsole)
+  await expect(fresh.getByTestId('console-panel').locator('li')).toHaveText(originalConsole.split('\n'))
   expect(originalConsole).toContain('timer 日本語 🚀')
   await context.close()
 })

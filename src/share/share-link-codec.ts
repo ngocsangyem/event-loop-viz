@@ -19,7 +19,7 @@ export function encodeShareFragment(payload: SharePayload): string {
   const bytes = new TextEncoder().encode(json)
   let binary = ''
   for (const byte of bytes) binary += String.fromCharCode(byte)
-  const base64 = btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
+  const base64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
   return PREFIX + base64
 }
 
@@ -27,7 +27,7 @@ export function encodeShareFragment(payload: SharePayload): string {
 export function decodeShareFragment(fragment: string): SharePayload | null {
   if (!fragment.startsWith(PREFIX)) return null
   try {
-    const base64 = fragment.slice(PREFIX.length).replaceAll('-', '+').replaceAll('_', '/')
+    const base64 = fragment.slice(PREFIX.length).replace(/-/g, '+').replace(/_/g, '/')
     const binary = atob(base64)
     const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
     const data: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes))
