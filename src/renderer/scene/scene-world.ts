@@ -24,8 +24,10 @@ export const REGIONS = {
   callStack: { x: -210, y: -8, w: 116, d: 116, r: 8 } satisfies Plan,
   /** Monitor at the back right. */
   console: { x: 30, y: -108, w: 190, d: 80, r: 8 } satisfies Plan,
-  /** Front lane for the queues (Job and Task queues) between the stack and the console. */
-  queues: { x: -84, y: 44, w: 210, d: 52, r: 6 } satisfies Plan,
+  /** Front lane, left half: the microtask queue (Jobs), next to the stack it feeds. */
+  jobQueue: { x: -84, y: 44, w: 108, d: 52, r: 6 } satisfies Plan,
+  /** Front lane, right half: the task queue. */
+  taskQueue: { x: 30, y: 44, w: 96, d: 52, r: 6 } satisfies Plan,
   /** Back centre lane for timers and the Virtual Clock. */
   timers: { x: -90, y: -108, w: 110, d: 80, r: 6 } satisfies Plan,
   /** Right front corner for promises, awaits and async generators. */
