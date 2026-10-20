@@ -2,6 +2,7 @@ import { deriveObservableOutput } from '../trace/derive-observable-output'
 import { TRACE_SCHEMA_VERSION } from '../trace/trace-event'
 import type {
   SourceLocation,
+  HaltReason,
   Trace,
   TraceBudgets,
   TraceEvent,
@@ -9,6 +10,8 @@ import type {
 } from '../trace/trace-event'
 import type { ObservableOutput } from '../trace/observable-output'
 import type { CallbackHandle, EngineAdapter } from './engine-adapter'
+import { BudgetHalt, createBudgetMeter } from './budget-meter'
+import { createSeededRandom } from './seeded-random'
 
 export interface HostSettings {
   nodeCostUs: number
@@ -68,6 +71,7 @@ export function runHost(
   let order = 0
   let currentNesting = 0
   const timers = new Map<number, PendingTimer>()
+  const meter = createBudgetMeter(settings.budgets)
 
   /** seq of each Job's job:enqueue event, so job:begin can point back to it. */
   const jobEnqueueSeq = new Map<string, number>()
@@ -78,6 +82,9 @@ export function runHost(
     visible = true,
     cause?: number,
   ) => {
+    // Engine frames unwinding after a Halt must not append to the Trace.
+    if (meter.tripped) return
+    meter.checkEvents(events.length)
     events.push({
       seq: events.length,
       t: nowUs,
@@ -88,7 +95,10 @@ export function runHost(
       ...body,
     })
   }
-  const newTaskId = () => `task-${++taskCounter}`
+  const newTaskId = () => {
+    meter.countTask()
+    return `task-${++taskCounter}`
+  }
 
   engine.start(
     {
@@ -101,11 +111,14 @@ export function runHost(
       writeConsole(level, text) {
         emit({ k: 'console', level, text }, HTML_LOOP)
       },
+      random: createSeededRandom(settings.randomSeed),
     },
     {
       onNode(nodeLoc) {
         loc = nodeLoc
+        meter.countNode()
         nowUs += settings.nodeCostUs
+        meter.checkVirtualTime(nowUs)
       },
       onFramePush: (f) => emit({ k: 'frame:push', ...f }, ES_CONTEXTS),
       onFramePop: (f) => emit({ k: 'frame:pop', ...f }, ES_CONTEXTS),
@@ -171,6 +184,22 @@ export function runHost(
     timingSensitive: false,
   }
 
+  const finish = (reason: HaltReason, limit?: number): HostRunResult => {
+    loc = undefined
+    // Bypasses the event Budget: the Halt itself always closes the Trace.
+    events.push({
+      seq: events.length,
+      t: nowUs,
+      ref: HTML_LOOP,
+      visible: true,
+      k: 'run:halted',
+      reason,
+      ...(limit !== undefined && { limit }),
+    })
+    return { kind: 'ran', trace: { header, events }, observableOutput: deriveObservableOutput(events) }
+  }
+
+  try {
   emit({ k: 'run:start' }, HTML_LOOP)
 
   const scriptTaskId = newTaskId()
@@ -190,6 +219,7 @@ export function runHost(
     const next = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
     if (!next) break
     if (next.dueUs > nowUs) nowUs = next.dueUs
+    meter.checkVirtualTime(nowUs)
     loc = undefined
     timers.delete(next.tid)
     currentNesting = next.nesting
@@ -206,8 +236,9 @@ export function runHost(
     checkpoint('task-end')
   }
 
-  loc = undefined
-  emit({ k: 'run:halted', reason: 'natural' }, HTML_LOOP)
-  const trace: Trace = { header, events }
-  return { kind: 'ran', trace, observableOutput: deriveObservableOutput(events) }
+  return finish('natural')
+  } catch (error) {
+    if (error instanceof BudgetHalt) return finish(error.reason, error.limit)
+    throw error
+  }
 }
