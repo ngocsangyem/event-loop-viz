@@ -6,6 +6,7 @@ import TransportBar from '@/renderer/transport-bar.vue'
 import ExamplePicker from '@/renderer/example-picker.vue'
 import UnsupportedApiNotice from '@/renderer/unsupported-api-notice.vue'
 import { EXAMPLES, findExample } from '@/examples/example-library'
+import SceneView from '@/renderer/scene/event-loop-scene.vue'
 import { scanUnsupportedApis } from '@/runner/unsupported-api-scan'
 import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
@@ -14,6 +15,7 @@ import type { SharedSettings } from '@/share/share-link-codec'
 import EventList from '@/renderer/event-list.vue'
 import EventDetail from '@/renderer/event-detail.vue'
 import { createPlayer } from '@/player/player'
+import { createInitialState } from '@/player/replay-state'
 import { withStepOptions } from '@/player/with-step-options'
 import type { Trace } from '@/trace/trace-event'
 
@@ -43,13 +45,22 @@ const showAll = ref(false)
 const player = computed(() =>
   trace.value ? withStepOptions(createPlayer(trace.value), { showAll: showAll.value }) : null,
 )
+// State is folded by the player; the UI never folds events itself.
+const replayState = computed(() => player.value?.stateAt(position.value) ?? createInitialState())
+const consoleOutput = computed(() => replayState.value.console)
 // Source ranges at the playhead; host-internal events carry none, which clears the highlight.
-const sourceHighlight = computed(() => {
-  const state = player.value?.stateAt(position.value)
-  return state ? { source: state.sourceRange, cause: state.causeRange } : null
+const sourceHighlight = computed(() =>
+  player.value
+    ? { source: replayState.value.sourceRange, cause: replayState.value.causeRange }
+    : null,
+)
+// One step earlier, for the Scene's transitions; null at the first step or before a Run.
+const previousReplayState = computed(() => {
+  const current = player.value
+  if (!current) return null
+  const before = current.prev(position.value)
+  return before === position.value ? null : current.stateAt(before)
 })
-// The console is folded by the player; the UI never folds events itself.
-const consoleOutput = computed(() => player.value?.stateAt(position.value).console ?? [])
 // During replay the Trace header is authoritative; before a Run the live scan of the editor text.
 const unsupportedApis = computed(() =>
   trace.value ? trace.value.header.unsupportedApis : scanUnsupportedApis(script.value),
@@ -133,9 +144,13 @@ onMounted(() => {
 
 <template>
   <main>
-    <ScriptEditor v-model="script" :read-only="replaying" :error-at="syntaxErrorAt"
+    <ScriptEditor
+      v-model="script"
+      :read-only="replaying"
+      :error-at="syntaxErrorAt"
       :highlight="sourceHighlight"
-      @run="run" />
+      @run="run"
+    />
     <ExamplePicker :examples="EXAMPLES" @load="loadExample" />
     <UnsupportedApiNotice :apis="unsupportedApis" />
     <p v-if="replaying" data-testid="replay-banner">
@@ -158,6 +173,8 @@ onMounted(() => {
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
     <TransportBar v-model="position" :player="player" :events="events" />
+
+    <SceneView :state="replayState" :previous="previousReplayState" />
 
     <template v-if="trace">
       <EventList v-model="position" v-model:show-all="showAll" :events="events" />

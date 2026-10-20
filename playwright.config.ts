@@ -12,6 +12,9 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  // Visual baselines are recorded once per theme on Chrome and shared by every config that runs
+  // the suite, so the path carries no project or platform name.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
   expect: {
