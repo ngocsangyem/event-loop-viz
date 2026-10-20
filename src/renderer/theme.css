@@ -128,3 +128,34 @@ body {
   background: var(--anatomy-page);
   color: var(--anatomy-text);
 }
+
+/*
+ * Base form-control skin. Native controls take their colours from the UA, which on some engines
+ * (WebKit in a dark colour scheme) pairs dark text with a dark surface and fails contrast.
+ * :where() keeps specificity at zero so any component rule still wins.
+ */
+:where(button, select, input:not([type='checkbox'], [type='range'], [type='radio']), textarea) {
+  font: inherit;
+  color: var(--anatomy-strong);
+  background: var(--anatomy-card);
+  border: 1px solid var(--anatomy-lo);
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+:where(button:not(:disabled), select:not(:disabled), summary) {
+  cursor: pointer;
+}
+:where(button, select):disabled {
+  color: var(--anatomy-muted);
+  cursor: default;
+}
+:where(button:not(:disabled):hover, select:not(:disabled):hover) {
+  background: var(--anatomy-face);
+  border-color: var(--anatomy-mid);
+}
+:where(button)[aria-pressed='true'] {
+  border-color: var(--anatomy-blue);
+}
+:where(summary) {
+  color: var(--anatomy-strong);
+}
