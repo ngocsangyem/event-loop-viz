@@ -98,6 +98,48 @@ function moduleBlocks(module: Module): Linter.Config[] {
   ]
 }
 
+// The Scene is a pure function of the player's ReplayState: its files may import their own
+// siblings (`./x`), Vue, and player *types*. A negative-lookahead regex lets everything else
+// through to the error, so a new module directory is forbidden by default rather than by name.
+const SCENE_ALLOWED_SPECIFIER = String.raw`^(?!\./|vue$|(\.\./\.\./|@/)player(/|$))`
+const SCENE_FILES = [`src/renderer/scene/**/${SOURCE}`]
+const SCENE_TESTS = ['src/renderer/scene/**/__tests__/**']
+
+const sceneBlocks: Linter.Config[] = [
+  {
+    name: 'import-boundaries/renderer-scene',
+    files: SCENE_FILES,
+    ignores: SCENE_TESTS,
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: SCENE_ALLOWED_SPECIFIER,
+              message:
+                'Import boundary: Scene components import only their own files, vue and player types.',
+            },
+          ],
+        },
+      ],
+      // Types are erased at build time, so only value imports from the player are a leak.
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: pathsOf('player'),
+              allowTypeImports: true,
+              message: 'Import boundary: Scene components import player types only.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+]
+
 export const importBoundaryConfigs: Linter.Config[] = [
   // Everything outside the module directories (app entry, stores, oracle): engine262 only.
   {
@@ -107,4 +149,6 @@ export const importBoundaryConfigs: Linter.Config[] = [
     rules: { 'no-restricted-imports': ['error', { patterns: [ENGINE262_GROUP] }] },
   },
   ...(['trace', 'engine', 'host', 'runner', 'player', 'renderer'] as const).flatMap(moduleBlocks),
+  // After the renderer block: for scene files this block's rule options win.
+  ...sceneBlocks,
 ]

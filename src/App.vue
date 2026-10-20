@@ -4,12 +4,14 @@ import ScriptEditor from '@/renderer/script-editor.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
 import TransportBar from '@/renderer/transport-bar.vue'
 import UnsupportedApiNotice from '@/renderer/unsupported-api-notice.vue'
+import SceneView from '@/renderer/scene/event-loop-scene.vue'
 import { scanUnsupportedApis } from '@/runner/unsupported-api-scan'
 import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import type { SharedSettings } from '@/share/share-link-codec'
 import { createPlayer } from '@/player/player'
+import { createInitialState } from '@/player/replay-state'
 import type { Trace } from '@/trace/trace-event'
 
 const shared = decodeShareFragment(window.location.hash)
@@ -34,8 +36,16 @@ const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
 const player = computed(() => (trace.value ? createPlayer(trace.value) : null))
-// The console is folded by the player; the UI never folds events itself.
-const consoleOutput = computed(() => player.value?.stateAt(position.value).console ?? [])
+// State is folded by the player; the UI never folds events itself.
+const replayState = computed(() => player.value?.stateAt(position.value) ?? createInitialState())
+const consoleOutput = computed(() => replayState.value.console)
+// One step earlier, for the Scene's transitions; null at the first step or before a Run.
+const previousReplayState = computed(() => {
+  const current = player.value
+  if (!current) return null
+  const before = current.prev(position.value)
+  return before === position.value ? null : current.stateAt(before)
+})
 // During replay the Trace header is authoritative; before a Run the live scan of the editor text.
 const unsupportedApis = computed(() =>
   trace.value ? trace.value.header.unsupportedApis : scanUnsupportedApis(script.value),
@@ -128,6 +138,8 @@ onMounted(() => {
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
     <TransportBar v-model="position" :player="player" />
+
+    <SceneView :state="replayState" :previous="previousReplayState" />
 
     <template v-if="trace">
       <ol data-testid="event-list">

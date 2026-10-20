@@ -8,7 +8,11 @@ const eslint = new ESLint({ cwd: process.cwd() })
 async function boundaryViolations(filePath: string, code: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath })
   return (result?.messages ?? [])
-    .filter((m) => m.ruleId === 'no-restricted-imports')
+    .filter(
+      (m) =>
+        m.ruleId === 'no-restricted-imports' ||
+        m.ruleId === '@typescript-eslint/no-restricted-imports',
+    )
     .map((m) => m.message)
 }
 
@@ -16,6 +20,47 @@ describe('import boundaries', () => {
   // [importing file, import statement]
   const forbidden: [string, string][] = [
     ['src/renderer/app.ts', "import { runHost } from '../host/event-loop-host'"],
+    // Scene components see the player's types and nothing else of the app.
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport { formatValue } from \'../../trace/format-value\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/call-stack-model.ts',
+      "import type { TraceEvent } from '../../trace/trace-event'",
+    ],
+    [
+      'src/renderer/scene/call-stack-model.ts',
+      "import type { ObservableOutput } from '@/trace/observable-output'",
+    ],
+    [
+      'src/renderer/scene/console-part.vue',
+      '<script setup lang="ts">\nimport { formatConsoleLines } from \'../console-lines\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/console-part.vue',
+      '<script setup lang="ts">\nimport { useStore } from \'@/stores/counter\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport ConsolePanel from \'../console-panel.vue\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport { createPlayer } from \'../../player/player\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport { createPlayer } from \'@/player/player\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport { computed } from \'pinia\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport * as E from \'@engine262/engine262\'\n</script>',
+    ],
     ['src/renderer/app.ts', "import { runHost } from '@/host/event-loop-host'"],
     [
       'src/renderer/scene/stack.ts',
@@ -54,6 +99,21 @@ describe('import boundaries', () => {
     ['src/renderer/app.ts', "import type { Trace } from '@/trace/trace-event'"],
     ['src/renderer/app.ts', "import { ref } from 'vue'"],
     ['src/renderer/scene/stack.ts', "import type { ReplayState } from '../../player/replay-state'"],
+    ['src/renderer/scene/stack.ts', "import type { ReplayState } from '@/player/replay-state'"],
+    ['src/renderer/scene/stack.ts', "import { type ReplayState } from '../../player/replay-state'"],
+    ['src/renderer/scene/stack.ts', "import { projectOf } from './scene-world'"],
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport { computed } from \'vue\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/scene.vue',
+      '<script setup lang="ts">\nimport Part from \'./parts/call-stack.vue\'\n</script>',
+    ],
+    [
+      'src/renderer/scene/__tests__/model.test.ts',
+      "import { createInitialState } from '../../../player/replay-state'",
+    ],
     ['src/player/state-at.ts', "import type { Trace } from '../trace/trace-event'"],
     ['src/trace/derive-observable-output.ts', "import type { TraceEvent } from './trace-event'"],
     ['src/trace/__tests__/derive.test.ts', "import { describe } from 'vitest'"],
