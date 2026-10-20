@@ -34,6 +34,11 @@ const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
 const player = computed(() => (trace.value ? createPlayer(trace.value) : null))
+// Source ranges at the playhead; host-internal events carry none, which clears the highlight.
+const sourceHighlight = computed(() => {
+  const state = player.value?.stateAt(position.value)
+  return state ? { source: state.sourceRange, cause: state.causeRange } : null
+})
 // The console is folded by the player; the UI never folds events itself.
 const consoleOutput = computed(() => player.value?.stateAt(position.value).console ?? [])
 // During replay the Trace header is authoritative; before a Run the live scan of the editor text.
@@ -106,7 +111,9 @@ onMounted(() => {
 
 <template>
   <main>
-    <ScriptEditor v-model="script" :read-only="replaying" :error-at="syntaxErrorAt" @run="run" />
+    <ScriptEditor v-model="script" :read-only="replaying" :error-at="syntaxErrorAt"
+      :highlight="sourceHighlight"
+      @run="run" />
     <UnsupportedApiNotice :apis="unsupportedApis" />
     <p v-if="replaying" data-testid="replay-banner">
       Read-only during replay.
