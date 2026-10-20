@@ -12,6 +12,8 @@ import type { ObservableOutput } from '../trace/observable-output'
 import type { CallbackHandle, EngineAdapter } from './engine-adapter'
 import { BudgetHalt, createBudgetMeter } from './budget-meter'
 import { createSeededRandom } from './seeded-random'
+import { createRejectionTracker } from './rejection-tracker'
+import type { NotificationTask } from './rejection-tracker'
 import { createTimingSensitivityTracker } from './timing-sensitivity'
 
 export interface HostSettings {
@@ -46,6 +48,8 @@ const HTML_CHECKPOINT = 'HTML:#perform-a-microtask-checkpoint'
 const HTML_REPORT = 'HTML:#report-the-exception'
 const ES_ENQUEUE_JOB = 'ES:#sec-hostenqueuepromisejob'
 const HTML_QUEUE_MICROTASK = 'HTML:#dom-queuemicrotask'
+const HTML_REJECTION_TRACKER = 'HTML:#the-hostpromiserejectiontracker-implementation'
+const HTML_NOTIFY_REJECTED = 'HTML:#notify-about-rejected-promises'
 const ES_CONTEXTS = 'ES:#sec-execution-contexts'
 
 /** Nesting level above which Chrome clamps timers to 4 ms (HTML timer initialization steps). */
@@ -73,6 +77,7 @@ export function runHost(
   let currentNesting = 0
   const timers = new Map<number, PendingTimer>()
   const meter = createBudgetMeter(settings.budgets)
+  const rejections = createRejectionTracker()
   const timing = createTimingSensitivityTracker()
   const pendingDueUs = () => [...timers.values()].map((t) => t.dueUs)
 
@@ -133,8 +138,37 @@ export function runHost(
           kind === 'queue-microtask' ? HTML_QUEUE_MICROTASK : ES_ENQUEUE_JOB,
         )
       },
+      onRejectionTrack(pid, op, message) {
+        emit({ k: 'rejection:track', pid, op }, HTML_REJECTION_TRACKER, false)
+        const handledLater = rejections.track(pid, op, message)
+        if (handledLater) queueNotification(handledLater, 'handled')
+      },
     },
   )
+
+  function queueNotification(
+    rejected: { pid: string; message: string },
+    outcome: NotificationTask['outcome'],
+  ) {
+    const task: NotificationTask = { ...rejected, taskId: newTaskId(), dueUs: nowUs, outcome }
+    emit(
+      { k: 'task:queue', taskId: task.taskId, source: 'dom-manipulation' },
+      HTML_NOTIFY_REJECTED,
+    )
+    rejections.enqueue(task)
+  }
+
+  /** Runs a queued unhandledrejection / rejectionhandled notification as its own Task. */
+  function runNotification(task: NotificationTask) {
+    loc = undefined
+    emit({ k: 'task:begin', taskId: task.taskId }, HTML_LOOP)
+    emit(
+      { k: 'rejection:notify', pid: task.pid, outcome: task.outcome, message: task.message },
+      HTML_NOTIFY_REJECTED,
+    )
+    emit({ k: 'task:end', taskId: task.taskId }, HTML_LOOP)
+    checkpoint('task-end')
+  }
 
   function initTimer(callback: CallbackHandle, requestedMs: number, repeat: boolean, tid: number) {
     const clampedMs =
@@ -173,6 +207,8 @@ export function runHost(
       if (jobId === undefined) break
       emit({ k: 'job:end', jobId }, HTML_CHECKPOINT)
     }
+    // Notify about rejected promises runs after the Jobs drain (HTML perform a microtask checkpoint).
+    for (const rejected of rejections.takeAboutToBeNotified()) queueNotification(rejected, 'unhandled')
     emit({ k: 'checkpoint:end', reason }, HTML_CHECKPOINT)
   }
 
@@ -223,6 +259,12 @@ export function runHost(
 
   for (;;) {
     const next = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
+    // Chrome runs a timer that is already due before the notification Task; a later timer waits.
+    const notification = rejections.peek()
+    if (notification && (!next || next.dueUs > notification.dueUs)) {
+      runNotification(rejections.dequeue()!)
+      continue
+    }
     if (!next) break
     if (next.dueUs > nowUs) nowUs = next.dueUs
     meter.checkVirtualTime(nowUs)

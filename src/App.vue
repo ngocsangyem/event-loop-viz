@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
-import { runScript } from '@/runner/run-script'
+import { startWorkerRun } from '@/runner/worker-run-client'
+import type { WorkerRun } from '@/runner/worker-run-client'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import type { SharedSettings } from '@/share/share-link-codec'
 import { deriveObservableOutput } from '@/trace/derive-observable-output'
@@ -19,6 +20,10 @@ const trace = ref<Trace | null>(null)
 const syntaxError = ref<string | null>(null)
 /** Index of the current event in the Trace. The Trace is immutable; position is the only state. */
 const position = ref(0)
+const running = ref(false)
+let activeRun: WorkerRun | null = null
+// Lets tests shorten the 30 s wall-clock watchdog: /?watchdogMs=300
+const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')) || undefined
 
 const events = computed(() => trace.value?.events ?? [])
 const replaying = computed(() => trace.value !== null)
@@ -41,14 +46,34 @@ function discardTrace() {
 }
 
 async function run() {
-  const result = await runScript(script.value, settings.value)
+  // The editor shortcut can fire while a Run is in flight.
+  if (running.value) return
   syntaxError.value = null
   trace.value = null
   position.value = 0
-  if (result.kind === 'ran') trace.value = result.trace
-  else if (result.kind === 'syntax-error') {
-    syntaxError.value = `${result.message} (line ${result.line}, column ${result.column})`
-  } else syntaxError.value = 'The run was stopped by the watchdog.'
+  running.value = true
+  // Plain copy: reactive proxies cannot be posted to a Worker.
+  const plainSettings = JSON.parse(JSON.stringify(settings.value)) as SharedSettings
+  activeRun = startWorkerRun(script.value, plainSettings, { watchdogMs })
+  try {
+    const result = await activeRun.result
+    if (result.kind === 'ran') trace.value = result.trace
+    else if (result.kind === 'syntax-error') {
+      syntaxError.value = `${result.message} (line ${result.line}, column ${result.column})`
+    } else if (result.kind === 'watchdog-killed') {
+      syntaxError.value =
+        'The run was stopped by the watchdog: it took too long, so no Trace exists.'
+    }
+  } catch (error) {
+    syntaxError.value = `The run could not start: ${error instanceof Error ? error.message : error}`
+  } finally {
+    running.value = false
+    activeRun = null
+  }
+}
+
+function cancel() {
+  activeRun?.cancel()
 }
 
 async function share() {
@@ -76,7 +101,11 @@ onMounted(() => {
       Read-only during replay.
       <button type="button" @click="discardTrace">Edit (discards Trace)</button>
     </p>
-    <button type="button" @click="run">Run</button>
+    <button type="button" :disabled="running" @click="run">Run</button>
+    <template v-if="running">
+      <progress aria-label="Running">Running…</progress>
+      <button type="button" @click="cancel">Cancel</button>
+    </template>
     <button type="button" @click="share">Share</button>
     <input
       v-if="shareUrl"
