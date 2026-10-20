@@ -4,14 +4,21 @@ import { EditorState, Compartment } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 import { javascript } from '@codemirror/lang-javascript'
+import { syntaxErrorMarker } from './syntax-error-marker'
+import type { SyntaxErrorPosition } from './syntax-error-marker'
 
-const props = defineProps<{ modelValue: string; readOnly: boolean }>()
+const props = defineProps<{
+  modelValue: string
+  readOnly: boolean
+  errorAt?: SyntaxErrorPosition | null
+}>()
 const emit = defineEmits<{ 'update:modelValue': [value: string]; run: [] }>()
 
 const host = ref<HTMLElement | null>(null)
 let view: EditorView | null = null
 // Read-only is a facet, not contenteditable=false, so the editor stays focusable and selectable.
 const readOnlyCompartment = new Compartment()
+const errorCompartment = new Compartment()
 
 onMounted(() => {
   view = new EditorView({
@@ -33,6 +40,7 @@ onMounted(() => {
         basicSetup,
         javascript(),
         readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
+        errorCompartment.of([]),
         EditorView.contentAttributes.of({ 'aria-label': 'Script' }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) emit('update:modelValue', update.state.doc.toString())
@@ -46,6 +54,16 @@ watch(
   () => props.readOnly,
   (readOnly) =>
     view?.dispatch({ effects: readOnlyCompartment.reconfigure(EditorState.readOnly.of(readOnly)) }),
+)
+
+watch(
+  () => props.errorAt,
+  (at) => {
+    if (view)
+      view.dispatch({
+        effects: errorCompartment.reconfigure(syntaxErrorMarker(view.state, at ?? null)),
+      })
+  },
 )
 
 watch(
@@ -67,6 +85,12 @@ onBeforeUnmount(() => view?.destroy())
 <style scoped>
 .script-editor {
   border: 1px solid #8884;
+}
+.script-editor :deep(.cm-syntax-error-line) {
+  background: #c6282822;
+}
+.script-editor :deep(.cm-syntax-error-mark) {
+  text-decoration: underline wavy #c62828;
 }
 .script-editor :deep(.cm-editor) {
   min-height: 12em;

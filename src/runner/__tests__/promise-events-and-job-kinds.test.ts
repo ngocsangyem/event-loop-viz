@@ -240,6 +240,30 @@ describe('cause links', () => {
     expect(causeOf(trace, job!)).toMatchObject({ k: 'promise:resolve', pid: job!.pid, with: 'thenable' })
   })
 
+  it('reads a thenable then getter synchronously, before the thenable Job is enqueued', async () => {
+    const trace = await traceOf(`
+      new Promise((r) => r({ get then() { console.log('getter'); return (f) => f(1) } }))
+      console.log('after')
+    `)
+    const order = trace.events
+      .filter((e) => e.k === 'console' || e.k === 'promise:resolve' || e.k === 'job:enqueue')
+      .map((e) => (e.k === 'console' ? e.text : e.k))
+    expect(order.slice(0, 4)).toEqual(['getter', 'promise:resolve', 'job:enqueue', 'after'])
+    expect(eventsOf(trace, 'promise:resolve')[0]).toMatchObject({ with: 'thenable' })
+  })
+
+  it('treats a native promise as a thenable and records a thenable Job for it', async () => {
+    const trace = await traceOf(`new Promise((r) => r(Promise.resolve()))`)
+    expect(eventsOf(trace, 'promise:resolve').map((e) => e.with)).toContain('thenable')
+    expect(eventsOf(trace, 'job:enqueue').map((e) => e.jobKind)).toEqual(['thenable', 'reaction'])
+  })
+
+  it('rejects the promise without a thenable Job when the then getter throws', async () => {
+    const trace = await traceOf(`new Promise((r) => r({ get then() { throw new Error('x') } }))`)
+    expect(eventsOf(trace, 'job:enqueue')).toEqual([])
+    expect(eventsOf(trace, 'promise:settle').map((e) => e.state)).toEqual(['rejected'])
+  })
+
   it('points job:begin at its job:enqueue', async () => {
     const trace = await traceOf(`Promise.resolve(1).then(() => {})`)
     const [enqueue] = eventsOf(trace, 'job:enqueue')
