@@ -2,6 +2,22 @@ import { describe, expect, it } from 'vitest'
 import { createPlayer } from '../player'
 import { buildTrace, loc, timerAndJobTrace } from './hand-built-traces'
 
+describe('what the running Job and Task were', () => {
+  const player = createPlayer(timerAndJobTrace())
+
+  it('remembers the kind of the Job that is running after it leaves the queue', () => {
+    expect(player.stateAt(14).currentJobKind).toBe('reaction')
+    expect(player.stateAt(19).currentJobKind).toBe('microtask')
+    expect(player.stateAt(18).currentJobKind).toBeNull()
+  })
+
+  it('remembers the source of the Task that is running after it leaves the queue', () => {
+    expect(player.stateAt(2).currentTaskSource).toBe('script')
+    expect(player.stateAt(22).currentTaskSource).toBe('timer')
+    expect(player.stateAt(25).currentTaskSource).toBeNull()
+  })
+})
+
 describe('stateAt on a hand-built Trace', () => {
   const player = createPlayer(timerAndJobTrace())
 

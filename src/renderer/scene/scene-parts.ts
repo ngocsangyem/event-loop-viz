@@ -4,6 +4,9 @@ import CallStackPart from './call-stack-part.vue'
 import { callStackOf } from './call-stack-model'
 import ConsolePart from './console-part.vue'
 import { consoleScreenOf } from './console-screen-model'
+import JobQueuePart from './job-queue-part.vue'
+import TaskQueuePart from './task-queue-part.vue'
+import TimerShelfPart from './timer-shelf-part.vue'
 
 /**
  * One region of the machine. A part is a component with props `{ state, previous }` that
@@ -32,11 +35,28 @@ export const SCENE_PARTS: readonly ScenePart[] = [
     },
   },
   {
+    id: 'timers',
+    component: TimerShelfPart,
+    readout(state) {
+      return state.timers.length === 0 ? null : `timers ${state.timers.length}`
+    },
+  },
+  {
     id: 'console',
     component: ConsolePart,
     readout(state) {
       const { printed } = consoleScreenOf(state, { rows: 0, columns: 0 })
       return printed === 0 ? null : `console ${printed}`
     },
+  },
+  {
+    id: 'microtask-queue',
+    component: JobQueuePart,
+    readout: (state) => (state.jobs.length === 0 ? null : `jobs ${state.jobs.length}`),
+  },
+  {
+    id: 'task-queue',
+    component: TaskQueuePart,
+    readout: (state) => (state.tasks.length === 0 ? null : `tasks ${state.tasks.length}`),
   },
 ]

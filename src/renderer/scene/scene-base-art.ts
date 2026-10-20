@@ -37,7 +37,7 @@ function slabAndScrews(): string {
 }
 
 function laneEngravings(): string {
-  const lanes = [REGIONS.queues, REGIONS.timers, REGIONS.promises]
+  const lanes = [REGIONS.promises]
   const out = lanes.map((lane) =>
     line(k.planOutline(k.insetPlan(lane, 0), 0, P), { tone: 'faint' }),
   )
