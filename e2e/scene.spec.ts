@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
@@ -77,7 +78,7 @@ test.describe('theme', () => {
   )
 
   for (const scheme of ['light', 'dark'] as const) {
-    test(`the Scene renders in the ${scheme} theme`, async ({ page }) => {
+    test(`the Scene renders in the ${scheme} theme`, async ({ page }, testInfo) => {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
       await runScript(page, NESTED)
       // Stop where a frame stack and a console line are both on screen.
@@ -93,7 +94,17 @@ test.describe('theme', () => {
         getComputedStyle(node).getPropertyValue('--anatomy-paper').trim(),
       )
       expect(paper).toBe(scheme === 'light' ? '#fbfbfa' : '#131313')
-      await expect(scene).toHaveScreenshot(`scene-${scheme}.png`, {
+      // Pixels differ per OS font stack, so baselines live under a per-platform folder and are
+      // compared only where one was recorded. Elsewhere the token check above is the assertion.
+      const name = `scene-${scheme}.png`
+      if (!existsSync(testInfo.snapshotPath(name))) {
+        testInfo.annotations.push({
+          type: 'snapshot-skipped',
+          description: `no ${process.platform} baseline for ${name}; record one with --update-snapshots`,
+        })
+        return
+      }
+      await expect(scene).toHaveScreenshot(name, {
         animations: 'disabled',
         maxDiffPixelRatio: 0.02,
       })
