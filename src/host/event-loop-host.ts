@@ -14,6 +14,7 @@ import { BudgetHalt, createBudgetMeter } from './budget-meter'
 import { createSeededRandom } from './seeded-random'
 import { createRejectionTracker } from './rejection-tracker'
 import type { NotificationTask } from './rejection-tracker'
+import { createTimingSensitivityTracker } from './timing-sensitivity'
 
 export interface HostSettings {
   nodeCostUs: number
@@ -77,6 +78,8 @@ export function runHost(
   const timers = new Map<number, PendingTimer>()
   const meter = createBudgetMeter(settings.budgets)
   const rejections = createRejectionTracker()
+  const timing = createTimingSensitivityTracker()
+  const pendingDueUs = () => [...timers.values()].map((t) => t.dueUs)
 
   /** seq of each Job's job:enqueue event, so job:begin can point back to it. */
   const jobEnqueueSeq = new Map<string, number>()
@@ -117,6 +120,7 @@ export function runHost(
         emit({ k: 'console', level, text }, HTML_LOOP)
       },
       random: createSeededRandom(settings.randomSeed),
+      virtualNowMs: () => nowUs / 1000,
     },
     {
       onNode(nodeLoc) {
@@ -217,7 +221,6 @@ export function runHost(
     randomSeed: settings.randomSeed,
     source: script,
     unsupportedApis,
-    timingSensitive: false,
   }
 
   const finish = (reason: HaltReason, limit?: number): HostRunResult => {
@@ -232,7 +235,8 @@ export function runHost(
       reason,
       ...(limit !== undefined && { limit }),
     })
-    return { kind: 'ran', trace: { header, events }, observableOutput: deriveObservableOutput(events) }
+    const traceHeader = { ...header, timingSensitive: timing.timingSensitive }
+    return { kind: 'ran', trace: { header: traceHeader, events }, observableOutput: deriveObservableOutput(events) }
   }
 
   try {
@@ -241,6 +245,7 @@ export function runHost(
   const scriptTaskId = newTaskId()
   emit({ k: 'task:queue', taskId: scriptTaskId, source: 'script' }, HTML_LOOP)
   emit({ k: 'task:begin', taskId: scriptTaskId }, HTML_LOOP)
+  const scriptStartUs = nowUs
   const outcome = engine.evaluateScript(script)
   if (outcome.kind === 'syntax-error') {
     return outcome
@@ -250,6 +255,7 @@ export function runHost(
   }
   emit({ k: 'task:end', taskId: scriptTaskId }, HTML_LOOP)
   checkpoint('script-end')
+  timing.taskEnded(scriptStartUs, nowUs, pendingDueUs())
 
   for (;;) {
     const next = [...timers.values()].sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)[0]
@@ -266,6 +272,7 @@ export function runHost(
     timers.delete(next.tid)
     currentNesting = next.nesting
     emit({ k: 'task:begin', taskId: next.taskId }, HTML_LOOP)
+    const taskStartUs = nowUs
     emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
     // An interval re-arms before its callback runs (HTML timer task steps).
     if (next.repeat) initTimer(next.callback, next.delayMs, true, next.tid)
@@ -276,6 +283,7 @@ export function runHost(
     emit({ k: 'task:end', taskId: next.taskId }, HTML_LOOP)
     currentNesting = 0
     checkpoint('task-end')
+    timing.taskEnded(taskStartUs, nowUs, pendingDueUs())
   }
 
   return finish('natural')
