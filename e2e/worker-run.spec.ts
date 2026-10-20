@@ -22,7 +22,7 @@ test('the UI stays responsive while a Run computes', async ({ page }) => {
 
   // And a control responds: typing in the editor updates it while the Run is in flight.
   await page.getByLabel('Script').fill('console.log(1)')
-  await expect(page.getByLabel('Script')).toHaveValue('console.log(1)')
+  await expect(page.getByLabel('Script')).toContainText('console.log(1)')
 })
 
 test('Cancel ends the Run without a Trace', async ({ page }) => {

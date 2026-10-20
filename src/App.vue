@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import ScriptEditor from '@/renderer/script-editor.vue'
 import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
 import { deriveObservableOutput } from '@/trace/derive-observable-output'
@@ -17,6 +18,7 @@ let activeRun: WorkerRun | null = null
 const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')) || undefined
 
 const events = computed(() => trace.value?.events ?? [])
+const replaying = computed(() => trace.value !== null)
 const lastPosition = computed(() => events.value.length - 1)
 // Derived from the Trace prefix so the console can never disagree with the event list.
 const consoleEntries = computed(() =>
@@ -29,7 +31,15 @@ function describeEntry(entry: ObservableEntry): string {
     : `${entry.kind}: ${entry.message}`
 }
 
+/** Editing ends the replay: the Trace belongs to the Script that produced it. */
+function discardTrace() {
+  trace.value = null
+  position.value = 0
+}
+
 async function run() {
+  // The editor shortcut can fire while a Run is in flight.
+  if (running.value) return
   syntaxError.value = null
   trace.value = null
   position.value = 0
@@ -58,8 +68,11 @@ function cancel() {
 
 <template>
   <main>
-    <label for="script">Script</label>
-    <textarea id="script" v-model="script" rows="8" cols="80" />
+    <ScriptEditor v-model="script" :read-only="replaying" @run="run" />
+    <p v-if="replaying" data-testid="replay-banner">
+      Read-only during replay.
+      <button type="button" @click="discardTrace">Edit (discards Trace)</button>
+    </p>
     <button type="button" :disabled="running" @click="run">Run</button>
     <template v-if="running">
       <progress aria-label="Running">Running…</progress>
@@ -67,10 +80,12 @@ function cancel() {
     </template>
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
-    <template v-if="trace">
-      <button type="button" :disabled="position <= 0" @click="position--">Prev</button>
-      <button type="button" :disabled="position >= lastPosition" @click="position++">Next</button>
+    <button type="button" :disabled="!replaying || position <= 0" @click="position--">Prev</button>
+    <button type="button" :disabled="!replaying || position >= lastPosition" @click="position++">
+      Next
+    </button>
 
+    <template v-if="trace">
       <ol data-testid="event-list">
         <li
           v-for="event in events"
