@@ -13,14 +13,26 @@ import {
   rowBaseline,
 } from './console-geometry'
 import { consoleScreenOf } from './console-screen-model'
+import { arrivals, fadeIn, useEnterMotion } from './scene-motion'
 
-// `previous` is accepted by every part so transitions can compare states without touching
-// the scene root; this part draws only `state`.
+// `previous` (the state one step back) only decides which line fades in; the screen drawn once
+// the motion ends is a function of `state` alone.
 const props = defineProps<{ state: ReplayState; previous?: ReplayState | null }>()
 
 const clipId = `scene-screen-clip-${useId()}`
 const screen = computed(() =>
   consoleScreenOf(props.state, { rows: SCREEN_ROWS, columns: SCREEN_COLUMNS }),
+)
+const arrived = computed(() => {
+  if (!props.previous) return new Set<string>()
+  const rowsOf = (state: ReplayState) =>
+    consoleScreenOf(state, { rows: SCREEN_ROWS, columns: SCREEN_COLUMNS }).rows.map(
+      (_, i) => `${i}`,
+    )
+  return arrivals(rowsOf(props.previous), rowsOf(props.state))
+})
+const { onEnter, onEnterCancelled } = useEnterMotion((el) =>
+  arrived.value.has(el.getAttribute('data-row') ?? '') ? fadeIn : null,
 )
 /** Width of one monospace cell, so the caret sits right after the last character. */
 const CELL = FONT_SIZE * 0.64
@@ -33,18 +45,21 @@ const CELL = FONT_SIZE * 0.64
       <clipPath :id="clipId"><path :d="SCREEN_PATH" /></clipPath>
       <path class="scene-screen" :d="SCREEN_PATH" />
       <g :clip-path="`url(#${clipId})`">
-        <text
-          v-for="(row, index) in screen.rows"
-          :key="index"
-          class="scene-screen-text"
-          data-testid="scene-console-line"
-          :data-tone="row.tone"
-          :x="TEXT_X"
-          :y="rowBaseline(index)"
-          :font-size="FONT_SIZE"
-        >
-          {{ row.text }}
-        </text>
+        <TransitionGroup :css="false" @enter="onEnter" @enter-cancelled="onEnterCancelled">
+          <text
+            v-for="(row, index) in screen.rows"
+            :key="index"
+            class="scene-screen-text"
+            data-testid="scene-console-line"
+            :data-tone="row.tone"
+            :data-row="index"
+            :x="TEXT_X"
+            :y="rowBaseline(index)"
+            :font-size="FONT_SIZE"
+          >
+            {{ row.text }}
+          </text>
+        </TransitionGroup>
         <rect
           class="scene-caret"
           :x="TEXT_X"

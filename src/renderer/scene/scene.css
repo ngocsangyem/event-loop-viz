@@ -338,10 +338,12 @@
     bottom: 18px;
   }
 }
+/* Parts also check the preference in script (scene-motion.ts) before moving anything. */
 @media (prefers-reduced-motion: reduce) {
-  .iso-line[data-flow],
-  .iso-dots circle[data-pulse] {
-    animation: none;
+  .iso-figure,
+  .iso-figure * {
+    animation: none !important;
+    transition: none !important;
   }
 }
 .iso-dot {

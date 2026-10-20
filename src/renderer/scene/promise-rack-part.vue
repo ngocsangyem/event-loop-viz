@@ -23,13 +23,28 @@ import {
   tagTextMatrix,
 } from './promise-rack-geometry'
 import { promiseRackOf } from './promise-rack-model'
+import { arrivals, dropIn, useEnterMotion } from './scene-motion'
 
-// `previous` is accepted by every part so transitions can compare states without touching
-// the scene root; this part draws only `state`.
+// `previous` (the state one step back) only decides how a cradle arrives; the rack drawn once
+// the motion ends is a function of `state` alone.
 const props = defineProps<{ state: ReplayState; previous?: ReplayState | null }>()
 
 const model = computed(() =>
   promiseRackOf(props.state, { rows: ROW_COUNT, generators: GENERATOR_COUNT }),
+)
+
+const arrived = computed(() =>
+  arrivals(
+    props.previous
+      ? promiseRackOf(props.previous, { rows: ROW_COUNT, generators: GENERATOR_COUNT }).rows.map(
+          (row) => row.pid,
+        )
+      : null,
+    model.value.rows.map((row) => row.pid),
+  ),
+)
+const { onEnter, onEnterCancelled } = useEnterMotion((el) =>
+  arrived.value.has(el.getAttribute('data-row-pid') ?? '') ? dropIn(10) : null,
 )
 
 const WORD = { pending: 'pending', fulfilled: 'fulfilled', rejected: 'rejected' } as const
@@ -74,64 +89,66 @@ const generators = computed(() =>
         class="iso-face-text"
         data-tone="hi"
         text-anchor="middle"
-        font-size="3.4"
+        font-size="3.8"
         :transform="drumLabelMatrix(gen.slot)"
       >
         {{ gen.gid }} {{ GEN_WORD[gen.view] }}
       </text>
     </g>
-    <g v-for="row in rows" :key="row.pid" data-testid="scene-promise-row">
-      <g
-        data-testid="scene-promise"
-        :data-pid="row.pid"
-        :data-state="row.view"
-        :data-waiting="row.waiter ? '' : undefined"
-      >
-        <IsoSolid
-          :paths="cellShape(row.index, row.height)"
-          :tone="row.view === 'pending' ? 'lo' : 'hi'"
+    <TransitionGroup :css="false" @enter="onEnter" @enter-cancelled="onEnterCancelled">
+      <g v-for="row in rows" :key="row.pid" data-testid="scene-promise-row" :data-row-pid="row.pid">
+        <g
+          data-testid="scene-promise"
+          :data-pid="row.pid"
+          :data-state="row.view"
+          :data-waiting="row.waiter ? '' : undefined"
         >
-          <IsoLine :d="cellRim(row.index, row.height)" :tone="RIM[row.view]" />
-          <text
-            class="iso-face-text"
-            data-tone="hi"
-            font-size="3.4"
-            :transform="cellTextMatrix(row.index, row.height, 'start')"
+          <IsoSolid
+            :paths="cellShape(row.index, row.height)"
+            :tone="row.view === 'pending' ? 'lo' : 'hi'"
           >
-            {{ row.pid }}
-          </text>
-          <text
-            class="iso-face-text"
-            data-tone="hi"
-            text-anchor="end"
-            font-size="3.4"
-            :transform="cellTextMatrix(row.index, row.height, 'end')"
-          >
-            {{ WORD[row.view] }}
-          </text>
-        </IsoSolid>
+            <IsoLine :d="cellRim(row.index, row.height)" :tone="RIM[row.view]" />
+            <text
+              class="iso-face-text"
+              data-tone="hi"
+              font-size="3.8"
+              :transform="cellTextMatrix(row.index, row.height, 'start')"
+            >
+              {{ row.pid }}
+            </text>
+            <text
+              class="iso-face-text"
+              data-tone="hi"
+              text-anchor="end"
+              font-size="3.8"
+              :transform="cellTextMatrix(row.index, row.height, 'end')"
+            >
+              {{ WORD[row.view] }}
+            </text>
+          </IsoSolid>
+        </g>
+        <g
+          v-if="row.waiter"
+          data-testid="scene-suspended-await"
+          :data-fid="row.waiter.fid"
+          :data-pid="row.pid"
+          :data-label="row.waiter.label"
+        >
+          <IsoSolid :paths="bracketShape(row.index)" tone="mid" crease="none" />
+          <IsoSolid :paths="tagShape(row.index)" tone="hi" lit>
+            <text
+              class="iso-face-text"
+              data-tone="hi"
+              text-anchor="middle"
+              :font-size="fitFont(row.tagText, 22, 3.6)"
+              :transform="tagTextMatrix(row.index)"
+            >
+              {{ row.tagText }}
+            </text>
+          </IsoSolid>
+        </g>
       </g>
-      <g
-        v-if="row.waiter"
-        data-testid="scene-suspended-await"
-        :data-fid="row.waiter.fid"
-        :data-pid="row.pid"
-        :data-label="row.waiter.label"
-      >
-        <IsoSolid :paths="bracketShape(row.index)" tone="mid" crease="none" />
-        <IsoSolid :paths="tagShape(row.index)" tone="hi" lit>
-          <text
-            class="iso-face-text"
-            data-tone="hi"
-            text-anchor="middle"
-            :font-size="fitFont(row.tagText, 22, 3.6)"
-            :transform="tagTextMatrix(row.index)"
-          >
-            {{ row.tagText }}
-          </text>
-        </IsoSolid>
-      </g>
-    </g>
+    </TransitionGroup>
     <text
       v-if="model.hiddenPromises > 0"
       class="iso-face-text"
