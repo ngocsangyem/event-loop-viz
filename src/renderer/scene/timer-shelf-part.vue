@@ -17,9 +17,10 @@ import {
   timerShelfBackSvg,
 } from './timer-shelf-geometry'
 import { timerShelfOf } from './timer-shelf-model'
+import { arrivals, dropIn, useEnterMotion } from './scene-motion'
 
-// `previous` is accepted by every part so transitions can compare states without touching
-// the scene root; this part draws only `state`.
+// `previous` (the state one step back) only decides how a timer block arrives; the shelf drawn
+// once the motion ends is a function of `state` alone.
 const props = defineProps<{ state: ReplayState; previous?: ReplayState | null }>()
 
 const clipId = `scene-clock-clip-${useId()}`
@@ -30,6 +31,15 @@ const blocks = computed(() =>
     const timer = model.value.shown[slot]
     return timer ? [{ slot, timer }] : []
   }),
+)
+const arrived = computed(() =>
+  arrivals(
+    props.previous ? timerShelfOf(props.previous, SLOT_COUNT).shown.map((t) => t.tid) : null,
+    model.value.shown.map((t) => t.tid),
+  ),
+)
+const { onEnter, onEnterCancelled } = useEnterMotion((el) =>
+  arrived.value.has(el.getAttribute('data-tid') ?? '') ? dropIn(12) : null,
 )
 </script>
 
@@ -52,35 +62,37 @@ const blocks = computed(() =>
       </text>
       <path class="iso-line" data-tone="lo" :d="clockScreenPath" />
     </g>
-    <g
-      v-for="{ slot, timer } in blocks"
-      :key="timer.tid"
-      data-testid="scene-timer"
-      :data-tid="timer.tid"
-      :data-due="timer.due"
-      :data-repeat="timer.repeat ? '' : undefined"
-    >
-      <IsoSolid :paths="blockShape(slot)" tone="hi" crease="faint">
-        <text
-          class="iso-face-text"
-          data-tone="mid"
-          text-anchor="middle"
-          font-size="3.8"
-          :transform="blockTextMatrix(slot, 0)"
-        >
-          {{ timer.repeat ? `t${timer.tid} repeat` : `t${timer.tid}` }}
-        </text>
-        <text
-          class="iso-face-text"
-          data-tone="hi"
-          text-anchor="middle"
-          font-size="5"
-          :transform="blockTextMatrix(slot, 1)"
-        >
-          {{ timer.due }}
-        </text>
-      </IsoSolid>
-    </g>
+    <TransitionGroup :css="false" @enter="onEnter" @enter-cancelled="onEnterCancelled">
+      <g
+        v-for="{ slot, timer } in blocks"
+        :key="timer.tid"
+        data-testid="scene-timer"
+        :data-tid="timer.tid"
+        :data-due="timer.due"
+        :data-repeat="timer.repeat ? '' : undefined"
+      >
+        <IsoSolid :paths="blockShape(slot)" tone="hi" crease="faint">
+          <text
+            class="iso-face-text"
+            data-tone="mid"
+            text-anchor="middle"
+            font-size="3.8"
+            :transform="blockTextMatrix(slot, 0)"
+          >
+            {{ timer.repeat ? `t${timer.tid} repeat` : `t${timer.tid}` }}
+          </text>
+          <text
+            class="iso-face-text"
+            data-tone="hi"
+            text-anchor="middle"
+            font-size="5"
+            :transform="blockTextMatrix(slot, 1)"
+          >
+            {{ timer.due }}
+          </text>
+        </IsoSolid>
+      </g>
+    </TransitionGroup>
     <text
       v-if="model.hidden > 0"
       class="iso-face-text"
