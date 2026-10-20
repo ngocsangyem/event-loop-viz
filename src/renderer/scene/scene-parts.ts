@@ -7,7 +7,6 @@ import { consoleScreenOf } from './console-screen-model'
 import JobQueuePart from './job-queue-part.vue'
 import TaskQueuePart from './task-queue-part.vue'
 import TimerShelfPart from './timer-shelf-part.vue'
-import { timerShelfOf } from './timer-shelf-model'
 
 /**
  * One region of the machine. A part is a component with props `{ state, previous }` that
@@ -39,10 +38,7 @@ export const SCENE_PARTS: readonly ScenePart[] = [
     id: 'timers',
     component: TimerShelfPart,
     readout(state) {
-      const { clock } = timerShelfOf(state, 0)
-      return state.timers.length === 0
-        ? `clock ${clock}`
-        : `timers ${state.timers.length} · clock ${clock}`
+      return state.timers.length === 0 ? null : `timers ${state.timers.length}`
     },
   },
   {

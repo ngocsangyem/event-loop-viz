@@ -1,10 +1,5 @@
 import type { ObservableOutput } from '../trace/observable-output'
-import type {
-  HaltReason,
-  JobKind,
-  SourceLocation,
-  TraceEventBody,
-} from '../trace/trace-event'
+import type { HaltReason, JobKind, SourceLocation, TraceEventBody } from '../trace/trace-event'
 
 export interface StackFrame {
   frameId: string

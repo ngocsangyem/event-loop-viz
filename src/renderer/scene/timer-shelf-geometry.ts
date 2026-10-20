@@ -19,15 +19,15 @@ export const BLOCK_H = 12
 const COLUMN_PITCH = 26
 const ROW_PITCH = 22
 
-const SHELF: k.Plan = { x: region.x + 2, y: region.y + 28, w: region.w - 4, d: 50, r: 3 }
+const SHELF: k.Plan = { x: region.x + 2, y: region.y + 30, w: region.w - 4, d: 50, r: 3 }
 const SLOT_X0 = region.x + 4
-const SLOT_Y0 = region.y + 32
+const SLOT_Y0 = region.y + 34
 const BLOCK = { w: 23, d: 16 }
 
 /** Clock housing on its plinth, and the screen window in its front face. */
 const PLINTH: k.Plan = { x: region.x + 14, y: region.y + 5, w: 82, d: 16, r: 2 }
 const HOUSING: k.Plan = { x: region.x + 10, y: region.y + 4, w: 90, d: 14, r: 3 }
-const HOUSING_Z = BASE_H + 8
+const HOUSING_Z = BASE_H + 14
 const HOUSING_H = 30
 const FACE_Y = HOUSING.y + HOUSING.d
 export const CLOCK_SCREEN = {
@@ -61,8 +61,7 @@ export const SLOT_PAINT_ORDER = Array.from({ length: SLOT_COUNT }, (_, slot) => 
   (a, b) => (a % SLOT_ROWS) - (b % SLOT_ROWS) || a - b,
 )
 
-export const blockShape = (slot: number) =>
-  k.slabOf(slotPlan(slot), SHELF_TOP, BLOCK_H, P, 4, 0.5)
+export const blockShape = (slot: number) => k.slabOf(slotPlan(slot), SHELF_TOP, BLOCK_H, P, 4, 0.5)
 
 /** Matrix for a line of text lying on top of the block in `slot`; `row` 0 is the id line. */
 export const blockTextMatrix = (slot: number, row: 0 | 1) => {
@@ -74,7 +73,12 @@ export const blockTextMatrix = (slot: number, row: 0 | 1) => {
     'x',
   )
 }
-export const moreMatrix = k.topMatrix([SHELF.x + SHELF.w - 6, SHELF.y + SHELF.d - 2.6], SHELF_TOP, P, 'x')
+export const moreMatrix = k.topMatrix(
+  [SHELF.x + SHELF.w - 6, SHELF.y + SHELF.d - 2.6],
+  SHELF_TOP,
+  P,
+  'x',
+)
 
 function plinthAndClock(): string {
   const out = [`<path class="iso-halo" d="${k.haloOf(region, 0, BASE_H, P)}"/>`]
@@ -92,7 +96,9 @@ function plinthAndClock(): string {
   // Bezel and engraved name on the front face.
   const { x0, x1, z0, z1 } = CLOCK_SCREEN
   const bezel = k.pathOf(
-    k.roundedPlan({ x: x0 - 3, y: z0 - 3, w: x1 - x0 + 6, d: z1 - z0 + 6, r: 4 }, 4).map(([u, z]) => [u, -z]),
+    k
+      .roundedPlan({ x: x0 - 3, y: z0 - 3, w: x1 - x0 + 6, d: z1 - z0 + 6, r: 4 }, 4)
+      .map(([u, z]) => [u, -z]),
     true,
   )
   const name = `<text x="${x0}" y="${-(HOUSING_Z + 3.4)}" font-size="3.4">virtual clock</text>`
@@ -103,7 +109,9 @@ function plinthAndClock(): string {
   )
   out.push(
     dots(
-      [HOUSING.x + 4, HOUSING.x + HOUSING.w - 4].map((x) => at([x, FACE_Y, HOUSING_Z + HOUSING_H - 4])),
+      [HOUSING.x + 4, HOUSING.x + HOUSING.w - 4].map((x) =>
+        at([x, FACE_Y, HOUSING_Z + HOUSING_H - 4]),
+      ),
       { size: 0.5 },
     ),
   )
@@ -116,7 +124,16 @@ function shelf(): string {
     k.planOutline(k.insetPlan(slotPlan(slot), -1.4), SHELF_TOP, P, 4),
   )
   out.push(line(engraved.join(''), { tone: 'faint' }))
-  const ticks = k.topTicks(SHELF.x + 6, SHELF.x + SHELF.w - 6, 5, 5, SHELF.y + SHELF.d - 1.4, SHELF_TOP, [1.2, 2.2], P)
+  const ticks = k.topTicks(
+    SHELF.x + 6,
+    SHELF.x + SHELF.w - 6,
+    5,
+    5,
+    SHELF.y + SHELF.d - 1.4,
+    SHELF_TOP,
+    [1.2, 2.2],
+    P,
+  )
   out.push(line(ticks.minor, { tone: 'lo' }), line(ticks.major, { tone: 'mid' }))
   out.push(
     dots(

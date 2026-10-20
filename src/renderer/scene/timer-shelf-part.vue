@@ -4,7 +4,6 @@ import type { ReplayState } from '../../player/replay-state'
 import IsoRaw from './iso-raw.vue'
 import IsoSolid from './iso-solid.vue'
 import {
-  BLOCK_H,
   CLOCK_FONT,
   CLOCK_MATRIX,
   CLOCK_TEXT_X,
