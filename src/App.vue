@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import ScriptEditor from '@/renderer/script-editor.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
 import TransportBar from '@/renderer/transport-bar.vue'
@@ -16,6 +16,7 @@ import AdvancedSettings from '@/renderer/advanced-settings.vue'
 import HaltBanner from '@/renderer/halt-banner.vue'
 import EventList from '@/renderer/event-list.vue'
 import EventDetail from '@/renderer/event-detail.vue'
+import StepAnnouncer from '@/renderer/step-announcer.vue'
 import { createPlayer } from '@/player/player'
 import { createInitialState } from '@/player/replay-state'
 import { withStepOptions } from '@/player/with-step-options'
@@ -37,6 +38,9 @@ const syntaxErrorAt = ref<{ line: number; column: number } | null>(null)
 const position = ref(0)
 const running = ref(false)
 let activeRun: WorkerRun | null = null
+const editor = useTemplateRef('editor')
+const transport = useTemplateRef('transport')
+const runButton = useTemplateRef<HTMLButtonElement>('runButton')
 // Lets tests shorten the 30 s wall-clock watchdog: /?watchdogMs=300
 const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')) || undefined
 
@@ -88,6 +92,24 @@ function discardTrace() {
   position.value = 0
 }
 
+/** The "Edit" button vanishes with the replay banner, so focus moves to the editor it unlocks. */
+async function editScript() {
+  discardTrace()
+  await nextTick()
+  editor.value?.focus()
+}
+
+/**
+ * The Run button is disabled mid-Run, which drops keyboard focus to the page. Put it back where
+ * the next action is: the playback controls after a Trace, the Run button after a failure.
+ */
+async function restoreFocusAfterRun() {
+  await nextTick()
+  if (document.activeElement && document.activeElement !== document.body) return
+  if (trace.value) transport.value?.focusStep()
+  else runButton.value?.focus()
+}
+
 function loadExample(id: string) {
   const example = findExample(id)
   if (!example) return
@@ -124,6 +146,7 @@ async function run() {
   } finally {
     running.value = false
     activeRun = null
+    void restoreFocusAfterRun()
   }
 }
 
@@ -151,8 +174,11 @@ onMounted(() => {
 
 <template>
   <main class="app-shell">
+    <h1 class="visually-hidden">Event Loop Visualizer</h1>
+    <StepAnnouncer :events="events" :position="position" />
     <div class="pane-editor">
     <ScriptEditor
+      ref="editor"
       v-model="script"
       :read-only="replaying"
       :error-at="syntaxErrorAt"
@@ -164,9 +190,9 @@ onMounted(() => {
     <UnsupportedApiNotice :apis="unsupportedApis" />
     <p v-if="replaying" data-testid="replay-banner">
       Read-only during replay.
-      <button type="button" @click="discardTrace">Edit (discards Trace)</button>
+      <button type="button" @click="editScript">Edit (discards Trace)</button>
     </p>
-    <button type="button" :disabled="running" @click="run">Run</button>
+    <button ref="runButton" type="button" :disabled="running" @click="run">Run</button>
     <template v-if="running">
       <progress aria-label="Running">Running…</progress>
       <button type="button" @click="cancel">Cancel</button>
@@ -186,7 +212,7 @@ onMounted(() => {
     <div class="pane-scene">
       <HaltBanner :halt="halt" />
       <SceneView :state="replayState" :previous="previousReplayState" />
-      <TransportBar v-model="position" :player="player" :events="events" />
+      <TransportBar ref="transport" v-model="position" :player="player" :events="events" />
     </div>
 
     <div v-if="trace" class="pane-panels">

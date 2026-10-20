@@ -17,6 +17,6 @@ const lines = computed(() => formatConsoleLines(props.output))
 
 <style scoped>
 .console-error {
-  color: #c62828;
+  color: var(--anatomy-error-text);
 }
 </style>
