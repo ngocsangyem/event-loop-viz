@@ -116,7 +116,11 @@ export function applyEvent(
       state.console.push({ kind: 'console', level: event.level, text: event.text })
       break
     case 'exception:report':
-      state.console.push({ kind: 'uncaught-exception', message: event.message })
+      state.console.push({
+        kind: 'uncaught-exception',
+        message: event.message,
+        ...(event.unsupportedApi && { errorName: 'UnsupportedApiError' as const }),
+      })
       break
     case 'rejection:notify':
       state.console.push({

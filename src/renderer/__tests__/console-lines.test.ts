@@ -11,10 +11,22 @@ describe('formatConsoleLines', () => {
 
   it('prints an Unsupported API exception like a Chrome Uncaught line', () => {
     expect(
-      formatConsoleLines([{ kind: 'uncaught-exception', message: 'fetch is not supported in v1' }]),
+      formatConsoleLines([
+        {
+          kind: 'uncaught-exception',
+          message: 'fetch is not supported in v1',
+          errorName: 'UnsupportedApiError',
+        },
+      ]),
     ).toEqual([
       { kind: 'error', text: 'Uncaught UnsupportedApiError: fetch is not supported in v1' },
     ])
+  })
+
+  it('does not prefix a Script error whose message only looks like an Unsupported API one', () => {
+    expect(
+      formatConsoleLines([{ kind: 'uncaught-exception', message: 'x is not supported in v1' }]),
+    ).toEqual([{ kind: 'error', text: 'Uncaught x is not supported in v1' }])
   })
 
   it('prints plain exceptions and rejections with their Chrome prefixes', () => {

@@ -17,7 +17,11 @@ describe('Unsupported APIs', () => {
       `setTimeout(() => console.log('later'), 0); fetch('/x'); console.log('not reached')`,
     )
     expect(observableOutput).toEqual([
-      { kind: 'uncaught-exception', message: 'fetch is not supported in v1' },
+      {
+        kind: 'uncaught-exception',
+        message: 'fetch is not supported in v1',
+        errorName: 'UnsupportedApiError',
+      },
       { kind: 'console', level: 'log', text: 'later' },
     ])
     expect(reports(trace)).toMatchObject([{ origin: 'script', unsupportedApi: 'fetch' }])
@@ -28,10 +32,21 @@ describe('Unsupported APIs', () => {
       `setTimeout(() => console.log('t'), 0); requestAnimationFrame(() => console.log('raf'))`,
     )
     expect(observableOutput).toEqual([
-      { kind: 'uncaught-exception', message: 'requestAnimationFrame is not supported in v1' },
+      {
+        kind: 'uncaught-exception',
+        message: 'requestAnimationFrame is not supported in v1',
+        errorName: 'UnsupportedApiError',
+      },
       { kind: 'console', level: 'log', text: 't' },
     ])
     expect(reports(trace)).toMatchObject([{ unsupportedApi: 'requestAnimationFrame' }])
+  })
+
+  it('does not tag a Script error that merely reads like an Unsupported API message', async () => {
+    const { observableOutput } = await ran(`throw new Error('thing is not supported in v1')`)
+    expect(observableOutput).toEqual([
+      { kind: 'uncaught-exception', message: 'thing is not supported in v1' },
+    ])
   })
 
   it('records the pre-run scan in the Trace header', async () => {

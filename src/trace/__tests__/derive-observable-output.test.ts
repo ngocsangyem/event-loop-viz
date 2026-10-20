@@ -20,4 +20,24 @@ describe('deriveObservableOutput', () => {
       { kind: 'console', level: 'warn', text: 'b' },
     ])
   })
+
+  it('names the error on an exception report that carries an Unsupported API', () => {
+    const events: TraceEvent[] = [
+      {
+        ...base,
+        seq: 0,
+        k: 'exception:report',
+        origin: 'script',
+        message: 'fetch is not supported in v1',
+        unsupportedApi: 'fetch',
+      },
+    ]
+    expect(deriveObservableOutput(events)).toEqual([
+      {
+        kind: 'uncaught-exception',
+        message: 'fetch is not supported in v1',
+        errorName: 'UnsupportedApiError',
+      },
+    ])
+  })
 })
