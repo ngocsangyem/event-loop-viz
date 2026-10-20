@@ -50,6 +50,11 @@ export type PromiseEventInfo =
   | { type: 'resolve'; pid: string; with: 'value' | 'thenable' | 'self' }
   | { type: 'settle'; pid: string; state: 'fulfilled' | 'rejected' }
 
+/** An async function parking at an await, or continuing after it; `fid` is its frame id. */
+export type AwaitEventInfo =
+  | { type: 'suspend'; fid: string; awaitedPid: string }
+  | { type: 'resume'; fid: string; mode: 'next' | 'throw' }
+
 /** Notifications the engine adapter sends to the host while it executes. */
 export interface EngineHooks {
   /** One AST node was evaluated: the host advances the Virtual Clock. */
@@ -57,6 +62,7 @@ export interface EngineHooks {
   onFramePush(frame: FrameInfo): void
   onFramePop(frame: FrameInfo): void
   onPromiseEvent(event: PromiseEventInfo): void
+  onAwaitEvent(event: AwaitEventInfo): void
   /**
    * A Job joined the microtask queue (FIFO). Promise Jobs name their target promise;
    * the engine reports the promise event that scheduled the Job just before this call.

@@ -90,6 +90,8 @@ export type TraceEventBody =
   | { k: 'promise:reaction'; pid: string; via: PromiseReactionVia; pending: boolean }
   | { k: 'promise:resolve'; pid: string; with: 'value' | 'thenable' | 'self' }
   | { k: 'promise:settle'; pid: string; state: 'fulfilled' | 'rejected' }
+  /** An async function parks at an await (`fid` = its frame id) / continues once the awaited promise settles. */
+  | { k: 'await:suspend' | 'await:resume'; fid: string; awaitedPid?: string; mode?: 'next' | 'throw' }
   | { k: 'timer:fire' | 'timer:clear'; tid: string }
   | { k: 'rejection:track'; pid: string; op: 'reject' | 'handle' }
   /** A queued notification Task fired: `unhandled` (unhandledrejection) or `handled` (rejectionhandled). */
