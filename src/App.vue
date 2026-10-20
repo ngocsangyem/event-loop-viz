@@ -14,6 +14,7 @@ import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-cod
 import type { SharedSettings } from '@/share/share-link-codec'
 import AdvancedSettings from '@/renderer/advanced-settings.vue'
 import HaltBanner from '@/renderer/halt-banner.vue'
+import TimingSensitiveBadge from '@/renderer/timing-sensitive-badge.vue'
 import EventList from '@/renderer/event-list.vue'
 import EventDetail from '@/renderer/event-detail.vue'
 import StepAnnouncer from '@/renderer/step-announcer.vue'
@@ -211,6 +212,7 @@ onMounted(() => {
 
     <div class="pane-scene">
       <HaltBanner :halt="halt" />
+      <TimingSensitiveBadge :timing-sensitive="trace?.header.timingSensitive ?? false" />
       <SceneView :state="replayState" :previous="previousReplayState" />
       <TransportBar ref="transport" v-model="position" :player="player" :events="events" />
     </div>
