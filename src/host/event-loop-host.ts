@@ -71,6 +71,18 @@ const NESTING_CLAMP_MIN_MS = 4
  * a timer task source and Checkpoints. Time is virtual: it advances only by
  * evaluated nodes and by jumping to the next due timer.
  */
+/** Steps the host performs itself: no Script code runs, so they carry no source location. */
+const HOST_ONLY_KINDS: ReadonlySet<string> = new Set([
+  'run:start',
+  'run:halted',
+  'task:begin',
+  'task:end',
+  'checkpoint:begin',
+  'checkpoint:end',
+  'job:begin',
+  'job:end',
+])
+
 export function runHost(
   engine: EngineAdapter,
   script: string,
@@ -114,7 +126,7 @@ export function runHost(
       t: nowUs,
       ref,
       visible,
-      ...(loc && { loc }),
+      ...(loc && !HOST_ONLY_KINDS.has(body.k) && { loc }),
       ...(cause !== undefined && { cause }),
       ...body,
     })
