@@ -1,0 +1,16 @@
+{
+  "await that resumes": [
+    "await:suspend fid=frame-7 awaitedPid=p2",
+    "job:begin jobId=job-1",
+    "await:resume fid=frame-7 mode=next",
+    "console text=mark"
+  ],
+  "await that throws": [
+    "await:suspend fid=frame-7 awaitedPid=p2",
+    "job:begin jobId=job-1",
+    "await:resume fid=frame-7 mode=throw"
+  ],
+  "await that never resumes": [
+    "await:suspend fid=frame-7 awaitedPid=p2"
+  ]
+}
