@@ -73,9 +73,15 @@ describe('seeking in a Trace at the events Budget', () => {
     const eventAt = (seq: number) => trace.events[seq]
     const folded = createInitialState()
     const checks = new Set([0, 1, 499, 500, 501, 1000, 99_999, 100_000, 150_001, EVENT_BUDGET - 1])
+    const expected: unknown[] = []
+    const actual: unknown[] = []
     trace.events.forEach((event, i) => {
       applyEvent(folded, event, eventAt)
-      if (checks.has(i)) expect(player.stateAt(i)).toEqual(folded)
+      if (!checks.has(i)) return
+      expected.push(structuredClone(folded))
+      actual.push(player.stateAt(i))
     })
+    expect(actual).toHaveLength(checks.size)
+    expect(actual).toEqual(expected)
   }, 60_000)
 })

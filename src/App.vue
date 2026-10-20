@@ -11,6 +11,8 @@ import { startWorkerRun } from '@/runner/worker-run-client'
 import type { WorkerRun } from '@/runner/worker-run-client'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import type { SharedSettings } from '@/share/share-link-codec'
+import AdvancedSettings from '@/renderer/advanced-settings.vue'
+import HaltBanner from '@/renderer/halt-banner.vue'
 import EventList from '@/renderer/event-list.vue'
 import EventDetail from '@/renderer/event-detail.vue'
 import { createPlayer } from '@/player/player'
@@ -37,6 +39,11 @@ let activeRun: WorkerRun | null = null
 const watchdogMs = Number(new URLSearchParams(location.search).get('watchdogMs')) || undefined
 
 const events = computed(() => trace.value?.events ?? [])
+/** The Run's Halt, if a Budget ended it; the final event of a Trace. */
+const halt = computed(() => {
+  const last = events.value[events.value.length - 1]
+  return last?.k === 'run:halted' ? { reason: last.reason, limit: last.limit } : null
+})
 const replaying = computed(() => trace.value !== null)
 /** "Show all events" makes Bookkeeping Events steppable, not only visible in the list. */
 const showAll = ref(false)
@@ -137,6 +144,7 @@ onMounted(() => {
       :highlight="sourceHighlight"
       @run="run" />
     <ExamplePicker :examples="EXAMPLES" @load="loadExample" />
+    <AdvancedSettings v-model="settings" />
     <UnsupportedApiNotice :apis="unsupportedApis" />
     <p v-if="replaying" data-testid="replay-banner">
       Read-only during replay.
@@ -157,6 +165,7 @@ onMounted(() => {
     />
     <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
 
+    <HaltBanner :halt="halt" />
     <TransportBar v-model="position" :player="player" :events="events" />
 
     <template v-if="trace">
