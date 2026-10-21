@@ -5,11 +5,16 @@
  * only the end state; the hue rule and the RUNNING tag still say what changed.
  */
 @media (prefers-reduced-motion: no-preference) {
-  .queue-item-enter-active,
-  .queue-item-leave-active {
+  .queue-item-enter-active {
     transition:
       transform var(--motion-base) var(--ease-out),
       opacity var(--motion-base) var(--ease-out);
+  }
+  /* Leaving accelerates away (swift ease) and opacity trails the lift, so the row pops off. */
+  .queue-item-leave-active {
+    transition:
+      transform var(--motion-base) var(--ease-swift),
+      opacity var(--motion-base) var(--ease-swift) var(--motion-tick);
   }
   .queue-item-move {
     transition: transform var(--motion-slow) var(--ease-swift);
@@ -25,7 +30,7 @@
   }
   .queue-item-leave-to {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(calc(var(--reveal-distance) * -1)) scale(0.97);
   }
   /* Leaving entries stop taking space so the rest can glide into place. */
   .queue-item-leave-active {

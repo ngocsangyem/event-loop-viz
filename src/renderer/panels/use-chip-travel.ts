@@ -103,7 +103,7 @@ export function useChipTravel(options: ChipTravelOptions) {
       const last = rectOf(chip)
       const origin = before.get(id) ?? (flyingEntered.includes(id) && highlight ? editorOrigin(highlight, last) : null)
       if (flies && overlay && origin && isOnScreen(origin) && isOnScreen(last)) {
-        running.push(flyChip(overlay, chip, origin, last, duration))
+        running.push(flyChip(overlay, chip, origin, last, duration, !before.has(id)))
       } else if (canAnimate) {
         running.push(pulseChip(chip))
       }

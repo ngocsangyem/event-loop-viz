@@ -10,6 +10,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import AppHeader from '@/renderer/app-header.vue'
 import { useAskAiDock } from '@/renderer/ai/use-ask-ai-dock'
 import AskAiLauncher from '@/renderer/ai/ask-ai-launcher.vue'
+import TracePanelToggle from '@/renderer/trace-panel-toggle.vue'
 import EditorCard from '@/renderer/editor-card.vue'
 import TransportBar from '@/renderer/transport-bar.vue'
 import HaltBanner from '@/renderer/halt-banner.vue'
@@ -44,6 +45,8 @@ const autoplay = useAutoplayPreference()
 const runCount = shallowRef(0)
 const shareOpen = shallowRef(false)
 const sheetOpen = shallowRef(false)
+/** The Why rail and its Trace Events are optional; they show only after the viewer opens them. */
+const traceOpen = shallowRef(false)
 
 /**
  * After a Run: start playback when auto-play is on, then put keyboard focus back. The Run button
@@ -81,7 +84,7 @@ const { sameView, travelMs } = usePanelChipTravel(view, player, () => transport.
 const { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, dockStyle } = useAskAiDock({
   running, run, position, hasTrace: () => trace.value !== null, pausePlayback: () => transport.value?.pause(),
 })
-const { tab, gridStyle } = useAppLayout({ replaying, askOpen })
+const { tab, gridStyle } = useAppLayout({ replaying, askOpen, traceOpen })
 
 /** The "Edit" button vanishes with the replay banner, so focus moves to the editor it unlocks. */
 async function editScript() {
@@ -121,6 +124,9 @@ useAppHotkeys({
     if (shareOpen.value) share()
   },
   toggleAsk,
+  toggleTrace: () => {
+    if (replaying.value) traceOpen.value = !traceOpen.value
+  },
   toggleSheet: () => (sheetOpen.value = !sheetOpen.value),
   tourStep,
   run: () => {
@@ -188,7 +194,9 @@ onMounted(() => {
             ref="editor"
             v-model:script="script"
             v-model:settings="settings"
-            class="border-0"
+            :trace="trace"
+            :replay-state="replayState"
+            :run-number="runCount || null"
             :replaying="replaying"
             :running="running"
             :syntax-error="syntaxError"
@@ -201,8 +209,11 @@ onMounted(() => {
             @load-example="loadExample"
           />
         </div>
-        <div :class="['bg-background min-w-0 xl:overflow-y-auto', tab === 'script' && 'max-md:hidden']">
+        <!-- A flex column so the ghost stage can fill the column height before the first Run. -->
+        <div :class="['bg-background flex min-w-0 flex-col xl:overflow-y-auto', tab === 'script' && 'max-md:hidden']">
           <ReplayStage
+            class="flex-1"
+            :run-state="running ? 'running' : unsupportedApis.length > 0 ? 'blocked' : 'idle'"
             :view="view"
             :events="events"
             :position="position"
@@ -216,10 +227,10 @@ onMounted(() => {
           />
         </div>
         <div
-          v-show="trace || askOpen"
+          v-show="(trace && traceOpen) || askOpen"
           :class="['bg-background min-w-0 lg:col-span-2 xl:col-span-1 xl:min-h-0 xl:overflow-y-auto', tab === 'script' && 'max-md:hidden']"
         >
-          <WhyRail v-if="trace" v-model="position" v-model:show-all="showAll" :events="events" :class="askOpen && 'xl:hidden'" />
+          <WhyRail v-if="trace && traceOpen" v-model="position" v-model:show-all="showAll" :events="events" :class="askOpen && 'xl:hidden'" />
           <AskAiAssistant
             v-if="askMounted"
             v-model:open="askOpen"
@@ -228,6 +239,7 @@ onMounted(() => {
             :position="position"
             :state="replayState"
             :player="player"
+            :run-number="runCount || undefined"
             :ensure-run="ensureRun"
             @seek="seekFromTour"
             @minimize="focusLauncher"
@@ -255,6 +267,7 @@ onMounted(() => {
           <template #trailing>
             <!-- The minimized Ask AI tour docks here as a segment, next to the ASK AI word. -->
             <div id="dock-tour" class="contents" />
+            <TracePanelToggle v-if="replaying" :open="traceOpen" @toggle="traceOpen = !traceOpen" />
             <AskAiLauncher ref="launcher" :open="askOpen" @toggle="toggleAsk" />
           </template>
         </TransportBar>

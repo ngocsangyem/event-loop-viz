@@ -8,6 +8,7 @@ import messageChannel from '../../oracle/fixtures/message-channel-vs-timeout.js?
 import unhandledRejection from '../../oracle/fixtures/unhandled-rejection-vs-timer.js?raw'
 import busyWait from '../../oracle/fixtures/busy-wait-delays-timeout.js?raw'
 import infiniteLoop from '../../oracle/fixtures/infinite-loop-halts.js?raw'
+import syncPromiseAsyncTimeout from '../../oracle/fixtures/sync-promise-async-timeout.js?raw'
 
 export interface Example {
   id: string
@@ -26,6 +27,13 @@ export const EXAMPLES: readonly Example[] = [
     description: 'An awaited promise resumes before a chained then does its second step.',
     fixture: 'await-vs-then-chain.js',
     script: awaitVsThen,
+  },
+  {
+    id: 'sync-promise-async-timeout',
+    title: 'Sync, promise, async, timer',
+    description: 'Sync code first, then the promise reaction and the await, and the 0 ms timer last.',
+    fixture: 'sync-promise-async-timeout.js',
+    script: syncPromiseAsyncTimeout,
   },
   {
     id: 'timers-and-clamp',

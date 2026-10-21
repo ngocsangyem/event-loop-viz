@@ -38,6 +38,8 @@ export default {
     on: 'Bật',
     off: 'Tắt',
   },
+  /** The `[V]TRACE` word in the dock that shows the Why rail and its Trace Events. */
+  tracePanel: { open: 'Trace', close: 'Ẩn Trace' },
   shortcuts: {
     title: 'Phím tắt',
     hint: 'Phím tắt không hoạt động khi bạn đang gõ trong trình soạn code hay ô nhập.',
@@ -54,5 +56,6 @@ export default {
     views: 'Bảng · Sơ đồ · Cảnh 3D',
     prefs: 'Ngôn ngữ · giao diện · liên kết chia sẻ',
     sheet: 'Bảng này',
+    trace: 'Hiện / ẩn panel Trace',
   },
 } satisfies typeof en

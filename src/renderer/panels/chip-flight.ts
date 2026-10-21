@@ -1,4 +1,4 @@
-import { MOTION_EASE } from '../scene/scene-motion'
+import { gsap } from 'gsap'
 
 /** Where a chip is on screen, in viewport pixels. */
 export interface ChipRect {
@@ -53,10 +53,16 @@ export interface Flight {
   end: () => void
 }
 
+/** How far a chip lifts off its place before it travels, and how much it swells, so it reads as picked up. */
+const POP_LIFT_PX = 6
+const POP_SCALE = 1.05
+
 /**
  * Flies a copy of `chip` from `from` to `to` inside `overlay`, and hides the real chip while the
- * copy is in the air. Both animations leave nothing behind: no fill, and the copy is removed
- * when it lands or is ended. The caller ends a flight with `end`, which removes the copy at once.
+ * copy is in the air. The copy pops out of where it was (a short lift and swell), travels on a
+ * gentle curve (x and y ease differently) and settles into its place. `fromCode` fades the copy
+ * in during the pop, since it leaves highlighted text rather than a chip. Nothing is left behind:
+ * the copy is removed when it lands or is ended, and the real chip's opacity is cleared.
  */
 export function flyChip(
   overlay: HTMLElement,
@@ -64,24 +70,39 @@ export function flyChip(
   from: ChipRect,
   to: ChipRect,
   duration: number,
+  fromCode = false,
 ): Flight {
   const ghost = makeGhost(chip, to)
   overlay.appendChild(ghost)
-  const flight = ghost.animate(
-    [
-      { transform: `translate(${from.left}px, ${from.top}px)`, width: `${from.width}px` },
-      { transform: `translate(${to.left}px, ${to.top}px)`, width: `${to.width}px` },
-    ],
-    { duration, easing: MOTION_EASE },
-  )
-  flight.onfinish = () => ghost.remove()
-  const hidden = chip.animate([{ opacity: 0 }, { opacity: 0 }], { duration })
+  const seconds = duration / 1000
+  let settle!: () => void
+  const settled = new Promise<void>((resolve) => (settle = resolve))
+  const cleanUp = () => {
+    ghost.remove()
+    gsap.set(chip, { clearProps: 'opacity' })
+    settle()
+  }
+
+  gsap.set(chip, { opacity: 0 })
+  const timeline = gsap.timeline({ onComplete: cleanUp })
+  timeline
+    .set(ghost, { x: from.left, y: from.top, width: from.width, transformOrigin: '50% 50%', force3D: true })
+    .fromTo(
+      ghost,
+      { scale: fromCode ? 0.92 : 1, autoAlpha: fromCode ? 0 : 1 },
+      { y: from.top - POP_LIFT_PX, scale: POP_SCALE, autoAlpha: 1, duration: seconds * 0.22, ease: 'power2.out' },
+    )
+    // Different eases on x and y bend the path into a curve instead of a straight slide.
+    .addLabel('travel')
+    .to(ghost, { x: to.left, width: to.width, duration: seconds * 0.6, ease: 'power3.inOut' }, 'travel')
+    .to(ghost, { y: to.top - POP_LIFT_PX, duration: seconds * 0.6, ease: 'sine.inOut' }, 'travel')
+    .to(ghost, { y: to.top, scale: 1, duration: seconds * 0.18, ease: 'back.out(2.2)' })
+
   return {
-    settled: Promise.allSettled([flight.finished, hidden.finished]),
+    settled,
     end() {
-      flight.cancel()
-      hidden.cancel()
-      ghost.remove()
+      timeline.kill()
+      cleanUp()
     },
   }
 }

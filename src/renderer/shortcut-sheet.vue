@@ -17,6 +17,7 @@ const KEYMAP: { keys: string; action: string }[] = [
   { keys: 'Home End', action: 'ends' },
   { keys: 'P N', action: 'tour' },
   { keys: 'A', action: 'ask' },
+  { keys: 'V', action: 'trace' },
   { keys: 'E R', action: 'mode' },
   { keys: '⌘↵ Ctrl↵', action: 'run' },
   { keys: 'Esc', action: 'esc' },

@@ -40,6 +40,10 @@ export default {
         title: 'await vs then',
         description: 'An awaited promise resumes before a chained then does its second step.',
       },
+      syncPromiseAsyncTimeout: {
+        title: 'Sync, promise, async, timer',
+        description: 'Sync code first, then the promise reaction and the await, and the 0 ms timer last.',
+      },
       timersAndClamp: {
         title: 'Timers and clamp',
         description: 'Chained 0 ms timers get clamped to 4 ms once nesting gets deep.',

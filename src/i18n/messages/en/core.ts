@@ -40,6 +40,8 @@ export default {
     off: 'Off',
   },
   /** The `?` sheet: DESIGN.md keyboard map. */
+  /** The `[V]TRACE` word in the dock that shows the Why rail and its Trace Events. */
+  tracePanel: { open: 'Trace', close: 'Hide Trace' },
   shortcuts: {
     title: 'Keyboard shortcuts',
     hint: 'Keys never fire while you type in the editor or a field.',
@@ -56,5 +58,6 @@ export default {
     views: 'Panels · Diagram · 3D Scene',
     prefs: 'Language · theme · share link',
     sheet: 'This sheet',
+    trace: 'Show / hide the Trace panel',
   },
 }

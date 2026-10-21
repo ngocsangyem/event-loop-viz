@@ -41,6 +41,10 @@ export default {
         title: 'await và then',
         description: 'Promise được await tiếp tục chạy trước khi then nối tiếp làm xong bước thứ hai.',
       },
+      syncPromiseAsyncTimeout: {
+        title: 'Sync, promise, async, timer',
+        description: 'Code đồng bộ chạy trước, rồi tới promise reaction và await, timer 0 ms chạy sau cùng.',
+      },
       timersAndClamp: {
         title: 'Timer và clamp',
         description: 'Các timer 0 ms lồng nhau bị nâng lên 4 ms khi độ lồng đủ sâu.',
