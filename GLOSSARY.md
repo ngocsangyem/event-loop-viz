@@ -35,12 +35,16 @@ _Avoid_: missing API, polyfill
 ## Event loop
 
 **Task**:
-A unit of work the event loop takes from a task queue (script, timer callback, …).
+A unit of work the event loop takes from a task queue (script, timer callback, …). A timer's Task is queued only once the Virtual Clock reaches its due time.
 _Avoid_: macrotask
 
 **Job**:
 A unit of work in the microtask queue (promise reaction, resolve-thenable job, or `queueMicrotask` callback).
 _Avoid_: microtask (as a noun for the item), callback
+
+**Callback chip**:
+The code of the function a Task or Job will call, shown as one token that moves between panels; identified by its Task or Job id.
+_Avoid_: token, pill
 
 **Checkpoint**:
 One microtask checkpoint: draining the microtask queue until it is empty.

@@ -1,5 +1,6 @@
 import type { ObservableOutput } from '../trace/observable-output'
-import type { HaltReason, JobKind, SourceLocation, TraceEventBody } from '../trace/trace-event'
+import type { CallbackInfo, HaltReason, JobKind, SourceLocation, TraceEventBody } from '../trace/trace-event'
+import type { RunningCallback } from './running-callback'
 
 export interface StackFrame {
   frameId: string
@@ -11,6 +12,10 @@ export interface QueuedTask {
   taskId: string
   source: Extract<TraceEventBody, { k: 'task:queue' }>['source']
   dueUs?: number
+  /** Set on a timer Task (schema v2): the timer it came from. */
+  tid?: string
+  /** The function the Task will call, when the Trace names it. */
+  callback?: CallbackInfo
 }
 
 export interface QueuedJob {
@@ -18,6 +23,7 @@ export interface QueuedJob {
   jobKind: JobKind
   pid?: string
   outcome?: 'fulfill' | 'reject'
+  callback?: CallbackInfo
 }
 
 export interface PendingTimer {
@@ -27,6 +33,9 @@ export interface PendingTimer {
   repeat: boolean
   /** Virtual Clock time at which the timer's Task becomes due, microseconds. */
   dueUs: number
+  /** Id of the Task this timer queues once due; the same id the callback chip keeps. */
+  taskId?: string
+  callback?: CallbackInfo
 }
 
 export type PromiseView = 'pending' | 'fulfilled' | 'rejected'
@@ -81,6 +90,11 @@ export interface ReplayState {
   halted: { reason: HaltReason; limit?: number } | null
   /** Tick assigned to each queued Job; consumed at job:begin. */
   jobTicks: Record<string, number>
+  /**
+   * The callback of the running Task or Job, once it has begun. The reducer replaces this
+   * object on every change and never mutates it, because snapshots share the reference.
+   */
+  runningCallback: RunningCallback | null
 }
 
 export function createInitialState(): ReplayState {
@@ -105,6 +119,7 @@ export function createInitialState(): ReplayState {
     causeRange: null,
     halted: null,
     jobTicks: {},
+    runningCallback: null,
   }
 }
 

@@ -9,6 +9,7 @@ import type {
 import { installUnsupportedApiStubs, unsupportedApiOf } from './unsupported-api-stubs'
 import type { EngineJob, EngineValue } from './engine262-types'
 import { createEngineRunState, createHostCallHelpers } from './engine-run-state'
+import { createCallbackDescriber } from './describe-callback'
 import { createFrameTracker } from './frame-tracker'
 import { createPromiseEventReporters } from './promise-event-reporters'
 import { createReportingJobQueue } from './reporting-job-queue'
@@ -18,7 +19,7 @@ import { installRealmGlobals } from './realm-globals'
 export const ENGINE262_COMMIT = '2d7d8d988c77e94473ba0377122cdfccdfe243ba'
 
 /** Revision of patches/@engine262__engine262.patch; bump when the patch changes. */
-export const ENGINE262_PATCH = 'promise-events-3'
+export const ENGINE262_PATCH = 'promise-events-4'
 
 /**
  * Creates an engine262 realm driven by manual Job execution: Jobs run only when
@@ -28,9 +29,10 @@ export function createEngine262Adapter(): EngineAdapter {
   const state = createEngineRunState()
   const { withHostContext, format, errorMessage } = createHostCallHelpers(state)
   const { frameInfo, observeStack } = createFrameTracker(state)
-  const { promiseId, reportPromiseEvent, reportAwaitEvent, reportAsyncGeneratorEvent } =
+  const describe = createCallbackDescriber(state)
+  const { promiseId, awaitSite, reportPromiseEvent, reportAwaitEvent, reportAsyncGeneratorEvent } =
     createPromiseEventReporters(state, frameInfo)
-  const { jobQueue, jobIds, nextJobId } = createReportingJobQueue(state, promiseId)
+  const { jobQueue, jobIds, nextJobId } = createReportingJobQueue(state, promiseId, describe, awaitSite)
   const callbacks = new WeakMap<CallbackHandle, EngineValue>()
 
   const runAsJob = (
@@ -68,12 +70,20 @@ export function createEngine262Adapter(): EngineAdapter {
         onAsyncGeneratorEvent: reportAsyncGeneratorEvent,
         onNodeEvaluation(node) {
           if (state.hostDepth) return
-          state.hooks.onNode({
+          const loc = {
             start: node.location.startIndex,
             end: node.location.endIndex,
             line: node.location.start.line,
             column: node.location.start.column,
-          })
+          }
+          state.lastLoc = loc
+          if (node.type === 'AwaitExpression') {
+            const context = (agent as unknown as { runningExecutionContext: object }).runningExecutionContext
+            const pending = state.pendingAwaits.get(context)
+            if (pending) pending.push(loc)
+            else state.pendingAwaits.set(context, [loc])
+          }
+          state.hooks.onNode(loc)
         },
       })
       E.setSurroundingAgent(agent)
@@ -81,13 +91,14 @@ export function createEngine262Adapter(): EngineAdapter {
       observeStack(agent)
 
       withHostContext(() => {
-        installRealmGlobals(state, bindings, jobQueue, callbacks, format)
+        installRealmGlobals(state, bindings, jobQueue, callbacks, format, describe)
         installUnsupportedApiStubs(state.realm)
       })
     },
 
     evaluateScript(source): ScriptOutcome {
       const { realm } = state
+      state.source = source
       const compiled = realm.compileScript(source, { specifier: 'user.js' })
       if (compiled instanceof E.ThrowCompletion) {
         const error = compiled.Value
@@ -100,8 +111,9 @@ export function createEngine262Adapter(): EngineAdapter {
           column: site?.columnNumber ?? 1,
         }
       }
-      const completion = E.EnsureCompletion(realm.evaluateScriptSkipDebugger(E.ValueOfNormalCompletion(compiled)),
-      )
+      const script = E.ValueOfNormalCompletion(compiled)
+      state.scriptRoot = (script as unknown as { ECMAScriptCode: object }).ECMAScriptCode
+      const completion = E.EnsureCompletion(realm.evaluateScriptSkipDebugger(script))
       return completion instanceof E.ThrowCompletion
         ? withUnsupportedApi({ kind: 'threw', message: errorMessage(completion.Value) }, completion.Value)
         : { kind: 'ok' }

@@ -3,6 +3,7 @@ import type { CallbackHandle, HostBindings } from '../host/engine-adapter'
 import { installMessageChannel } from './message-channel-global'
 import type { EngineJob, EngineValue, NativeGenerator, NativeSteps } from './engine262-types'
 import type { EngineRunState } from './engine-run-state'
+import type { DescribeCallback } from './describe-callback'
 import type { ReportingJobQueue } from './reporting-job-queue'
 
 /** Fixed epoch so `Date.now()` is deterministic across Runs (2023-11-14T22:13:20Z). */
@@ -50,6 +51,7 @@ export function installRealmGlobals(
   jobQueue: ReportingJobQueue,
   callbacks: WeakMap<CallbackHandle, EngineValue>,
   format: (v: EngineValue) => string,
+  describe: DescribeCallback,
 ) {
   const { realm } = state
   const global = realm.GlobalObject
@@ -60,7 +62,8 @@ export function installRealmGlobals(
       }
       const delayMs = toDelayMs(delay)
       if (delayMs instanceof E.ThrowCompletion) return delayMs
-      const handle = { __callbackHandle: true } as const
+      const info = describe(callback)
+      const handle = { __callbackHandle: true, ...(info && { info }) } as const
       callbacks.set(handle, callback as EngineValue)
       return E.Value(bindings.setTimer(handle, delayMs, repeat))
     }
@@ -85,7 +88,7 @@ export function installRealmGlobals(
         callerRealm: realm,
         callerScriptOrModule: null,
       } as EngineJob,
-      'microtask',
+      { jobKind: 'microtask', callback: describe(fn) },
     )
     return E.Value.undefined
   })
@@ -94,8 +97,9 @@ export function installRealmGlobals(
     realm,
     defineFunction: defineGlobal,
     enqueuePortMessage: bindings.enqueuePortMessage,
-    registerCallback(fn) {
-      const handle = { __callbackHandle: true } as const
+    describe,
+    registerCallback(fn, info) {
+      const handle = { __callbackHandle: true, ...(info && { info }) } as const
       callbacks.set(handle, fn)
       return handle
     },

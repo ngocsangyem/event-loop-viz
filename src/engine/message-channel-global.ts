@@ -1,6 +1,7 @@
 // MessageChannel / MessagePort for engine262 realms. Imports engine262, so it lives in src/engine.
 import * as E from '@engine262/engine262'
 import type { CallbackHandle } from '../host/engine-adapter'
+import type { CallbackInfo } from '../trace/trace-event'
 
 type EngineValue = E.Value
 type ObjectValue = InstanceType<typeof E.ObjectValue>
@@ -13,7 +14,9 @@ export interface MessageChannelDeps {
   /** Defines a non-enumerable method on `target`; engine262 natives are generators of positional args. */
   defineFunction(target: ObjectValue, name: string, steps: NativeGenerator): void
   /** Makes a script function callable by the host as a Task callback. */
-  registerCallback(fn: EngineValue): CallbackHandle
+  registerCallback(fn: EngineValue, info?: CallbackInfo): CallbackHandle
+  /** What calling `fn` shows in the Trace. */
+  describe(fn: EngineValue): CallbackInfo | undefined
   /** Asks the host to queue a port-message Task that will call `deliver`. */
   enqueuePortMessage(deliver: CallbackHandle): void
 }
@@ -55,7 +58,8 @@ export function installMessageChannel(deps: MessageChannelDeps): void {
     }
     Object.defineProperty(deliver, 'name', { value: 'MessagePort message dispatch' })
     const fn = E.CreateBuiltinFunction.from(deliver as unknown as HelperSteps, 'MessagePort message dispatch')
-    deps.enqueuePortMessage(deps.registerCallback(fn))
+    // The chip shows the handler as it is when the delivery is scheduled.
+    deps.enqueuePortMessage(deps.registerCallback(fn, deps.describe(port.handler)))
   }
 
   const start = (port: PortState) => {

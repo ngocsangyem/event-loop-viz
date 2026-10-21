@@ -51,11 +51,11 @@ describe('runScript: console and timers', () => {
 })
 
 describe('runScript: Trace shape', () => {
-  it('has a v1 header, dense seq numbers, run:start first and a natural run:halted last', async () => {
+  it('has a v2 header, dense seq numbers, run:start first and a natural run:halted last', async () => {
     const script = `setTimeout(() => console.log('x'), 3)`
     const { trace } = await ran(script)
     expect(trace.header).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       hostProfile: 'chrome-155',
       source: script,
       nodeCostUs: 1,
@@ -81,10 +81,10 @@ describe('runScript: Trace shape', () => {
       'task:queue', // script Task
       'task:begin',
       'timer:init',
-      'task:queue', // timer Task
       'task:end',
       'checkpoint:begin',
       'checkpoint:end',
+      'task:queue', // timer Task: queued at the first clock advance at or after its due time
       'task:begin',
       'timer:fire',
       'task:end',
@@ -104,7 +104,10 @@ describe('runScript: Trace shape', () => {
     const queued = trace.events.filter((e) => e.k === 'task:queue').pop()
     expect(queued).toMatchObject({ k: 'task:queue', source: 'timer' })
     if (queued?.k !== 'task:queue') throw new Error('unreachable')
-    expect((queued.dueUs ?? 0) - queued.t).toBe(7000)
+    const init = first(trace, 'timer:init')
+    // Due 7 ms after the timer was set; queued once the Virtual Clock reached that time.
+    expect((init?.t ?? 0) + 7000).toBe(queued.dueUs)
+    expect(queued.t).toBeGreaterThanOrEqual(queued.dueUs ?? Infinity)
   })
 
   it('keeps built-in frame labels under their real names', async () => {

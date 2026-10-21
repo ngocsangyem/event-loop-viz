@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "header": {
     "schemaVersion": {
       "type": "number"
@@ -127,6 +127,46 @@
       "dueUs": {
         "type": "number",
         "optional": true
+      },
+      "tid": {
+        "type": "string",
+        "optional": true
+      },
+      "callback": {
+        "type": "object",
+        "fields": {
+          "kind": {
+            "type": "enum",
+            "values": [
+              "function",
+              "await",
+              "builtin"
+            ]
+          },
+          "loc": {
+            "type": "object",
+            "fields": {
+              "start": {
+                "type": "number"
+              },
+              "end": {
+                "type": "number"
+              },
+              "line": {
+                "type": "number"
+              },
+              "column": {
+                "type": "number"
+              }
+            },
+            "optional": true
+          },
+          "name": {
+            "type": "string",
+            "optional": true
+          }
+        },
+        "optional": true
       }
     },
     "task:begin": {
@@ -182,6 +222,42 @@
           "reject"
         ],
         "optional": true
+      },
+      "callback": {
+        "type": "object",
+        "fields": {
+          "kind": {
+            "type": "enum",
+            "values": [
+              "function",
+              "await",
+              "builtin"
+            ]
+          },
+          "loc": {
+            "type": "object",
+            "fields": {
+              "start": {
+                "type": "number"
+              },
+              "end": {
+                "type": "number"
+              },
+              "line": {
+                "type": "number"
+              },
+              "column": {
+                "type": "number"
+              }
+            },
+            "optional": true
+          },
+          "name": {
+            "type": "string",
+            "optional": true
+          }
+        },
+        "optional": true
       }
     },
     "job:begin": {
@@ -220,6 +296,9 @@
       "tid": {
         "type": "string"
       },
+      "taskId": {
+        "type": "string"
+      },
       "requestedMs": {
         "type": "number"
       },
@@ -231,6 +310,42 @@
       },
       "repeat": {
         "type": "boolean"
+      },
+      "callback": {
+        "type": "object",
+        "fields": {
+          "kind": {
+            "type": "enum",
+            "values": [
+              "function",
+              "await",
+              "builtin"
+            ]
+          },
+          "loc": {
+            "type": "object",
+            "fields": {
+              "start": {
+                "type": "number"
+              },
+              "end": {
+                "type": "number"
+              },
+              "line": {
+                "type": "number"
+              },
+              "column": {
+                "type": "number"
+              }
+            },
+            "optional": true
+          },
+          "name": {
+            "type": "string",
+            "optional": true
+          }
+        },
+        "optional": true
       }
     },
     "timer:fire": {

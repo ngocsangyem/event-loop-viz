@@ -15,10 +15,10 @@ index afc4ccc42a5309cd6cab3fde51142382f781a35b..95cf23af1adc0261f6c9a866106945b8
  //# sourceMappingURL=promise-operations.d.mts.map
 \ No newline at end of file
 diff --git a/declaration/execution-context/Job.d.mts b/declaration/execution-context/Job.d.mts
-index 85cb86c6b790fa48d58607be416e34971f5549f6..9038377463b525b90b326c6a67fa0c705183093f 100644
+index 85cb86c6b790fa48d58607be416e34971f5549f6..5830213cfd5fd2fad07126425482ecef35174a07 100644
 --- a/declaration/execution-context/Job.d.mts
 +++ b/declaration/execution-context/Job.d.mts
-@@ -6,7 +6,17 @@ export interface Job {
+@@ -6,7 +6,23 @@ export interface Job {
      readonly job: () => PlainEvaluator<unknown>;
      readonly callerRealm: Realm | undefined;
      readonly callerScriptOrModule: AbstractModuleRecord | ScriptRecord | null;
@@ -29,14 +29,20 @@ index 85cb86c6b790fa48d58607be416e34971f5549f6..9038377463b525b90b326c6a67fa0c70
 +    kind: 'reaction';
 +    promise: object;
 +    outcome: 'fulfill' | 'reject';
++    /** The reaction's handler function; undefined when the reaction passes the value through. */
++    handler?: object;
++    /** The async function context an await continuation resumes. */
++    asyncContext?: object;
 +} | {
 +    kind: 'thenable';
 +    promise: object;
++    /** The thenable's `then` method the Job calls. */
++    then: object;
 +};
  /** https://tc39.es/ecma262/#sec-jobcallback-records */
  export interface JobCallbackRecord {
      Callback: FunctionObject & {
-@@ -19,5 +29,5 @@ export declare function HostMakeJobCallback(callback: FunctionObject): JobCallba
+@@ -19,5 +35,5 @@ export declare function HostMakeJobCallback(callback: FunctionObject): JobCallba
  /** https://tc39.es/ecma262/#sec-hostcalljobcallback */
  export declare function HostCallJobCallback(jobCallback: JobCallbackRecord, V: Value, argumentsList: Arguments): ValueEvaluator;
  /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
@@ -98,7 +104,7 @@ index 9326e5942b8611852a7167d57527c8e26c585552..8bd71ccf0ec611f1d827b48ec5292968
 +    mode: 'next' | 'throw';
 +};
 diff --git a/lib/engine262.js b/lib/engine262.js
-index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23a96e4178 100644
+index a5a527197a1c8ae13b056d308720af7bf2bcca57..328b93c7d4f95c583b96349c8afbc038bb7cfa51 100644
 --- a/lib/engine262.js
 +++ b/lib/engine262.js
 @@ -29355,6 +29355,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
@@ -183,7 +189,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
      return promiseCapability.Promise;
    }
    AsyncFromSyncIteratorContinuation.section = 'https://tc39.es/ecma262/#sec-asyncfromsynciteratorcontinuation';
-@@ -50017,7 +50025,29 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50017,7 +50025,32 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
    // Atomics: HostEnqueueGenericJob
  
    /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
@@ -207,14 +213,17 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
 +  return {
 +    kind: 'reaction',
 +    promise,
-+    outcome: reaction.Type === 'Fulfill' ? 'fulfill' : 'reject'
++    outcome: reaction.Type === 'Fulfill' ? 'fulfill' : 'reject',
++    // The function the reaction will call, and the async context it resumes when it is an await continuation.
++    handler: reaction.Handler ? reaction.Handler.Callback : undefined,
++    asyncContext: reaction.Handler ? reaction.Handler.Callback[kAsyncContext] : undefined
 +  };
 +}
 +function HostEnqueuePromiseJob(job, realm, meta) {
      if (exports.surroundingAgent.debugger_isPreviewing) {
        return;
      }
-@@ -50027,8 +50057,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50027,8 +50060,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        queueName: 'PromiseJobs',
        job,
        callerRealm,
@@ -226,7 +235,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
    }
    HostEnqueuePromiseJob.section = 'https://tc39.es/ecma262/#sec-hostenqueuepromisejob';
  
-@@ -50089,17 +50120,19 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50089,17 +50123,19 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        if (SameValue(resolution, promise)) {
          // a. Let selfResolutionError be a newly created TypeError object.
          const selfResolutionError = Throw.TypeError('Cannot resolve a promise $1 with itself', promise).Value;
@@ -252,7 +261,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
        const then = EnsureCompletion(yield* Get(resolution, 'then'));
        // 10. If then is an abrupt completion, then
        if (then instanceof AbruptCompletion) {
-@@ -50111,11 +50144,12 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50111,11 +50147,12 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        const thenAction = then.Value;
        // 12. If IsCallable(thenAction) is false, then
        if (!IsCallable(thenAction)) {
@@ -270,19 +279,19 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
          return Value.undefined;
        }
        // 13. Let thenJobCallback be HostMakeJobCallback(thenAction).
-@@ -50123,8 +50157,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50123,8 +50160,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        // 14. Let job be NewPromiseResolveThenableJob(promise, resolution, thenJobCallback).
        const job = NewPromiseResolveThenableJob(promise, resolution, thenJobCallback);
        // 15. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
 -      HostEnqueuePromiseJob(job.Job, job.Realm);
 -      // 16. Return undefined.
 +      emitPromiseEvent({ type: 'resolve', promise, with: 'thenable' });
-+    HostEnqueuePromiseJob(job.Job, job.Realm, { kind: 'thenable', promise });
++    HostEnqueuePromiseJob(job.Job, job.Realm, { kind: 'thenable', promise, then: thenAction });
 +    // 16. Return undefined.
        return Value.undefined;
      };
      // 4. Let resolve be CreateBuiltinFunction(resolveSteps, 1, "", « »).
-@@ -50205,7 +50240,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50205,7 +50243,8 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
      promise.PromiseFulfillReactions = undefined;
      promise.PromiseRejectReactions = undefined;
      promise.PromiseState = 'fulfilled';
@@ -292,7 +301,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
    }
    FulfillPromise.section = 'https://tc39.es/ecma262/#sec-fulfillpromise';
  
-@@ -50278,22 +50314,23 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50278,22 +50317,23 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
      promise.PromiseFulfillReactions = undefined;
      promise.PromiseRejectReactions = undefined;
      promise.PromiseState = 'rejected';
@@ -322,7 +331,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
      // 2. Return undefined.
      return Value.undefined;
    }
-@@ -50429,7 +50466,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50429,7 +50469,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
  
    /** https://tc39.es/ecma262/#sec-performpromisethen */
  
@@ -331,7 +340,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
      /* Assert */ /* node:coverage ignore next */ // 1. Assert: IsPromise(promise) is true.
      if (!IsPromise(promise)) throw new Assert.Error("IsPromise(promise)");
      // 2. If resultCapability is not present, then
-@@ -50468,8 +50505,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50468,8 +50508,9 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        Type: 'Reject',
        Handler: onRejectedJobCallback
      });
@@ -343,7 +352,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
        exports.surroundingAgent.debugger_tryTouchDuringPreview(promise);
        // a. Append fulfillReaction as the last element of the List that is promise.[[PromiseFulfillReactions]].
        promise.PromiseFulfillReactions.push(fulfillReaction);
-@@ -50481,7 +50519,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50481,7 +50522,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        // b. Let fulfillJob be NewPromiseReactionJob(fulfillReaction, value).
        const fulfillJob = NewPromiseReactionJob(fulfillReaction, value);
        // c. Perform HostEnqueuePromiseJob(fulfillJob.[[Job]], fulfillJob.[[Realm]]).
@@ -352,7 +361,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
      } else {
        /* Assert */ /* node:coverage ignore next */ // a. Assert: The value of promise.[[PromiseState]] is rejected.
        if (!(promise.PromiseState === 'rejected')) throw new Assert.Error("promise.PromiseState === 'rejected'");
-@@ -50494,7 +50532,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
+@@ -50494,7 +50535,7 @@ ${' '.repeat(startIndex - lineStart)}${'^'.repeat(Math.max(endIndex - startIndex
        // d. Let rejectJob be NewPromiseReactionJob(rejectReaction, reason).
        const rejectJob = NewPromiseReactionJob(rejectReaction, reason);
        // e. Perform HostEnqueuePromiseJob(rejectJob.[[Job]], rejectJob.[[Realm]]).
@@ -362,7 +371,7 @@ index a5a527197a1c8ae13b056d308720af7bf2bcca57..935e233f5bb6139a6a32620063e9dc23
      // 12. Set promise.[[PromiseIsHandled]] to true.
      promise.PromiseIsHandled = true;
 diff --git a/lib/engine262.mjs b/lib/engine262.mjs
-index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044f803c935 100644
+index 3af81eec05f7e5b6279b48c5687e77cec6315e36..5ddf7409f1df5a3d707abcd54aa79c3cc355bb56 100644
 --- a/lib/engine262.mjs
 +++ b/lib/engine262.mjs
 @@ -29349,6 +29349,7 @@ function* Await(arg) {
@@ -445,7 +454,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
    return promiseCapability.Promise;
  }
  AsyncFromSyncIteratorContinuation.section = 'https://tc39.es/ecma262/#sec-asyncfromsynciteratorcontinuation';
-@@ -50011,7 +50019,29 @@ HostCallJobCallback.section = 'https://tc39.es/ecma262/#sec-hostcalljobcallback'
+@@ -50011,7 +50019,32 @@ HostCallJobCallback.section = 'https://tc39.es/ecma262/#sec-hostcalljobcallback'
  // Atomics: HostEnqueueGenericJob
  
  /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
@@ -469,14 +478,17 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
 +  return {
 +    kind: 'reaction',
 +    promise,
-+    outcome: reaction.Type === 'Fulfill' ? 'fulfill' : 'reject'
++    outcome: reaction.Type === 'Fulfill' ? 'fulfill' : 'reject',
++    // The function the reaction will call, and the async context it resumes when it is an await continuation.
++    handler: reaction.Handler ? reaction.Handler.Callback : undefined,
++    asyncContext: reaction.Handler ? reaction.Handler.Callback[kAsyncContext] : undefined
 +  };
 +}
 +function HostEnqueuePromiseJob(job, realm, meta) {
    if (surroundingAgent.debugger_isPreviewing) {
      return;
    }
-@@ -50021,7 +50051,8 @@ function HostEnqueuePromiseJob(job, realm) {
+@@ -50021,7 +50054,8 @@ function HostEnqueuePromiseJob(job, realm) {
      queueName: 'PromiseJobs',
      job,
      callerRealm,
@@ -486,7 +498,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
    });
  }
  HostEnqueuePromiseJob.section = 'https://tc39.es/ecma262/#sec-hostenqueuepromisejob';
-@@ -50083,12 +50114,14 @@ function CreateResolvingFunctions(toResolve) {
+@@ -50083,12 +50117,14 @@ function CreateResolvingFunctions(toResolve) {
      if (SameValue(resolution, promise)) {
        // a. Let selfResolutionError be a newly created TypeError object.
        const selfResolutionError = Throw.TypeError('Cannot resolve a promise $1 with itself', promise).Value;
@@ -501,7 +513,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
        // a. Return FulfillPromise(promise, resolution).
        FulfillPromise(promise, resolution);
        return Value.undefined;
-@@ -50105,6 +50138,7 @@ function CreateResolvingFunctions(toResolve) {
+@@ -50105,6 +50141,7 @@ function CreateResolvingFunctions(toResolve) {
      const thenAction = then.Value;
      // 12. If IsCallable(thenAction) is false, then
      if (!IsCallable(thenAction)) {
@@ -509,17 +521,17 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
        // a. Return FulfillPromise(promise, resolution).
        FulfillPromise(promise, resolution);
        return Value.undefined;
-@@ -50117,7 +50151,8 @@ function CreateResolvingFunctions(toResolve) {
+@@ -50117,7 +50154,8 @@ function CreateResolvingFunctions(toResolve) {
      // 14. Let job be NewPromiseResolveThenableJob(promise, resolution, thenJobCallback).
      const job = NewPromiseResolveThenableJob(promise, resolution, thenJobCallback);
      // 15. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
 -    HostEnqueuePromiseJob(job.Job, job.Realm);
 +    emitPromiseEvent({ type: 'resolve', promise, with: 'thenable' });
-+    HostEnqueuePromiseJob(job.Job, job.Realm, { kind: 'thenable', promise });
++    HostEnqueuePromiseJob(job.Job, job.Realm, { kind: 'thenable', promise, then: thenAction });
      // 16. Return undefined.
      return Value.undefined;
    };
-@@ -50199,7 +50234,8 @@ function FulfillPromise(promise, value) {
+@@ -50199,7 +50237,8 @@ function FulfillPromise(promise, value) {
    promise.PromiseFulfillReactions = undefined;
    promise.PromiseRejectReactions = undefined;
    promise.PromiseState = 'fulfilled';
@@ -529,7 +541,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
  }
  FulfillPromise.section = 'https://tc39.es/ecma262/#sec-fulfillpromise';
  
-@@ -50272,21 +50308,22 @@ function RejectPromise(promise, reason) {
+@@ -50272,21 +50311,22 @@ function RejectPromise(promise, reason) {
    promise.PromiseFulfillReactions = undefined;
    promise.PromiseRejectReactions = undefined;
    promise.PromiseState = 'rejected';
@@ -555,7 +567,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
    });
    // 2. Return undefined.
    return Value.undefined;
-@@ -50423,7 +50460,7 @@ NewPromiseReactionJob.section = 'https://tc39.es/ecma262/#sec-newpromisereaction
+@@ -50423,7 +50463,7 @@ NewPromiseReactionJob.section = 'https://tc39.es/ecma262/#sec-newpromisereaction
  
  /** https://tc39.es/ecma262/#sec-performpromisethen */
  
@@ -564,7 +576,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
    /* Assert */ /* node:coverage ignore next */ // 1. Assert: IsPromise(promise) is true.
    if (!IsPromise(promise)) throw new Assert.Error("IsPromise(promise)");
    // 2. If resultCapability is not present, then
-@@ -50462,6 +50499,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+@@ -50462,6 +50502,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
      Type: 'Reject',
      Handler: onRejectedJobCallback
    });
@@ -572,7 +584,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
    // 9. If promise.[[PromiseState]] is pending, then
    if (promise.PromiseState === 'pending') {
      surroundingAgent.debugger_tryTouchDuringPreview(promise);
-@@ -50475,7 +50513,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+@@ -50475,7 +50516,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
      // b. Let fulfillJob be NewPromiseReactionJob(fulfillReaction, value).
      const fulfillJob = NewPromiseReactionJob(fulfillReaction, value);
      // c. Perform HostEnqueuePromiseJob(fulfillJob.[[Job]], fulfillJob.[[Realm]]).
@@ -581,7 +593,7 @@ index 3af81eec05f7e5b6279b48c5687e77cec6315e36..4504c7228adb814f7d1801b226676044
    } else {
      /* Assert */ /* node:coverage ignore next */ // a. Assert: The value of promise.[[PromiseState]] is rejected.
      if (!(promise.PromiseState === 'rejected')) throw new Assert.Error("promise.PromiseState === 'rejected'");
-@@ -50488,7 +50526,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+@@ -50488,7 +50529,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
      // d. Let rejectJob be NewPromiseReactionJob(rejectReaction, reason).
      const rejectJob = NewPromiseReactionJob(rejectReaction, reason);
      // e. Perform HostEnqueuePromiseJob(rejectJob.[[Job]], rejectJob.[[Realm]]).

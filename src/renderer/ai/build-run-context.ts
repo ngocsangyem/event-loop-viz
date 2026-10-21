@@ -1,6 +1,7 @@
 import { explainEvent } from '@/player/explain-event'
 import type { ReplayState } from '@/player/replay-state'
-import type { TraceEvent } from '@/trace/trace-event'
+import type { CallbackInfo, TraceEvent } from '@/trace/trace-event'
+import { chipText } from '@/renderer/panels/callback-chip-model'
 
 export const MAX_SCRIPT_CHARS = 6000
 export const MAX_CONSOLE_LINES = 20
@@ -8,6 +9,7 @@ export const MAX_CONSOLE_LINE_CHARS = 120
 /** Visible events listed for the whole Run; a longer Trace keeps its start and says how much is cut. */
 export const MAX_TRACE_EVENTS = 240
 const MAX_QUEUE_ITEMS = 12
+const MAX_CALLBACK_CHARS = 80
 const MAX_EXPLANATION_CHARS = 180
 
 export interface RunContextInput {
@@ -81,12 +83,24 @@ function consoleLines(state: ReplayState): string {
   return (omitted > 0 ? [`(${omitted} earlier lines omitted)`, ...clipped] : clipped).join('\n')
 }
 
-function summarizeState(state: ReplayState): string {
+const ENGLISH_CHIP_LABELS = {
+  awaitResume: (fn: string) => `${fn} after await`,
+  anonymous: '(anonymous)',
+  line: (line: number) => `line ${line}`,
+}
+
+/** ` running <code>` for a Task or Job whose callback is known, so the AI names the code the learner sees. */
+function callbackNote(info: CallbackInfo | undefined, script: string): string {
+  const text = info && chipText(info, script, ENGLISH_CHIP_LABELS)
+  return text ? ` calling \`${clip(text.full, MAX_CALLBACK_CHARS)}\`` : ''
+}
+
+function summarizeState(state: ReplayState, script: string): string {
   const stack = list(state.stack, (f) => (f.builtin ? `${f.label} (built-in)` : f.label))
   const tasks = list(state.tasks, (t) =>
-    `${t.taskId} from ${t.source}${t.dueUs === undefined ? '' : ` due ${t.dueUs / 1000} ms`}`)
+    `${t.taskId} from ${t.source}${t.dueUs === undefined ? '' : ` due ${t.dueUs / 1000} ms`}${callbackNote(t.callback, script)}`)
   const jobs = list(state.jobs, (j) =>
-    `${j.jobId} ${j.jobKind}${j.outcome ? ` (${j.outcome})` : ''}`)
+    `${j.jobId} ${j.jobKind}${j.outcome ? ` (${j.outcome})` : ''}${callbackNote(j.callback, script)}`)
   const timers = list(state.timers, (t) =>
     `${t.tid} due ${t.dueUs / 1000} ms${t.repeat ? ' repeating' : ''}`)
   const running = [
@@ -134,6 +148,6 @@ export function buildRunContext({ script, events, position, state, finalState }:
   parts.push(`Console output of the whole Run:\n${consoleLines(finalState)}`)
   if (finalState.halted) parts.push(`The Run halted: ${finalState.halted.reason}`)
   parts.push(`The learner's playhead is at:\n${describeEvent(event, events)}`)
-  parts.push(`Replay state at the playhead:\n${summarizeState(state)}`)
+  parts.push(`Replay state at the playhead:\n${summarizeState(state, script)}`)
   return parts.join('\n\n')
 }

@@ -53,9 +53,11 @@ test('stepping a Run lights the edges and cards each step uses', async ({ page }
   await stepUntilActive(page, 'run-job')
   await expect(node(page, 'stack')).toHaveAttribute('data-lit', 'true')
 
-  // The timer waits in Web APIs until it is due; then its Task goes all the way to the stack.
+  // The timer waits in Web APIs until it is due; its Task is queued then, and runs on a later step.
   await stepUntilActive(page, 'timer-fires')
-  await expect(edge(page, 'next-task')).toHaveAttribute('data-active', 'true')
+  await expect(node(page, 'taskq')).toHaveAttribute('data-lit', 'true')
+  await expect(edge(page, 'next-task')).toHaveAttribute('data-active', 'false')
+  await stepUntilActive(page, 'next-task')
   await expect(edge(page, 'run-task')).toHaveAttribute('data-active', 'true')
   for (const id of ['taskq', 'loop', 'stack']) await expect(node(page, id)).toHaveAttribute('data-lit', 'true')
 })

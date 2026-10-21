@@ -123,7 +123,8 @@ defineExpose({ focus: () => view?.focus() })
   text-decoration: underline wavy var(--destructive);
 }
 .script-editor :deep(.cm-source-highlight) {
-  background: #ffd54f55;
+  /* Light enough that syntax-coloured tokens (numbers) under it keep 4.5:1 contrast in the dark theme. */
+  background: #ffd54f40;
   outline: 1px solid #f9a825;
 }
 .script-editor :deep(.cm-cause-highlight) {

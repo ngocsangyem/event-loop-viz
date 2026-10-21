@@ -14,7 +14,7 @@ import type { HostSettings } from './host-run-context'
 import { createTimerScheduler } from './timer-scheduler'
 import { createCheckpointRunner } from './checkpoint-and-notifications'
 import { createEngineHooks } from './engine-event-hooks'
-import { HTML_LOOP, HTML_PORT_MESSAGE, HTML_REPORT, HTML_TIMERS } from './host-spec-references'
+import { HTML_LOOP, HTML_REPORT, HTML_TIMERS } from './host-spec-references'
 
 export type { HostSettings } from './host-run-context'
 
@@ -44,7 +44,7 @@ export function runHost(
   let order = 0
   const nextOrder = () => ++order
   const timers = createTimerScheduler(ctx, nextOrder)
-  const portMessages = createPortMessageTasks()
+  const portMessages = createPortMessageTasks(ctx, nextOrder)
   const rejections = createRejectionTracker()
   const timing = createTimingSensitivityTracker()
   const jobEnqueueSeq = new Map<string, number>()
@@ -59,11 +59,7 @@ export function runHost(
     {
       setTimer: timers.set,
       clearTimer: timers.clear,
-      enqueuePortMessage(deliver) {
-        const task = { taskId: ctx.newTaskId(), deliver, dueUs: clock.nowUs, order: nextOrder() }
-        emit({ k: 'task:queue', taskId: task.taskId, source: 'port-message', dueUs: task.dueUs }, HTML_PORT_MESSAGE)
-        portMessages.push(task)
-      },
+      enqueuePortMessage: portMessages.enqueue,
       writeConsole(level, text) {
         emit({ k: 'console', level, text }, HTML_LOOP)
       },
@@ -72,11 +68,12 @@ export function runHost(
     },
     createEngineHooks(ctx, rejections, jobEnqueueSeq, (rejected) =>
       queueNotification(rejected, 'handled'),
+      () => timers.queueDue(clock.nowUs),
     ),
   )
 
   const header = {
-    schemaVersion: TRACE_SCHEMA_VERSION as 1,
+    schemaVersion: TRACE_SCHEMA_VERSION as 2,
     engine: { name: 'engine262' as const, ...identity },
     hostProfile: settings.hostProfile,
     budgets: settings.budgets,
@@ -152,10 +149,12 @@ export function runHost(
         continue
       }
       if (nextDueUs === undefined) break
-      const taskId = useMessage ? nextMessage.taskId : nextTimer!.taskId
       if (nextDueUs > clock.nowUs) clock.nowUs = nextDueUs
       ctx.meter.checkVirtualTime(clock.nowUs)
       clock.loc = undefined
+      // The jump may make the chosen timer (and equal-delay siblings) due: queue them first.
+      timers.queueDue(clock.nowUs)
+      const taskId = useMessage ? nextMessage.taskId : nextTimer!.taskId
       let callback: CallbackHandle
       if (useMessage) {
         portMessages.shift()
@@ -165,7 +164,7 @@ export function runHost(
         const next = nextTimer!
         timers.fire(next)
         callback = next.callback
-        emit({ k: 'task:begin', taskId }, HTML_LOOP, true, ctx.taskQueueSeq.get(taskId))
+        emit({ k: 'task:begin', taskId }, HTML_LOOP, true, next.initSeq)
         emit({ k: 'timer:fire', tid: String(next.tid) }, HTML_TIMERS)
         if (next.repeat) timers.rearm(next)
       }

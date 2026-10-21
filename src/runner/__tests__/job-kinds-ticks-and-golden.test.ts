@@ -155,7 +155,7 @@ describe('golden Traces', () => {
       .map((e) => {
         const { k, visible } = e
         const fields = Object.entries(e)
-          .filter(([key]) => !['seq', 't', 'ref', 'loc', 'cause', 'k', 'visible'].includes(key))
+          .filter(([key]) => !['seq', 't', 'ref', 'loc', 'cause', 'k', 'visible', 'callback'].includes(key))
           .map(([key, value]) => `${key}=${String(value)}`)
         const cause = e.cause === undefined ? '' : ` <- ${trace.events[e.cause]!.k}#${e.cause}`
         return `${k}${visible ? '' : ' (bookkeeping)'} ${fields.join(' ')}${cause}`.replace(/\s+/g, ' ')

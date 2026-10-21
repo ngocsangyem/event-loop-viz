@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue'
-import { until, useElementSize } from '@vueuse/core'
+import { defineAsyncComponent, nextTick, onMounted, useTemplateRef } from 'vue'
 import { findExample } from '@/examples/example-library'
 import { decodeShareFragment } from '@/share/share-link-codec'
 import { useRunSession } from '@/use-run-session'
@@ -8,6 +7,7 @@ import { useShareLink } from '@/use-share-link'
 import { Card, CardContent } from '@/components/ui/card'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import AppHeader from '@/renderer/app-header.vue'
+import { useAskAiDock } from '@/renderer/ai/use-ask-ai-dock'
 import AskAiLauncher from '@/renderer/ai/ask-ai-launcher.vue'
 import EditorCard from '@/renderer/editor-card.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
@@ -26,8 +26,8 @@ import { useColorTheme } from '@/renderer/use-color-theme'
 import { useVisualizerView } from '@/renderer/use-visualizer-view'
 import { useLocale } from '@/renderer/use-locale'
 import { useAutoplayPreference } from '@/renderer/use-autoplay-preference'
-import { panelSignature } from '@/renderer/panels/panel-view-model'
-import type { SameView } from '@/renderer/use-playback'
+import ChipTravelLayer from '@/renderer/panels/chip-travel-layer.vue'
+import { usePanelChipTravel } from '@/renderer/use-panel-chip-travel'
 
 // The 3D Scene and the Diagram are opt-in, so their code and styles load only when picked.
 const SceneView = defineAsyncComponent(() => import('@/renderer/scene/event-loop-scene.vue'))
@@ -36,39 +36,11 @@ const EventLoopDiagram = defineAsyncComponent(() => import('@/renderer/diagram/e
 const AskAiAssistant = defineAsyncComponent(() => import('@/renderer/ai/ask-ai-assistant.vue'))
 
 const shared = decodeShareFragment(window.location.hash)
-/** A share link runs on load; that Run must not move focus the user never placed. */
-let autoRun = false
-const editor = useTemplateRef('editor')
-const transport = useTemplateRef('transport')
+let autoRun = false // a share link runs on load; that Run must not move focus the user never placed
+const [editor, transport] = [useTemplateRef('editor'), useTemplateRef('transport')]
 const { choice: theme } = useColorTheme()
 const view = useVisualizerView()
 const locale = useLocale()
-const askOpen = shallowRef(false)
-/** Mounted on first open and kept, so a conversation survives minimizing the panel. */
-const askMounted = shallowRef(false)
-const launcher = useTemplateRef('launcher')
-function toggleAsk() {
-  askMounted.value = true
-  askOpen.value = !askOpen.value
-}
-function focusLauncher() {
-  ;(launcher.value?.$el as HTMLElement | undefined)?.focus()
-}
-/** Ask AI needs a Trace to point at; a question before any Run runs the Script first. */
-async function ensureRun() {
-  if (session.running.value) await until(session.running).toBe(false)
-  if (!session.trace.value) await session.run()
-}
-/** The AI tour wins over a running replay: playback pauses, then the replay shows the stop. */
-function seekFromTour(seq: number) {
-  transport.value?.pause()
-  position.value = seq
-}
-/** The launcher floats just above the sticky playback bar, which sits 0.75rem off the bottom. */
-const transportCard = useTemplateRef('transportCard')
-const { height: transportHeight } = useElementSize(transportCard, undefined, { box: 'border-box' })
-// Before the first measurement, assume the bar's usual desktop height so nothing overlaps it.
-const dockStyle = computed(() => ({ '--ai-dock': `${Math.round(transportHeight.value || 96) + 24}px` }))
 const autoplay = useAutoplayPreference()
 
 /**
@@ -96,16 +68,15 @@ const session = useRunSession({
   watchdogMs: Number(new URLSearchParams(location.search).get('watchdogMs')) || undefined,
 })
 const {
-  script, settings, trace, syntaxError, syntaxErrorAt, position, running, showAll, events,
-  halt, replaying, player, replayState, consoleOutput, sourceHighlight, previousReplayState,
-  unsupportedApis, run, cancel,
+  script, settings, trace, syntaxError, syntaxErrorAt, position, running, showAll, events, halt, replaying,
+  player, replayState, consoleOutput, sourceHighlight, previousReplayState, unsupportedApis, run, cancel,
 } = session
 
-/** In the panels view, playback passes over steps the panels draw identically. */
-const sameView = computed((): SameView | undefined => {
-  const current = player.value
-  if (view.value !== 'panels' || !current) return undefined
-  return (from, to) => panelSignature(current.stateAt(from)) === panelSignature(current.stateAt(to))
+// The travel layer tells the panel lists when a coming patch is a jump or a flight's landing row.
+const { sameView, travelMs } = usePanelChipTravel(view, player, () => transport.value)
+
+const { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, dockStyle } = useAskAiDock({
+  running, run, position, hasTrace: () => trace.value !== null, pausePlayback: () => transport.value?.pause(),
 })
 
 /** The "Edit" button vanishes with the replay banner, so focus moves to the editor it unlocks. */
@@ -156,17 +127,24 @@ onMounted(() => {
             @edit="editScript"
             @load-example="loadExample"
           />
-          <WebApisPanel v-if="view === 'panels'" :state="replayState" />
+          <WebApisPanel v-if="view === 'panels'" :state="replayState" :source="trace?.header.source ?? ''" />
           <ConsolePanel v-else :output="consoleOutput" />
         </div>
         <template v-if="view === 'panels'">
+          <ChipTravelLayer
+            :player="player"
+            :position="position"
+            :source="trace?.header.source ?? ''"
+            :same-view="sameView"
+            :travel-ms="travelMs"
+          />
           <div class="flex min-w-0 flex-col gap-4 xl:col-span-4">
-            <CallStackPanel :state="replayState" />
+            <CallStackPanel :state="replayState" :source="trace?.header.source ?? ''" />
             <ConsolePanel :output="consoleOutput" />
           </div>
           <div class="flex min-w-0 flex-col gap-4 xl:col-span-4">
-            <TaskQueuePanel :state="replayState" />
-            <MicrotaskQueuePanel :state="replayState" />
+            <TaskQueuePanel :state="replayState" :source="trace?.header.source ?? ''" />
+            <MicrotaskQueuePanel :state="replayState" :source="trace?.header.source ?? ''" />
             <EventLoopPanel :state="replayState" />
           </div>
         </template>

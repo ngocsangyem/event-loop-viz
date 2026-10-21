@@ -6,10 +6,10 @@ import { TRACE_SCHEMA_VERSION } from '../trace-event'
 import { describeTraceSchema, validateTraceEvent } from '../trace-event-schema'
 
 const snapshotPath = fileURLToPath(
-  new URL('../../../tests/golden/trace-schema-v1.json', import.meta.url),
+  new URL('../../../tests/golden/trace-schema-v2.json', import.meta.url),
 )
 
-describe('Trace schema v1 snapshot', () => {
+describe('Trace schema v2 snapshot', () => {
   // A shape change must bump TRACE_SCHEMA_VERSION and regenerate the snapshot deliberately:
   //   UPDATE_GOLDEN=1 pnpm exec vitest run src/trace/__tests__/trace-schema.test.ts
   it.runIf(process.env.UPDATE_GOLDEN)('regenerates the snapshot', () => {
@@ -22,9 +22,9 @@ describe('Trace schema v1 snapshot', () => {
     expect(describeTraceSchema()).toEqual(pinned)
   })
 
-  it('is pinned for schemaVersion 1', () => {
-    expect(TRACE_SCHEMA_VERSION).toBe(1)
-    expect(JSON.parse(readFileSync(snapshotPath, 'utf8')).schemaVersion).toBe(1)
+  it('is pinned for schemaVersion 2', () => {
+    expect(TRACE_SCHEMA_VERSION).toBe(2)
+    expect(JSON.parse(readFileSync(snapshotPath, 'utf8')).schemaVersion).toBe(2)
   })
 })
 

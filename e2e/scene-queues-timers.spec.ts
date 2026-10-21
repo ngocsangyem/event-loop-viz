@@ -57,7 +57,7 @@ test('a timer shows its due time on the shelf and leaves it when it fires', asyn
   await expect(timer).toContainText('100ms')
   await expect(page.getByTestId('scene-clock')).toHaveText('0ms')
 
-  // The timer leaves the shelf at timer:fire, and the Virtual Clock has reached its due time.
+  // The timer leaves the shelf when it is due: its Task is queued as the Virtual Clock reaches the due time.
   const last = await lastSeq(page)
   while ((await timer.count()) > 0) {
     expect(await current(page)).not.toBe(last)

@@ -26,8 +26,9 @@ test('the scrubber shows a marker for each event family of the Run', async ({ pa
 test('dragging the scrubber to a marker shows that event as current', async ({ page }) => {
   await runScript(page)
   const slider = page.getByLabel('Timeline')
-  const sliderBox = (await slider.boundingBox())!
   for (const family of ['timer', 'job']) {
+    // The page height follows the panels' content, so the slider's position is read every round.
+    const sliderBox = (await slider.boundingBox())!
     const marker = page.locator(`[data-testid=scrubber] [data-family=${family}]`).first()
     const seq = Number(await marker.getAttribute('data-seq'))
     const target = (await marker.boundingBox())!

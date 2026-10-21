@@ -43,7 +43,7 @@ export function timerAndJobTrace(): Trace {
     { k: 'task:queue', taskId: 'task-1', source: 'script' }, // 1
     { k: 'task:begin', taskId: 'task-1' }, // 2
     { k: 'frame:push', frameId: 'f1', label: '(script)', builtin: false, loc: loc(0) }, // 3
-    { k: 'timer:init', tid: '1', requestedMs: 10, clampedMs: 10, nesting: 1, repeat: false, t: 5 }, // 4
+    { k: 'timer:init', tid: '1', taskId: 'task-2', requestedMs: 10, clampedMs: 10, nesting: 1, repeat: false, t: 5 }, // 4
     { k: 'task:queue', taskId: 'task-2', source: 'timer', dueUs: 10005 }, // 5
     { k: 'promise:create', pid: 'p1', visible: false }, // 6
     { k: 'promise:settle', pid: 'p1', state: 'fulfilled' }, // 7

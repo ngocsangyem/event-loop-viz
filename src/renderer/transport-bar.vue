@@ -45,6 +45,8 @@ const toolbar = useTemplateRef<HTMLElement>('toolbar')
 defineExpose({
   play,
   pause,
+  playing,
+  speed,
   // Next is disabled when the Trace opens at its end; fall back to the first enabled control.
   focusStep: () =>
     toolbar.value

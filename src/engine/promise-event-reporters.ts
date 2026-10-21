@@ -1,7 +1,11 @@
 import type * as E from '@engine262/engine262'
 import type { FrameInfo } from '../host/engine-adapter'
+import type { CallbackInfo } from '../trace/trace-event'
 import type { Frame } from './engine262-types'
 import type { EngineRunState } from './engine-run-state'
+
+/** Where an await continuation shows its pause: the async function and the line it paused at. */
+export type AwaitSite = (context: object) => CallbackInfo
 
 /**
  * Translates engine262's promise, await and async-generator callbacks into host hook calls,
@@ -30,12 +34,37 @@ export function createPromiseEventReporters(
     else hooks.onPromiseEvent({ type: 'settle', pid, state: event.state })
   }
 
+  /** Pause sites of async functions currently parked at an await, keyed by their context. */
+  const parkedSites = new WeakMap<object, CallbackInfo>()
+  /**
+   * The innermost `await` expression the context entered and has not paused at yet. Awaits that
+   * have no expression (`for await`, async generators) fall back to the last evaluated node.
+   */
+  const currentSite = (context: object): CallbackInfo => {
+    const pending = state.pendingAwaits.get(context)
+    const loc = pending?.[pending.length - 1] ?? state.lastLoc
+    return { kind: 'await', name: frameInfo(context as unknown as Frame).label, ...(loc && { loc }) }
+  }
+  /**
+   * The continuation Job of an await is enqueued before the engine reports the suspend when the
+   * awaited promise is already settled, so a context with no parked site is still on the node
+   * it is pausing at and the current position is the right one.
+   */
+  const awaitSite: AwaitSite = (context) => parkedSites.get(context) ?? currentSite(context)
+
   const reportAwaitEvent = (event: E.AwaitEvent) => {
     if (state.hostDepth) return
     const fid = frameInfo(event.context as unknown as Frame).frameId
     if (event.type === 'suspend') {
+      parkedSites.set(event.context, currentSite(event.context))
+      // This await is now paused; an enclosing one (`await (await a)`) is next in line.
+      state.pendingAwaits.get(event.context)?.pop()
       state.hooks.onAwaitEvent({ type: 'suspend', fid, awaitedPid: promiseId(event.promise) })
-    } else state.hooks.onAwaitEvent({ type: 'resume', fid, mode: event.mode })
+    } else {
+      // The next await in this context must not reuse this pause site.
+      parkedSites.delete(event.context)
+      state.hooks.onAwaitEvent({ type: 'resume', fid, mode: event.mode })
+    }
   }
 
   let generatorCounter = 0
@@ -47,5 +76,5 @@ export function createPromiseEventReporters(
     state.hooks.onAsyncGeneratorEvent({ type: event.type, gid })
   }
 
-  return { promiseId, reportPromiseEvent, reportAwaitEvent, reportAsyncGeneratorEvent }
+  return { promiseId, awaitSite, reportPromiseEvent, reportAwaitEvent, reportAsyncGeneratorEvent }
 }

@@ -1,4 +1,4 @@
-import type { JobKind, PromiseReactionVia, SourceLocation } from '../trace/trace-event'
+import type { CallbackInfo, JobKind, PromiseReactionVia, SourceLocation } from '../trace/trace-event'
 
 /**
  * Engine-neutral seam between the host and a JavaScript engine.
@@ -9,6 +9,8 @@ import type { JobKind, PromiseReactionVia, SourceLocation } from '../trace/trace
 /** Opaque reference to a script function the host will call back later. */
 export interface CallbackHandle {
   readonly __callbackHandle: true
+  /** What the handle will call, for display; absent when the engine cannot describe it. */
+  readonly info?: CallbackInfo
 }
 
 /** `unsupportedApi` names the Unsupported API when the error is an UnsupportedApiError. */
@@ -71,7 +73,13 @@ export interface EngineHooks {
    * A Job joined the microtask queue (FIFO). Promise Jobs name their target promise;
    * the engine reports the promise event that scheduled the Job just before this call.
    */
-  onJobEnqueue(jobId: string, jobKind: JobKind, pid?: string, outcome?: 'fulfill' | 'reject'): void
+  onJobEnqueue(job: {
+    jobId: string
+    jobKind: JobKind
+    pid?: string
+    outcome?: 'fulfill' | 'reject'
+    callback?: CallbackInfo
+  }): void
   /**
    * HostPromiseRejectionTracker: `pid` identifies the promise, `message` is its
    * rejection reason formatted for display.

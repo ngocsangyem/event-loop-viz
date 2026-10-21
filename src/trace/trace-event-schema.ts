@@ -1,22 +1,15 @@
 /**
- * Runtime description of the Trace schema (schemaVersion 1), kept in lockstep with the types in
+ * Runtime description of the Trace schema (schemaVersion 2), kept in lockstep with the types in
  * trace-event.ts: the mapped type below fails to compile when an event kind or field is added,
  * removed or renamed without updating this table. A snapshot test pins the table itself, so any
  * shape change is a deliberate, versioned decision.
  */
 import { TRACE_SCHEMA_VERSION } from './trace-event'
 import type { TraceEventBody, TraceHeader } from './trace-event'
+import { checkFields } from './field-spec-check'
+import type { FieldSpec } from './field-spec-check'
 
-type Primitive = 'string' | 'number' | 'boolean'
-
-export interface FieldSpec {
-  type: Primitive | 'enum' | 'string-array' | 'object'
-  /** Allowed values when `type` is 'enum'. */
-  values?: readonly string[]
-  /** Nested fields when `type` is 'object'. */
-  fields?: Record<string, FieldSpec>
-  optional?: true
-}
+export type { FieldSpec }
 
 const str: FieldSpec = { type: 'string' }
 const num: FieldSpec = { type: 'number' }
@@ -40,6 +33,13 @@ const taskRef = { taskId: str }
 const jobRef = { jobId: str }
 const checkpoint = { reason: oneOf('task-end', 'script-end', 'callback-end') }
 const timerRef = { tid: str }
+const callback = opt(
+  obj({
+    kind: oneOf('function', 'await', 'builtin'),
+    loc: opt(obj({ start: num, end: num, line: num, column: num })),
+    name: opt(str),
+  }),
+)
 
 export const TRACE_EVENT_SCHEMA: EventSchema = {
   'run:start': {},
@@ -51,6 +51,8 @@ export const TRACE_EVENT_SCHEMA: EventSchema = {
     taskId: str,
     source: oneOf('script', 'timer', 'port-message', 'dom-manipulation'),
     dueUs: opt(num),
+    tid: opt(str),
+    callback,
   },
   'task:begin': taskRef,
   'task:end': taskRef,
@@ -61,12 +63,21 @@ export const TRACE_EVENT_SCHEMA: EventSchema = {
     jobKind: oneOf('reaction', 'thenable', 'microtask'),
     pid: opt(str),
     outcome: opt(oneOf('fulfill', 'reject')),
+    callback,
   },
   'job:begin': jobRef,
   'job:end': jobRef,
   'frame:push': frame,
   'frame:pop': frame,
-  'timer:init': { tid: str, requestedMs: num, clampedMs: num, nesting: num, repeat: bool },
+  'timer:init': {
+    tid: str,
+    taskId: str,
+    requestedMs: num,
+    clampedMs: num,
+    nesting: num,
+    repeat: bool,
+    callback,
+  },
   'timer:fire': timerRef,
   'timer:clear': timerRef,
   'promise:create': { pid: str },
@@ -112,47 +123,6 @@ const HEADER_SCHEMA: { [F in keyof TraceHeader]-?: FieldSpec } = {
   source: str,
   unsupportedApis: { type: 'string-array' },
   timingSensitive: bool,
-}
-
-function checkValue(path: string, value: unknown, spec: FieldSpec): string[] {
-  switch (spec.type) {
-    case 'string':
-    case 'number':
-    case 'boolean':
-      return typeof value === spec.type ? [] : [`${path}: expected ${spec.type}`]
-    case 'enum':
-      return typeof value === 'string' && spec.values?.includes(value)
-        ? []
-        : [`${path}: expected one of ${spec.values?.join('|')}, got ${String(value)}`]
-    case 'string-array':
-      return Array.isArray(value) && value.every((v) => typeof v === 'string')
-        ? []
-        : [`${path}: expected string[]`]
-    case 'object':
-      return typeof value === 'object' && value !== null
-        ? checkFields(path, value as Record<string, unknown>, spec.fields ?? {})
-        : [`${path}: expected object`]
-  }
-}
-
-function checkFields(
-  where: string,
-  record: Record<string, unknown>,
-  schema: Record<string, FieldSpec>,
-): string[] {
-  const problems: string[] = []
-  for (const [name, spec] of Object.entries(schema)) {
-    const value = record[name]
-    if (value === undefined) {
-      if (!spec.optional) problems.push(`${where}.${name}: missing`)
-    } else {
-      problems.push(...checkValue(`${where}.${name}`, value, spec))
-    }
-  }
-  for (const name of Object.keys(record)) {
-    if (!(name in schema)) problems.push(`${where}.${name}: unknown field`)
-  }
-  return problems
 }
 
 /** Returns a list of problems; empty means the event conforms to schema v1. */

@@ -26,6 +26,8 @@ export function createEngineHooks(
   /** Filled here, read by the checkpoint runner: job id -> seq of its job:enqueue event. */
   jobEnqueueSeq: Map<string, number>,
   queueHandledNotification: (rejected: RejectedPromise) => void,
+  /** The Virtual Clock moved forward by a node; timers that became due queue their Task. */
+  onClockAdvance: () => void,
 ): EngineHooks {
   const { emit, events, clock } = ctx
   /** The latest promise event, which is the cause of a Job enqueued right after it. */
@@ -37,6 +39,7 @@ export function createEngineHooks(
       ctx.meter.countNode()
       clock.nowUs += ctx.settings.nodeCostUs
       ctx.meter.checkVirtualTime(clock.nowUs)
+      onClockAdvance()
     },
     onFramePush: (f) => emit({ k: 'frame:push', ...f }, ES_CONTEXTS),
     onFramePop: (f) => emit({ k: 'frame:pop', ...f }, ES_CONTEXTS),
@@ -61,7 +64,7 @@ export function createEngineHooks(
     onAsyncGeneratorEvent(event) {
       emit({ k: `asyncgen:${event.type}`, gid: event.gid }, ES_ASYNC_GENERATOR)
     },
-    onJobEnqueue(jobId, jobKind, pid, outcome) {
+    onJobEnqueue({ jobId, jobKind, pid, outcome, callback }) {
       jobEnqueueSeq.set(jobId, events.length)
       // The engine reports the scheduling promise event right before the Job it causes.
       const cause = pid !== undefined && lastPromiseEvent?.pid === pid ? lastPromiseEvent.seq : undefined
@@ -72,6 +75,7 @@ export function createEngineHooks(
           jobKind,
           ...(pid !== undefined && { pid }),
           ...(outcome && { outcome }),
+          ...(callback && { callback }),
         },
         jobKind === 'microtask' ? HTML_QUEUE_MICROTASK : ES_ENQUEUE_JOB,
         true,

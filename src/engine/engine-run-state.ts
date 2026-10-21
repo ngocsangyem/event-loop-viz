@@ -1,5 +1,6 @@
 import * as E from '@engine262/engine262'
 import type { EngineHooks } from '../host/engine-adapter'
+import type { SourceLocation } from '../trace/trace-event'
 import type { EngineValue } from './engine262-types'
 
 /**
@@ -11,10 +12,27 @@ export interface EngineRunState {
   hooks: EngineHooks
   /** >0 while the host itself calls into the engine (formatting values, ...): no events. */
   hostDepth: number
+  /** The Script being run; function ranges in the Trace index into it. Unset before evaluateScript. */
+  source: string | undefined
+  /** The node evaluated last on behalf of the Script (not the host). */
+  lastLoc: SourceLocation | undefined
+  /** Root syntax node of the Script, to tell its functions from eval / `new Function` code. */
+  scriptRoot: object | undefined
+  /**
+   * `await` expressions entered but not yet suspended, per async function context, innermost
+   * last. `lastLoc` cannot say where an await is: by the time it suspends, the operand has run.
+   */
+  pendingAwaits: WeakMap<object, SourceLocation[]>
 }
 
 export function createEngineRunState(): EngineRunState {
-  return { hostDepth: 0 } as EngineRunState
+  return {
+    hostDepth: 0,
+    source: undefined,
+    lastLoc: undefined,
+    scriptRoot: undefined,
+    pendingAwaits: new WeakMap(),
+  } as EngineRunState
 }
 
 /** Helpers for calls the host makes into the engine, which must not appear in the Trace. */

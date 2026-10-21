@@ -79,8 +79,10 @@ export const VI_PHRASES: ExplainPhrases = {
       e.reason === 'natural'
         ? 'Run kết thúc tự nhiên: không còn Task hay Job nào để chạy.'
         : `Run bị dừng vì Budget ${e.reason}${e.limit === undefined ? '' : ` (${e.limit})`} đã cạn; không có gì sau điểm này được thực thi.`,
-    'task:queue': (e) =>
-      `Task ${e.taskId} vào hàng đợi, nguồn gốc là ${taskSource(e.source)}${e.dueUs === undefined ? '' : `, đến hạn ở ${e.dueUs / 1000} ms thời gian ảo`}. Nó chạy khi call stack trống và event loop chọn đến nó.`,
+    'task:queue': (e, name) =>
+      e.source === 'timer' && e.tid !== undefined
+        ? `Đã đến giờ của ${name.timer(e.tid)}: callback của nó vào Task Queue thành Task ${e.taskId}. Nó chạy khi call stack trống và event loop chọn đến nó.`
+        : `Task ${e.taskId} vào hàng đợi, nguồn gốc là ${taskSource(e.source)}${e.dueUs === undefined ? '' : `, đến hạn ở ${e.dueUs / 1000} ms thời gian ảo`}. Nó chạy khi call stack trống và event loop chọn đến nó.`,
     'task:begin': (e) => `Event loop bắt đầu chạy Task ${e.taskId}.`,
     'task:end': (e) => `Task ${e.taskId} chạy xong. Checkpoint diễn ra trước Task kế tiếp.`,
     'checkpoint:begin': (e) =>
@@ -102,7 +104,7 @@ export const VI_PHRASES: ExplainPhrases = {
     'timer:init': (e) =>
       `Timer ${e.tid} hẹn sau ${e.requestedMs} ms${e.clampedMs !== e.requestedMs ? `, nhưng bị nâng lên ${e.clampedMs} ms vì timer lồng sâu phải chờ ít nhất 4 ms (mức lồng ${e.nesting})` : ''}${e.repeat ? ', lặp lại' : ''}. Callback của nó thành Task khi đủ thời gian ảo trôi qua.`,
     'timer:fire': (e, name) =>
-      `Đã đến giờ của ${name.timer(e.tid)}, nên callback của nó chạy như một Task.`,
+      `Event loop chọn Task của ${name.timer(e.tid)}; callback của nó chạy ngay bây giờ.`,
     'timer:clear': (e, name) =>
       `${name.timerStart(e.tid)} đã bị clear, nên callback của nó sẽ không chạy.`,
     'promise:create': (e) => `Promise mới (${e.pid}) vừa tạo, ban đầu ở trạng thái pending.`,

@@ -62,7 +62,7 @@ const sourceLine = computed(() => {
       </dd>
       <dt class="text-muted-foreground">{{ t('detail.payload') }}</dt>
       <dd class="min-w-0">
-        <pre data-testid="event-payload" class="bg-muted max-h-48 overflow-auto rounded-md p-2 font-mono">{{ payload }}</pre>
+        <pre data-testid="event-payload" tabindex="0" class="bg-muted max-h-48 overflow-auto rounded-md p-2 font-mono">{{ payload }}</pre>
       </dd>
       <dt class="text-muted-foreground">{{ t('detail.source') }}</dt>
       <dd data-testid="event-source">{{ sourceLine ?? t('detail.noSource') }}</dd>

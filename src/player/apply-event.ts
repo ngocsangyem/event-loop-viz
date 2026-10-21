@@ -1,5 +1,6 @@
 import type { TraceEvent } from '../trace/trace-event'
 import type { ReplayState } from './replay-state'
+import { beginCallback, onFramePop, onFramePush } from './running-callback'
 
 /**
  * Folds one event into `state` in place. Kinds this switch does not know (added by newer
@@ -17,19 +18,29 @@ export function applyEvent(
   state.causeRange = (event.cause !== undefined ? eventAt(event.cause)?.loc : undefined) ?? null
 
   switch (event.k) {
-    case 'task:queue':
+    case 'task:queue': {
+      // A timer joins the queue only once due, so it leaves Web APIs at that moment.
+      const callback = event.callback ?? state.timers.find((t) => t.tid === event.tid)?.callback
+      if (event.tid !== undefined) state.timers = state.timers.filter((t) => t.tid !== event.tid)
       state.tasks.push({
         taskId: event.taskId,
         source: event.source,
+        ...(callback !== undefined && { callback }),
         ...(event.dueUs !== undefined && { dueUs: event.dueUs }),
+        ...(event.tid !== undefined && { tid: event.tid }),
       })
       break
-    case 'task:begin':
-      state.currentTaskSource = state.tasks.find((t) => t.taskId === event.taskId)?.source ?? null
+    }
+    case 'task:begin': {
+      const queued = state.tasks.find((t) => t.taskId === event.taskId)
+      state.currentTaskSource = queued?.source ?? null
+      state.runningCallback = beginCallback('task', event.taskId, queued?.callback)
       state.tasks = state.tasks.filter((t) => t.taskId !== event.taskId)
       state.currentTask = event.taskId
       break
+    }
     case 'task:end':
+      state.runningCallback = null
       state.currentTask = null
       state.currentTaskSource = null
       break
@@ -45,30 +56,37 @@ export function applyEvent(
         jobKind: event.jobKind,
         ...(event.pid !== undefined && { pid: event.pid }),
         ...(event.outcome !== undefined && { outcome: event.outcome }),
+        ...(event.callback !== undefined && { callback: event.callback }),
       })
       // A Job enqueued by Script code runs in Tick 1; one enqueued by a Job in the next Tick.
       state.jobTicks[event.jobId] = (state.tick ?? 0) + 1
       break
-    case 'job:begin':
-      state.currentJobKind = state.jobs.find((j) => j.jobId === event.jobId)?.jobKind ?? null
+    case 'job:begin': {
+      const queued = state.jobs.find((j) => j.jobId === event.jobId)
+      state.currentJobKind = queued?.jobKind ?? null
+      state.runningCallback = beginCallback('job', event.jobId, queued?.callback)
       state.jobs = state.jobs.filter((j) => j.jobId !== event.jobId)
       state.currentJob = event.jobId
       state.tick = state.jobTicks[event.jobId] ?? 1
       delete state.jobTicks[event.jobId]
       break
+    }
     case 'job:end':
+      state.runningCallback = null
       state.currentJob = null
       state.currentJobKind = null
       state.tick = null
       break
     case 'frame:push':
       state.stack.push({ frameId: event.frameId, label: event.label, builtin: event.builtin })
+      state.runningCallback = onFramePush(state.runningCallback, event)
       break
     case 'frame:pop': {
       // Pop to the matching frame so unwinding after a throw cannot leave stale frames.
       let at = state.stack.length - 1
       while (at >= 0 && state.stack[at]!.frameId !== event.frameId) at--
       if (at >= 0) state.stack.length = at
+      state.runningCallback = onFramePop(state.runningCallback, state.stack)
       break
     }
     case 'timer:init':
@@ -80,11 +98,17 @@ export function applyEvent(
         clampedMs: event.clampedMs,
         repeat: event.repeat,
         dueUs: event.t + event.clampedMs * 1000,
+        taskId: event.taskId,
+        ...(event.callback !== undefined && { callback: event.callback }),
       })
       break
     case 'timer:fire':
+      state.timers = state.timers.filter((t) => t.tid !== event.tid)
+      break
     case 'timer:clear':
       state.timers = state.timers.filter((t) => t.tid !== event.tid)
+      // Chrome cancels a timer Task that was already posted.
+      state.tasks = state.tasks.filter((t) => t.tid !== event.tid)
       break
     case 'promise:create':
       state.promises[event.pid] = 'pending'

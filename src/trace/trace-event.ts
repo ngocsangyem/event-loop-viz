@@ -3,7 +3,7 @@
  * Events are frozen, JSON-serializable and contain no engine objects.
  */
 
-export const TRACE_SCHEMA_VERSION = 1
+export const TRACE_SCHEMA_VERSION = 2
 
 export interface TraceBudgets {
   nodes: number
@@ -48,6 +48,15 @@ interface EventBase {
   visible: boolean
 }
 
+/** A function a Task or Job will call, for display. `loc` indexes into header.source. */
+export interface CallbackInfo {
+  kind: 'function' | 'await' | 'builtin'
+  /** function: the whole function text; await: the node it paused at. */
+  loc?: SourceLocation
+  /** await: the async function's name; builtin: the built-in's name. */
+  name?: string
+}
+
 /** What a Job does: run a promise reaction, call a thenable's `then`, or run a queueMicrotask callback. */
 export type JobKind = 'reaction' | 'thenable' | 'microtask'
 
@@ -63,6 +72,10 @@ export type TraceEventBody =
       taskId: string
       source: 'script' | 'timer' | 'port-message' | 'dom-manipulation'
       dueUs?: number
+      /** Timer id, on a timer Task: lets a replay move the timer from Web APIs to the queue. */
+      tid?: string
+      /** The function the Task will call, when it is known. */
+      callback?: CallbackInfo
     }
   | { k: 'task:begin' | 'task:end'; taskId: string }
   | { k: 'checkpoint:begin' | 'checkpoint:end'; reason: 'task-end' | 'script-end' | 'callback-end' }
@@ -74,6 +87,8 @@ export type TraceEventBody =
       pid?: string
       /** Which reaction a `reaction` Job runs. */
       outcome?: 'fulfill' | 'reject'
+      /** The function the Job will call, when it is known. */
+      callback?: CallbackInfo
     }
   | { k: 'job:begin' | 'job:end'; jobId: string }
   | { k: 'frame:push'; frameId: string; label: string; builtin: boolean }
@@ -81,10 +96,13 @@ export type TraceEventBody =
   | {
       k: 'timer:init'
       tid: string
+      /** Id of the Task this timer queues once due: lets the pending timer and its queued Task share a chip. */
+      taskId: string
       requestedMs: number
       clampedMs: number
       nesting: number
       repeat: boolean
+      callback?: CallbackInfo
     }
   | { k: 'promise:create'; pid: string }
   | { k: 'promise:reaction'; pid: string; via: PromiseReactionVia; pending: boolean }

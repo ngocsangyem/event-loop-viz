@@ -64,8 +64,10 @@ export const EN_PHRASES: ExplainPhrases = {
       e.reason === 'natural'
         ? 'The Run ends naturally: no Tasks or Jobs are left to run.'
         : `The Run was halted because the ${e.reason} Budget${e.limit === undefined ? '' : ` (${e.limit})`} ran out; nothing after this point was executed.`,
-    'task:queue': (e) =>
-      `A Task (${e.taskId}) was queued by ${taskSource(e.source)}${e.dueUs === undefined ? '' : `, due at ${e.dueUs / 1000} ms of virtual time`}. It runs when the call stack is empty and the event loop picks it.`,
+    'task:queue': (e, name) =>
+      e.source === 'timer' && e.tid !== undefined
+        ? `Time is up for ${name.timer(e.tid)}: its callback joins the Task Queue as Task ${e.taskId}. It runs when the call stack is empty and the event loop picks it.`
+        : `A Task (${e.taskId}) was queued by ${taskSource(e.source)}${e.dueUs === undefined ? '' : `, due at ${e.dueUs / 1000} ms of virtual time`}. It runs when the call stack is empty and the event loop picks it.`,
     'task:begin': (e) => `The event loop starts running Task ${e.taskId}.`,
     'task:end': (e) => `Task ${e.taskId} finished. A Checkpoint follows before the next Task.`,
     'checkpoint:begin': (e) =>
@@ -87,7 +89,7 @@ export const EN_PHRASES: ExplainPhrases = {
     'timer:init': (e) =>
       `Timer ${e.tid} was set for ${e.requestedMs} ms${e.clampedMs !== e.requestedMs ? `, raised to ${e.clampedMs} ms because deeply nested timers wait at least 4 ms (nesting level ${e.nesting})` : ''}${e.repeat ? ', repeating' : ''}. Its callback becomes a Task once that much virtual time passes.`,
     'timer:fire': (e, name) =>
-      `Time is up for ${name.timer(e.tid)}, so its callback runs as a Task.`,
+      `The event loop picks ${name.timer(e.tid)}'s Task; its callback runs now.`,
     'timer:clear': (e, name) =>
       `${name.timerStart(e.tid)} was cleared, so its callback will not run.`,
     'promise:create': (e) => `A new promise (${e.pid}) was created, initially pending.`,

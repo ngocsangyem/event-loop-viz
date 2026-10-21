@@ -41,7 +41,7 @@ describe('stateAt on a hand-built Trace', () => {
     expect(s.tasks).toEqual([{ taskId: 'task-2', source: 'timer', dueUs: 10005 }])
     expect(s.jobs).toEqual([{ jobId: 'job-1', jobKind: 'reaction', pid: 'p1', outcome: 'fulfill' }])
     expect(s.timers).toEqual([
-      { tid: '1', requestedMs: 10, clampedMs: 10, repeat: false, dueUs: 10005 },
+      { tid: '1', requestedMs: 10, clampedMs: 10, repeat: false, dueUs: 10005, taskId: 'task-2' },
     ])
     expect(s.clockUs).toBe(5)
     expect(s.console).toEqual([{ kind: 'console', level: 'log', text: 'sync' }])
@@ -76,14 +76,14 @@ describe('stateAt on a hand-built Trace', () => {
     const p = createPlayer(
       buildTrace([
         { k: 'run:start' },
-        { k: 'timer:init', tid: '1', requestedMs: 5, clampedMs: 5, nesting: 1, repeat: true, t: 0 },
+        { k: 'timer:init', tid: '1', taskId: 'task-1', requestedMs: 5, clampedMs: 5, nesting: 1, repeat: true, t: 0 },
         { k: 'timer:fire', tid: '1', t: 5000 },
-        { k: 'timer:init', tid: '1', requestedMs: 5, clampedMs: 5, nesting: 2, repeat: true, t: 5000 },
+        { k: 'timer:init', tid: '1', taskId: 'task-2', requestedMs: 5, clampedMs: 5, nesting: 2, repeat: true, t: 5000 },
         { k: 'timer:clear', tid: '1' },
       ]),
     )
     expect(p.stateAt(3).timers).toEqual([
-      { tid: '1', requestedMs: 5, clampedMs: 5, repeat: true, dueUs: 10000 },
+      { tid: '1', requestedMs: 5, clampedMs: 5, repeat: true, dueUs: 10000, taskId: 'task-2' },
     ])
     expect(p.stateAt(4).timers).toEqual([])
   })

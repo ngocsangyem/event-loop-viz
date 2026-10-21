@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { test, expect } from './fixtures'
 import type { Page } from '@playwright/test'
+import { stepUntilPresent } from './chip-helpers'
 
 const THEMES = ['light', 'dark'] as const
 type Theme = (typeof THEMES)[number]
@@ -48,6 +49,9 @@ for (const theme of THEMES) {
       await openApp(page, theme)
       await runScript(page)
       await page.getByRole('button', { name: 'Next', exact: true }).click()
+      expect(await seriousViolations(page)).toEqual([])
+      // The Web APIs timer card, with its callback chip and progress bar, is part of the page.
+      await stepUntilPresent(page, page.getByTestId('panel-web-apis').locator('li'))
       expect(await seriousViolations(page)).toEqual([])
       // The end of the Trace shows every console line, including the error line.
       await page.getByRole('button', { name: 'Go to end' }).click()

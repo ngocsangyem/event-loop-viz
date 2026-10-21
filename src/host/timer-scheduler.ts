@@ -11,6 +11,10 @@ export interface PendingTimer {
   dueUs: number
   order: number
   nesting: number
+  /** seq of this timer's timer:init event: the cause of its Task, whose code is the setTimeout call. */
+  initSeq: number
+  /** True once the Virtual Clock reached dueUs and the Task joined the Task Queue. */
+  queued: boolean
 }
 
 /** Nesting level above which Chrome clamps timers to 4 ms (HTML timer initialization steps). */
@@ -33,8 +37,19 @@ export function createTimerScheduler(ctx: HostRunContext, nextOrder: () => numbe
         ? NESTING_CLAMP_MIN_MS
         : requestedMs
     const nesting = currentNesting + 1
+    const initSeq = ctx.events.length
+    const taskId = ctx.newTaskId()
     ctx.emit(
-      { k: 'timer:init', tid: String(tid), requestedMs, clampedMs, nesting, repeat },
+      {
+        k: 'timer:init',
+        tid: String(tid),
+        taskId,
+        requestedMs,
+        clampedMs,
+        nesting,
+        repeat,
+        ...(callback.info && { callback: callback.info }),
+      },
       HTML_TIMERS,
     )
     const timer: PendingTimer = {
@@ -42,17 +57,23 @@ export function createTimerScheduler(ctx: HostRunContext, nextOrder: () => numbe
       callback,
       delayMs: requestedMs,
       repeat,
-      taskId: ctx.newTaskId(),
+      taskId,
       dueUs: ctx.clock.nowUs + clampedMs * 1000,
       order: nextOrder(),
       nesting,
+      initSeq,
+      queued: false,
     }
-    ctx.emit(
-      { k: 'task:queue', taskId: timer.taskId, source: 'timer', dueUs: timer.dueUs },
-      HTML_TIMERS,
-    )
     timers.set(tid, timer)
+    refreshNextUnqueuedDue()
     return tid
+  }
+
+  /** Earliest dueUs among timers whose Task is not queued yet; cached so the per-node check is O(1). */
+  let nextUnqueuedDueUs = Infinity
+  function refreshNextUnqueuedDue() {
+    nextUnqueuedDueUs = Infinity
+    for (const t of timers.values()) if (!t.queued && t.dueUs < nextUnqueuedDueUs) nextUnqueuedDueUs = t.dueUs
   }
 
   return {
@@ -60,7 +81,38 @@ export function createTimerScheduler(ctx: HostRunContext, nextOrder: () => numbe
     set: (callback: CallbackHandle, delayMs: number, repeat: boolean) =>
       init(callback, delayMs, repeat, ++timerCounter),
     clear(id: number) {
-      if (timers.delete(id)) ctx.emit({ k: 'timer:clear', tid: String(id) }, HTML_TIMERS)
+      if (timers.delete(id)) {
+        ctx.emit({ k: 'timer:clear', tid: String(id) }, HTML_TIMERS)
+        refreshNextUnqueuedDue()
+      }
+    },
+    /**
+     * The Virtual Clock advanced: the timers that are now due queue their Task (HTML timer
+     * initialization steps queue it only after the timeout elapsed), in (dueUs, arm order).
+     */
+    queueDue(nowUs: number) {
+      if (nowUs < nextUnqueuedDueUs) return
+      const due = [...timers.values()]
+        .filter((t) => !t.queued && t.dueUs <= nowUs)
+        .sort((a, b) => a.dueUs - b.dueUs || a.order - b.order)
+      // The host does this at a clock tick, not as part of the node being evaluated, so the
+      // event must not point at that node's source (it may be unrelated, e.g. a busy-wait loop).
+      const savedLoc = ctx.clock.loc
+      ctx.clock.loc = undefined
+      try {
+        for (const t of due) {
+          t.queued = true
+          ctx.emit(
+            { k: 'task:queue', taskId: t.taskId, source: 'timer', dueUs: t.dueUs, tid: String(t.tid), ...(t.callback.info && { callback: t.callback.info }) },
+            HTML_TIMERS,
+            true,
+            t.initSeq,
+          )
+        }
+      } finally {
+        ctx.clock.loc = savedLoc
+        refreshNextUnqueuedDue()
+      }
     },
     /** The timer due first; same-instant ties go to the earlier enqueue. */
     next: (): PendingTimer | undefined =>
@@ -68,6 +120,7 @@ export function createTimerScheduler(ctx: HostRunContext, nextOrder: () => numbe
     /** Removes a timer about to fire and makes its nesting level the one new timers inherit. */
     fire(timer: PendingTimer) {
       timers.delete(timer.tid)
+      refreshNextUnqueuedDue()
       currentNesting = timer.nesting
     },
     /** An interval re-arms before its callback runs (HTML timer task steps). */

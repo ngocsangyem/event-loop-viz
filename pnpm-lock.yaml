@@ -179,7 +179,7 @@ overrides:
   typescript: npm:typescript-native-bridge@latest
 
 patchedDependencies:
-  '@engine262/engine262': 3a8232dc483c0e1a75cdde3f4659a8d519aa50254fd4bf4ad6946e22a9e0aebd
+  '@engine262/engine262': 0cef63ca3d480e168afbb70cbc928dd0c0d822fb6f5a1c3e2d5e72d4422a68c1
 
 importers:
 
@@ -236,7 +236,7 @@ importers:
         version: 4.14.0(playwright-core@1.64.1)
       '@engine262/engine262':
         specifier: 0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba
-        version: 0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=3a8232dc483c0e1a75cdde3f4659a8d519aa50254fd4bf4ad6946e22a9e0aebd)
+        version: 0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=0cef63ca3d480e168afbb70cbc928dd0c0d822fb6f5a1c3e2d5e72d4422a68c1)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.64.1
@@ -3018,7 +3018,7 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.2': {}
 
-  '@engine262/engine262@0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=3a8232dc483c0e1a75cdde3f4659a8d519aa50254fd4bf4ad6946e22a9e0aebd)': {}
+  '@engine262/engine262@0.0.1-2d7d8d988c77e94473ba0377122cdfccdfe243ba(patch_hash=0cef63ca3d480e168afbb70cbc928dd0c0d822fb6f5a1c3e2d5e72d4422a68c1)': {}
 
   '@eslint-community/eslint-utils@4.10.1(eslint@10.13.0(jiti@2.7.0))':
     dependencies:

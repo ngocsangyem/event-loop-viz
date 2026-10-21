@@ -27,6 +27,7 @@ export type StepKey =
   | 'timerCallback'
   | 'message'
   | 'runTask'
+  | 'timerDue'
   | 'runTimerTask'
   | 'queueJob'
   | 'runJob'
@@ -76,13 +77,13 @@ export function flowForEvent(
       // The timer's Task is already running: its callback is what lands on the stack.
       return flow('timerCallback', [], ['stack'])
     case 'task:queue':
-      // The host queues a timer's Task up front with its due time, but the learner's picture
-      // is the timer waiting in Web APIs until it is due, so that hop plays when the Task starts.
+      // A timer's Task is queued when its time is up, so the Web APIs -> Task Queue hop plays here.
+      if (event.source === 'timer') return flow('timerDue', ['timer-fires'], ['taskq'])
       if (event.source === 'port-message') return flow('message', ['timer-fires'], ['taskq'])
       return IDLE_FLOW
     case 'task:begin':
       return taskSource === 'timer'
-        ? flow('runTimerTask', ['timer-fires', 'next-task', 'run-task'], ['taskq', 'loop', 'stack'])
+        ? flow('runTimerTask', ['next-task', 'run-task'], ['taskq', 'loop', 'stack'])
         : flow('runTask', ['next-task', 'run-task'], ['loop', 'stack'])
     case 'job:enqueue':
       // Settles and reactions are followed by their own job:enqueue, which carries the hop, so

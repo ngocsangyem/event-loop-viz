@@ -36,4 +36,17 @@ describe('panelSignature', () => {
     const logged: ReplayState = { ...base, console: [{ kind: 'console', level: 'log', text: 'x' } as never] }
     expect(panelSignature(logged)).not.toBe(panelSignature(base))
   })
+
+  it('changes whenever a chip moves: queue, running row, stack frame, gone', () => {
+    const callback = { kind: 'function' as const }
+    const queued: ReplayState = { ...createInitialState(), jobs: [{ jobId: 'J1', jobKind: 'microtask', callback }] }
+    const running: ReplayState = { ...createInitialState(), currentJob: 'J1', currentJobKind: 'microtask' }
+    const onStack: ReplayState = {
+      ...running,
+      stack: [frame('f1', 'script', false), frame('f2', 'micro', false)],
+    }
+    const gone: ReplayState = { ...running, stack: [frame('f1', 'script', false)] }
+    const sigs = [queued, running, onStack, gone].map(panelSignature)
+    expect(new Set(sigs).size).toBe(4)
+  })
 })

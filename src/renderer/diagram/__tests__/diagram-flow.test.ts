@@ -10,7 +10,7 @@ describe('flowForEvent', () => {
   })
 
   it('registers a timer on the Web APIs', () => {
-    const f = flowForEvent(ev({ k: 'timer:init', tid: 't1', requestedMs: 0, clampedMs: 0, nesting: 0, repeat: false }))
+    const f = flowForEvent(ev({ k: 'timer:init', tid: 't1', taskId: 'task-1', requestedMs: 0, clampedMs: 0, nesting: 0, repeat: false }))
     expect(f).toMatchObject({ edges: ['register'], lit: ['webapis'] })
   })
 
@@ -19,17 +19,21 @@ describe('flowForEvent', () => {
     expect(f).toMatchObject({ edges: ['timer-fires'], lit: ['taskq'] })
   })
 
-  it('keeps a timer in Web APIs while its Task waits for its due time', () => {
-    expect(flowForEvent(ev({ k: 'task:queue', taskId: 'k1', source: 'timer' })).edges).toEqual([])
+  it('moves a due timer from Web APIs to the Task Queue when its Task is queued', () => {
+    expect(flowForEvent(ev({ k: 'task:queue', taskId: 'k1', source: 'timer', tid: 't1' }))).toMatchObject({
+      edges: ['timer-fires'],
+      lit: ['taskq'],
+      step: { key: 'timerDue' },
+    })
   })
 
   it('lights the stack when a timer callback runs inside its Task', () => {
     expect(flowForEvent(ev({ k: 'timer:fire', tid: 't1' }))).toMatchObject({ edges: [], lit: ['stack'] })
   })
 
-  it('runs a due timer from Web APIs through the Task Queue and the loop onto the stack', () => {
+  it('runs a queued timer Task through the loop onto the stack', () => {
     expect(flowForEvent(ev({ k: 'task:begin', taskId: 'k1' }), 'timer')).toMatchObject({
-      edges: ['timer-fires', 'next-task', 'run-task'],
+      edges: ['next-task', 'run-task'],
       lit: ['taskq', 'loop', 'stack'],
     })
   })
