@@ -3,7 +3,7 @@ import type { TraceEvent } from './trace-event'
 
 /**
  * Derives Observable Output from a Trace. Pure, so the UI console and the
- * oracle comparison read the same data and cannot disagree (ADR-0002).
+ * oracle comparison read the same data and cannot disagree.
  */
 export function deriveObservableOutput(events: readonly TraceEvent[]): ObservableOutput {
   const output: ObservableOutput = []

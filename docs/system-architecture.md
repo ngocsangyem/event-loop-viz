@@ -1,6 +1,6 @@
 # System architecture
 
-The Trace is the only contract between execution and presentation (ADR-0005, ADR-0003). A Run
+The Trace is the only contract between execution and presentation. A Run
 produces one immutable Trace in a Web Worker; the main thread replays it.
 
 ```
@@ -12,7 +12,7 @@ renderer -> player -> trace <- host <- engine adapter        runner ties them to
 | Module | Responsibility | May import | Runs in |
 |---|---|---|---|
 | `trace/` | Trace Event and header types, runtime schema, default Budgets, Observable Output derivation. Pure TS, relative imports only. | nothing | anywhere |
-| `engine/` | engine262 adapter implementing the host-owned `EngineAdapter` interface: realm, host globals, `MessageChannel` global, Unsupported API stubs, promise-job descriptors (ADR-0009 patch). The only place that imports `@engine262/**`. | trace, host (the interface) | Worker |
+| `engine/` | engine262 adapter implementing the host-owned `EngineAdapter` interface: realm, host globals, `MessageChannel` global, Unsupported API stubs, promise-job descriptors (engine262 patch in `patches/`). The only place that imports `@engine262/**`. | trace, host (the interface) | Worker |
 | `host/` | HTML event loop for one Host Profile (`chrome-155`): task queues, Virtual Clock, timers, Checkpoints, rejection tracker, port-message task source, seeded `Math.random`, Budget meter, timing-sensitivity detection. Emits Trace Events; talks to the engine only through `EngineAdapter`. | trace | Worker |
 | `runner/` | `runScript` and its Worker entry, the main-thread `worker-run-client` (wall-clock watchdog, cancel), and the pre-run Unsupported API scan. | trace, host, engine | both |
 | `player/` | Pure replay logic over a Trace: `stateAt` folds events into a `ReplayState`, snapshots, Visible Event indexing, navigation (event, Tick, Task, start/end, seek), per-event explanations. No Vue, no timers. | trace | anywhere |
@@ -55,11 +55,11 @@ renderer -> player -> trace <- host <- engine adapter        runner ties them to
 ## Determinism and correctness
 
 - No wall-clock time in a Run: the Virtual Clock advances 1 us per evaluated node (configurable);
-  `Math.random` is seeded and the seed is recorded in the Trace header (ADR-0007, ADR-0004).
+  `Math.random` is seeded and the seed is recorded in the Trace header.
 - Budgets (nodes, tasks, virtual ms, events) halt a Run deterministically.
 - `oracle/` holds fixtures and Chrome-recorded goldens; `oracle.test.ts` compares simulator output
   to them, and a version guard fails if a golden's Chrome major differs from the Host Profile
-  (ADR-0008). `tests/golden/` holds golden Traces and the frozen Trace schema v1 snapshot.
+  `tests/golden/` holds golden Traces and the frozen Trace schema v1 snapshot.
 
 ## Build
 

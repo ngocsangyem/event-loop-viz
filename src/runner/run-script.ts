@@ -22,7 +22,7 @@ export interface RunSettings {
 
 export { DEFAULT_BUDGETS }
 
-/** Runs a Script to Halt under the simulated event loop (ADR-0001, ADR-0003). */
+/** Runs a Script to Halt under the simulated event loop. */
 export async function runScript(script: string, settings: RunSettings = {}): Promise<RunResult> {
   const hostSettings: HostSettings = {
     nodeCostUs: settings.nodeCostUs ?? DEFAULT_NODE_COST_US,

@@ -1,6 +1,6 @@
 /**
  * Detects Runs whose ordering could differ from the Oracle because the Virtual Clock
- * charges 1 us per node while real Chrome runs faster or slower (ADR-0007).
+ * charges 1 us per node while real Chrome runs faster or slower.
  *
  * A compute boundary is the end of a Task (with its Checkpoint) that computed for at
  * least MIN_COMPUTE_US. A pending timer due within WINDOW_US of that boundary could

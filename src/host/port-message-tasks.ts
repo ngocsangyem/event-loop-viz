@@ -11,7 +11,7 @@ export interface PortMessageTask {
 
 /**
  * FIFO of port-message Tasks. Enqueue time never decreases, so the head is always the oldest.
- * The event loop compares the head against the next timer to pick across sources (ADR-0010).
+ * The event loop compares the head against the next timer to pick across sources.
  */
 export function createPortMessageTasks() {
   const queue: PortMessageTask[] = []

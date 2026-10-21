@@ -1,6 +1,6 @@
 # UX References (Mobbin)
 
-Patterns from shipped products that apply to the replay UI (ADR-0003). Collected 2026-10-21.
+Patterns from shipped products that apply to the replay UI. Collected 2026-10-21.
 
 | Pattern | Reference | Apply to |
 |---|---|---|

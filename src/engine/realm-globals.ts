@@ -114,7 +114,7 @@ export function installRealmGlobals(
       return E.Value(bindings.random())
     })
   }
-  // Wall-clock reads must come from the Virtual Clock so busy-waits terminate deterministically (ADR-0007).
+  // Wall-clock reads must come from the Virtual Clock so busy-waits terminate deterministically.
   const dateConstructor = global.properties.get(E.Value('Date'))?.Value
   if (dateConstructor instanceof E.ObjectValue) {
     defineGlobal(dateConstructor, 'now', function* () {

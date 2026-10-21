@@ -1,5 +1,5 @@
 /**
- * Trace schema v1: the only contract between execution and presentation (ADR-0005).
+ * Trace schema v1: the only contract between execution and presentation.
  * Events are frozen, JSON-serializable and contain no engine objects.
  */
 

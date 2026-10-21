@@ -5,6 +5,6 @@
     "version": "155.0.8059.85"
   },
   "status": "skip",
-  "skipReason": "uses Math.random (ADR-0002 excludes it from differential tests)",
+  "skipReason": "uses Math.random, which differential tests exclude",
   "observableOutput": []
 }

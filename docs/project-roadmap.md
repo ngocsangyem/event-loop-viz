@@ -19,9 +19,9 @@ Deploy is manual: follow `docs/deployment-guide.md`, then add the URL to the REA
 
 ## v1.1 candidates
 
-- `requestAnimationFrame`: first candidate (ADR-0006). Its ordering against timers is unverified
+- `requestAnimationFrame`: first candidate. Its ordering against timers is unverified
   against the Oracle, so it ships only behind differential fixtures.
-- Seeded, grammar-based fuzzer for differential testing (ADR-0008): mixes `then`, `await`,
+- Seeded, grammar-based fuzzer for differential testing: mixes `then`, `await`,
   thenables, async generators, `queueMicrotask`, timers with safe delays and `throw`/reject;
   about 200 programs per PR and 10,000 nightly, with automatic minimization of mismatches into the
   curated cases.
@@ -29,5 +29,5 @@ Deploy is manual: follow `docs/deployment-guide.md`, then add the URL to the REA
 ## Standing maintenance
 
 - A Chrome major bump needs a new Host Profile, re-recorded goldens, and re-verification of the
-  cross-source task FIFO rule (ADR-0010).
-- An engine262 bump must keep the ADR-0009 patch applying and manual Job execution intact.
+  cross-source task FIFO rule.
+- An engine262 bump must keep the engine262 patch (`patches/`) applying and manual Job execution intact.

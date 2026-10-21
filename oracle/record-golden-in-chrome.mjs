@@ -1,5 +1,5 @@
 // Records the Oracle's Observable Output for every fixture by running it in real Chrome
-// (ADR-0002, ADR-0008). Writes fixtures/<name>.golden.json next to each fixture.
+// Writes fixtures/<name>.golden.json next to each fixture.
 // Usage: pnpm oracle:record [fixture-name ...]
 import { chromium } from '@playwright/test'
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -37,7 +37,7 @@ const browser = await chromium.launch({ channel: 'chrome', headless: true })
 const version = browser.version()
 if (Number(version.split('.')[0]) !== PINNED_CHROME_MAJOR) {
   await browser.close()
-  throw new Error(`Chrome ${version} does not match pinned major ${PINNED_CHROME_MAJOR}; add a new Host Profile first (ADR-0008)`)
+  throw new Error(`Chrome ${version} does not match pinned major ${PINNED_CHROME_MAJOR}; add a new Host Profile first`)
 }
 
 async function runOnce(source) {

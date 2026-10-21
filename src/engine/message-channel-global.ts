@@ -1,4 +1,4 @@
-// MessageChannel / MessagePort for engine262 realms (ADR-0010). Imports engine262, so it lives in src/engine.
+// MessageChannel / MessagePort for engine262 realms. Imports engine262, so it lives in src/engine.
 import * as E from '@engine262/engine262'
 import type { CallbackHandle } from '../host/engine-adapter'
 

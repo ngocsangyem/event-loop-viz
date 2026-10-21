@@ -17,7 +17,7 @@ hosting is only file serving. Target host: Vercel.
   chunk (`assets/index-*.js`) must not contain it, and `index.html` must not preload the Worker.
   The Worker is created when the first Run starts.
 - The Worker chunk keeps built-in function names (`keepNames`), because they become frame labels in
-  the Trace (ADR-0001). Minifying them away turns labels such as `executorClosure` into
+  the Trace. Minifying them away turns labels such as `executorClosure` into
   `(anonymous)`.
 - `pnpm run check:build` asserts both (after `pnpm run build-only`), by loading the built Worker
   chunk, running a Script in it and reading the frame labels it emits. It prints raw and gzip sizes.

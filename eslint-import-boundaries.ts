@@ -1,4 +1,4 @@
-// One-way module dependencies (ADR-0005):
+// One-way module dependencies:
 //   renderer -> player -> trace <- host <- engine adapter; runner ties them together.
 //
 // Rules match the literal import specifier (relative or `@/` alias) with gitignore-style

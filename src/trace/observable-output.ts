@@ -1,5 +1,5 @@
 /**
- * Observable Output: what a Script reveals to the outside world, in order (ADR-0002).
+ * Observable Output: what a Script reveals to the outside world, in order.
  * Differential tests compare exactly this against the Oracle (real Chrome), never the internal Trace.
  */
 export type ObservableEntry =

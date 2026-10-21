@@ -18,7 +18,7 @@ event-loop host on a Virtual Clock, inside a Web Worker. A Run produces one immu
 never drives the engine: it replays the Trace (play/pause, step, jump by Tick or Task, scrubber,
 source highlighting). Architecture: [docs/system-architecture.md](docs/system-architecture.md).
 Status and plans: [docs/project-roadmap.md](docs/project-roadmap.md). Terms are defined in
-[GLOSSARY.md](GLOSSARY.md); decisions are in [docs/adr/](docs/adr/).
+[GLOSSARY.md](GLOSSARY.md). The code is the record of design decisions.
 
 ## Supported APIs
 

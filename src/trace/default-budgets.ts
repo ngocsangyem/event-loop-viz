@@ -1,6 +1,6 @@
 import type { TraceBudgets } from './trace-event'
 
-/** Budgets a Run uses unless the user changes them (ADR-0004). */
+/** Budgets a Run uses unless the user changes them. */
 export const DEFAULT_BUDGETS: TraceBudgets = {
   nodes: 2_000_000,
   tasks: 10_000,

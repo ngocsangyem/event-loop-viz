@@ -12,4 +12,4 @@ Uses the five default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `
 
 ### Domain docs
 
-Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context: one `GLOSSARY.md` at the repo root. The codebase is the only source of truth for decisions: no ADRs. See `docs/agents/domain.md`.

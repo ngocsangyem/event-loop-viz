@@ -11,7 +11,7 @@ export class BudgetHalt extends Error {
 }
 
 /**
- * Counts every deterministic Budget (ADR-0004). All inputs are counts or Virtual
+ * Counts every deterministic Budget. All inputs are counts or Virtual
  * Clock readings, so a Run halts at the same point every time.
  */
 export interface BudgetMeter {

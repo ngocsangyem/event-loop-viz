@@ -1,3 +1,3 @@
-// Concept: math random seeded. Source: ADR-0002 (Math.random is seeded per Run; excluded from differential tests).
-// @oracle-skip: uses Math.random (ADR-0002 excludes it from differential tests)
+// Concept: math random seeded. Math.random is seeded per Run and excluded from differential tests.
+// @oracle-skip: uses Math.random, which differential tests exclude
 console.log(Math.random() < 2);

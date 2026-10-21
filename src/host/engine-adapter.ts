@@ -1,7 +1,7 @@
 import type { JobKind, PromiseReactionVia, SourceLocation } from '../trace/trace-event'
 
 /**
- * Engine-neutral seam between the host and a JavaScript engine (ADR-0001, ADR-0005).
+ * Engine-neutral seam between the host and a JavaScript engine.
  * The host owns this interface; src/engine implements it. Nothing under src/host
  * may import engine types, so another engine can be dropped in.
  */

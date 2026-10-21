@@ -1,4 +1,4 @@
-// Worker entry: runs the Script off the main thread so the UI never freezes (ADR-0001).
+// Worker entry: runs the Script off the main thread so the UI never freezes.
 import { runScript } from './run-script'
 import type { RunSettings } from './run-script'
 

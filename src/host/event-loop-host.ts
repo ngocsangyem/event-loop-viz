@@ -142,7 +142,7 @@ export function runHost(
     for (;;) {
       const nextTimer = timers.next()
       const nextMessage = portMessages.peek()
-      // Cross-source choice: oldest enqueue wins (Host Profile chrome-155, ADR-0010).
+      // Cross-source choice: oldest enqueue wins (Host Profile chrome-155).
       const useMessage = nextMessage && (!nextTimer || enqueuedBefore(nextMessage, nextTimer))
       const nextDueUs = useMessage ? nextMessage.dueUs : nextTimer?.dueUs
       // Chrome runs a task that is already due before the notification Task; a later one waits.

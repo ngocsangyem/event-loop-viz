@@ -1,7 +1,7 @@
 // Post-build gate for the production bundle (run after `pnpm run build-only`).
 // Asserts the three things a deploy must not regress, then prints a size table:
 //   1. the main chunk does not contain the engine (it lives in the lazily created Worker chunk)
-//   2. the Worker chunk keeps real built-in function names (frame labels in the Trace, ADR-0001)
+//   2. the Worker chunk keeps real built-in function names (frame labels in the Trace)
 //   3. the built Worker, actually executed, emits those real names as frame labels
 // Usage: node scripts/check-production-build.mjs [distDir]
 import { readdirSync, readFileSync, statSync } from 'node:fs'

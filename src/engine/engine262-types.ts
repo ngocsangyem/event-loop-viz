@@ -1,4 +1,4 @@
-// Type aliases over engine262 shared by the adapter's sibling modules (ADR-0001, ADR-0005).
+// Type aliases over engine262 shared by the adapter's sibling modules.
 import * as E from '@engine262/engine262'
 
 export type EngineValue = E.Value

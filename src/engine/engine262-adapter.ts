@@ -1,4 +1,4 @@
-// The only module that imports engine262 (ADR-0001, ADR-0005).
+// The only module that imports engine262.
 import * as E from '@engine262/engine262'
 import type {
   CallbackHandle,
@@ -22,7 +22,7 @@ export const ENGINE262_PATCH = 'promise-events-3'
 
 /**
  * Creates an engine262 realm driven by manual Job execution: Jobs run only when
- * the host performs a Checkpoint, never inside evaluate calls (ADR-0001).
+ * the host performs a Checkpoint, never inside evaluate calls.
  */
 export function createEngine262Adapter(): EngineAdapter {
   const state = createEngineRunState()
