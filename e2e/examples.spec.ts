@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('loading an example and running it produces a Trace', async ({ page }) => {
   await page.goto('/')

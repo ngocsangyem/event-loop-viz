@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { revealPanel } from './reveal-panel'
 
 test('a Script using fetch shows the pre-run notice and the replay console shows the error', async ({

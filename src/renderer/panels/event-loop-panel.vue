@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ReplayState } from '../../player/replay-state'
 import { formatVirtualMs } from '../scene/timer-shelf-model'
 import { cn } from '@/lib/utils'
 import { LOOP_PHASE_TEXT, loopPhaseOf } from './event-loop-phase'
+import type { LoopPhase } from './event-loop-phase'
 import PanelCard from './panel-card.vue'
 
 const props = defineProps<{ state: ReplayState }>()
@@ -13,6 +14,19 @@ const clock = computed(() => formatVirtualMs(props.state.clockUs))
 
 /** The ring: one Task, then every microtask, then around again. Arcs are half circles. */
 const R = 52
+
+/** Where the pointer rests for each phase, in degrees clockwise from the top. */
+const PHASE_ANGLE: Record<LoopPhase, number> = { idle: 0, task: 90, microtasks: 270, halted: 0 }
+
+/**
+ * The pointer only ever turns clockwise, like the loop itself: going from microtasks back to
+ * the next Task completes the circle instead of turning back.
+ */
+const pointerAngle = ref(PHASE_ANGLE[phase.value])
+watch(phase, (next) => {
+  const current = ((pointerAngle.value % 360) + 360) % 360
+  pointerAngle.value += (PHASE_ANGLE[next] - current + 360) % 360
+})
 const ARCS = [
   { id: 'task', label: 'Task', d: `M 60 ${60 - R} A ${R} ${R} 0 0 1 60 ${60 + R}` },
   { id: 'microtasks', label: 'Microtasks', d: `M 60 ${60 + R} A ${R} ${R} 0 0 1 60 ${60 - R}` },
@@ -35,6 +49,9 @@ const ARCS = [
           stroke-linecap="round"
           :class="cn('transition-colors', phase === arc.id ? 'stroke-primary' : 'stroke-muted')"
         />
+        <g class="loop-pointer" :style="{ transform: `rotate(${pointerAngle}deg)` }">
+          <circle cx="60" :cy="60 - R" r="7" class="fill-background stroke-primary" stroke-width="3" />
+        </g>
         <circle cx="60" cy="60" r="4" :class="phase === 'idle' ? 'fill-primary' : 'fill-muted-foreground/40'" />
       </svg>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">

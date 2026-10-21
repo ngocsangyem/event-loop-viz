@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { revealPanel } from './reveal-panel'
 
 // Unicode plus enough filler to push the link past a few kB.
@@ -29,6 +29,7 @@ test('a share link opened in a fresh context reproduces the Trace and output', a
 
   const context = await browser.newContext()
   const fresh = await context.newPage()
+  await fresh.addInitScript(() => localStorage.setItem('elv-autoplay', 'off'))
   await fresh.goto(url)
   await expect(fresh.getByTestId('event-list')).toBeVisible()
   await expect(fresh.getByTestId('event-list').locator('li')).toHaveCount(originalEvents)

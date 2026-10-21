@@ -19,7 +19,7 @@ const lines = computed(() => formatConsoleLines(props.output))
     <p v-if="lines.length === 0" class="text-muted-foreground py-2 text-center text-xs">
       No console output at this step.
     </p>
-    <ul data-testid="console-panel" class="flex flex-col font-mono text-xs">
+    <TransitionGroup tag="ul" name="queue-item" data-testid="console-panel" class="relative flex flex-col font-mono text-xs">
       <li
         v-for="(line, i) in lines"
         :key="i"
@@ -32,6 +32,6 @@ const lines = computed(() => formatConsoleLines(props.output))
       >
         {{ line.text }}
       </li>
-    </ul>
+    </TransitionGroup>
   </PanelCard>
 </template>

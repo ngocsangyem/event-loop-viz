@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import type { Page } from '@playwright/test'
 
 // Never finishes on its own. The node Budget is raised so far that it cannot trip first: the Run

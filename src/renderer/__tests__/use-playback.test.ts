@@ -53,4 +53,22 @@ describe('playback', () => {
     pb.play()
     expect(position.value).toBe(player.value.first())
   })
+
+  it('passes over steps the viewer would see as unchanged', () => {
+    const trace = buildTrace(
+      Array.from({ length: 10 }, (_, i) => ({ k: 'console', level: 'log', text: String(i) }) as never),
+    )
+    const player = ref(createPlayer(trace))
+    const steps = player.value.stepPositions()
+    const position = ref(player.value.first())
+    // Only every third step looks different.
+    const sameView = (from: number, to: number) =>
+      Math.floor(steps.indexOf(from) / 3) === Math.floor(steps.indexOf(to) / 3)
+    const pb = effectScope().run(() => usePlayback(player, position, () => sameView))!
+    pb.play()
+    vi.advanceTimersByTime(stepIntervalMs(1))
+    expect(position.value).toBe(steps[3])
+    vi.advanceTimersByTime(stepIntervalMs(1))
+    expect(position.value).toBe(steps[6])
+  })
 })

@@ -1,0 +1,45 @@
+/*
+ * Motion for the panels view: entries slide in when queued or pushed, fade out sideways when
+ * they leave, and glide when their neighbours change. Reduced motion keeps only the end state.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .queue-item-enter-active,
+  .queue-item-leave-active,
+  .queue-item-move {
+    transition:
+      transform 320ms cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .queue-item-enter-from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  .queue-item-leave-to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  /* Leaving entries stop taking space so the rest can glide into place. */
+  .queue-item-leave-active {
+    position: absolute;
+    inset-inline: 0;
+  }
+  .queue-item-active {
+    animation: queue-item-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes queue-item-pulse {
+    50% {
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+    }
+  }
+}
+
+/* The Event Loop pointer turns about the ring's centre. */
+.loop-pointer {
+  transform-box: view-box;
+  transform-origin: 60px 60px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .loop-pointer {
+    transition: transform 600ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}

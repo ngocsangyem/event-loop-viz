@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { revealPanel } from './reveal-panel'
 
 const SCRIPT = `setTimeout(() => console.log('timer'), 10); console.log('sync')`

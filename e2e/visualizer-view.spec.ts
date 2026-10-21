@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('panels are the default view and name each part of the event loop', async ({ page }) => {
   await page.goto('/')
@@ -43,4 +43,34 @@ test('arrow keys on the view switch move between views without stepping the Trac
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('End')
   expect(await current()).toBe(before)
+})
+
+test('with Autostart on, a Run plays by itself and fills the panels step by step', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('elv-autoplay', 'on'))
+  await page.goto('/')
+  await page.getByLabel('Script').fill(`console.log('start');
+setTimeout(() => console.log('timeout 1'), 0);
+Promise.resolve().then(() => console.log('promise 1'));
+console.log('end');`)
+  await page.getByRole('button', { name: 'Run' }).click()
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+  await expect(page.getByTestId('panel-web-apis')).toContainText('setTimeout', { timeout: 15_000 })
+  await expect(page.getByTestId('panel-microtask-queue')).toContainText('Promise reaction', { timeout: 15_000 })
+  await expect(page.getByTestId('console-panel')).toContainText('timeout 1', { timeout: 30_000 })
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
+})
+
+test('the call stack hides built-ins called by other built-ins', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Script').fill(`Promise.resolve(1)`)
+  await page.getByRole('button', { name: 'Run' }).click()
+  const stack = page.getByTestId('panel-call-stack')
+  // ArrowRight steps one event and stops quietly at the end of the Trace.
+  await page.locator('body').click()
+  for (let i = 0; i < 30; i++) {
+    await page.keyboard.press('ArrowRight')
+    await expect(stack.getByText('executorClosure')).toHaveCount(0)
+  }
+  // The walk really reached the end, past every frame of the Run.
+  await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled()
 })

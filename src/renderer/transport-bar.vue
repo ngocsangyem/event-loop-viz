@@ -4,21 +4,31 @@ import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import TimelineScrubber from './timeline-scrubber.vue'
 import { SPEEDS, usePlayback } from './use-playback'
+import type { SameView } from './use-playback'
 import {
-  ChevronFirstIcon, ChevronLastIcon, ChevronsLeftIcon, ChevronsRightIcon, PauseIcon, PlayIcon,
+  ChevronFirstIcon, ChevronLastIcon, RepeatIcon, ChevronsLeftIcon, ChevronsRightIcon, PauseIcon, PlayIcon,
   SkipBackIcon, SkipForwardIcon, StepBackIcon, StepForwardIcon,
 } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Toggle } from '@/components/ui/toggle'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-const props = defineProps<{ player: Player | null; events: readonly TraceEvent[] }>()
+const props = defineProps<{
+  player: Player | null
+  events: readonly TraceEvent[]
+  /** Lets playback pass over steps that change nothing on screen. */
+  sameView?: SameView
+}>()
 const position = defineModel<number>({ required: true })
+/** Start playing as soon as a Run produces a Trace. */
+const autoplay = defineModel<boolean>('autoplay', { required: true })
 
-const { playing, speed, toggle, pause } = usePlayback(
+const { playing, speed, play, toggle, pause } = usePlayback(
   computed(() => props.player),
   position,
+  () => props.sameView,
 )
 
 const atStart = computed(() => !props.player || position.value <= props.player.first())
@@ -43,6 +53,7 @@ function jumpBy(unit: Unit, direction: 'next' | 'prev') {
 const toolbar = useTemplateRef<HTMLElement>('toolbar')
 /** Lets the app hand keyboard focus to the controls once a Trace exists. */
 defineExpose({
+  play,
   // Next is disabled when the Trace opens at its end; fall back to the first enabled control.
   focusStep: () =>
     toolbar.value
@@ -174,6 +185,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <SelectItem v-for="s in SPEEDS" :key="s" :value="String(s)">{{ s }}×</SelectItem>
         </SelectContent>
       </Select>
+      <Toggle
+        v-model="autoplay"
+        size="sm"
+        variant="outline"
+        class="max-sm:h-11!"
+        data-control="autoplay"
+        title="Start playing as soon as a Run finishes"
+      >
+        <RepeatIcon />
+        Autostart
+      </Toggle>
     </div>
     <TimelineScrubber v-model="position" :player="player" :events="events" @scrub="pause" />
   </div>

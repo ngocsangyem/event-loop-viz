@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { revealPanel } from './reveal-panel'
 
 test.use({ viewport: { width: 375, height: 812 }, hasTouch: true })

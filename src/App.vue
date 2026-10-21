@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent, nextTick, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { findExample } from '@/examples/example-library'
 import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
 import { useRunSession } from '@/use-run-session'
@@ -21,6 +21,9 @@ import WebApisPanel from '@/renderer/panels/web-apis-panel.vue'
 import EventLoopPanel from '@/renderer/panels/event-loop-panel.vue'
 import { useColorTheme } from '@/renderer/use-color-theme'
 import { useVisualizerView } from '@/renderer/use-visualizer-view'
+import { useAutoplayPreference } from '@/renderer/use-autoplay-preference'
+import { panelSignature } from '@/renderer/panels/panel-view-model'
+import type { SameView } from '@/renderer/use-playback'
 
 // The 3D Scene is opt-in, so its code and styles load only when that view is picked.
 const SceneView = defineAsyncComponent(() => import('@/renderer/scene/event-loop-scene.vue'))
@@ -35,17 +38,21 @@ const editor = useTemplateRef('editor')
 const transport = useTemplateRef('transport')
 const { choice: theme } = useColorTheme()
 const view = useVisualizerView()
+const autoplay = useAutoplayPreference()
 
 /**
- * The Run button is disabled mid-Run, which drops keyboard focus to the page. Put it back where
- * the next action is: the playback controls after a Trace, the Run button after a failure.
+ * After a Run: start playback when auto-play is on, then put keyboard focus back. The Run button
+ * is disabled mid-Run, which drops focus to the page, so it goes where the next action is: the
+ * playback controls after a Trace, the Run button after a failure.
  */
-async function restoreFocusAfterRun() {
+async function afterRun() {
+  await nextTick()
+  // The panels animate the Run by themselves, like a video, unless the viewer opted out.
+  if (session.trace.value && autoplay.value) transport.value?.play()
   if (autoRun) {
     autoRun = false
     return
   }
-  await nextTick()
   if (document.activeElement && document.activeElement !== document.body) return
   if (session.trace.value) transport.value?.focusStep()
   else editor.value?.focusRun()
@@ -53,7 +60,7 @@ async function restoreFocusAfterRun() {
 
 const session = useRunSession({
   initial: shared ?? undefined,
-  onSettled: () => void restoreFocusAfterRun(),
+  onSettled: () => void afterRun(),
   // Lets tests shorten the 30 s wall-clock watchdog: /?watchdogMs=300
   watchdogMs: Number(new URLSearchParams(location.search).get('watchdogMs')) || undefined,
 })
@@ -62,6 +69,13 @@ const {
   halt, replaying, player, replayState, consoleOutput, sourceHighlight, previousReplayState,
   unsupportedApis, run, cancel,
 } = session
+
+/** In the panels view, playback passes over steps the panels draw identically. */
+const sameView = computed((): SameView | undefined => {
+  const current = player.value
+  if (view.value !== 'panels' || !current) return undefined
+  return (from, to) => panelSignature(current.stateAt(from)) === panelSignature(current.stateAt(to))
+})
 
 /** The "Edit" button vanishes with the replay banner, so focus moves to the editor it unlocks. */
 async function editScript() {
@@ -149,7 +163,8 @@ onMounted(() => {
 
       <Card size="sm" class="bg-card/90 sticky bottom-3 z-10 shadow-lg backdrop-blur">
         <CardContent>
-          <TransportBar ref="transport" v-model="position" :player="player" :events="events" />
+          <TransportBar ref="transport" v-model="position" v-model:autoplay="autoplay"
+            :same-view="sameView" :player="player" :events="events" />
         </CardContent>
       </Card>
 

@@ -12,11 +12,19 @@ export function stepIntervalMs(speed: number): number {
   return 1000 / (EVENTS_PER_SECOND_AT_1X * speed)
 }
 
+/** Two positions that look the same; playback passes over the second one. */
+export type SameView = (from: number, to: number) => boolean
+
 /**
  * Timer-driven playback. It only moves the playhead by calling the player's `next`,
- * and stops by itself on the last step or when the Trace is replaced.
+ * and stops by itself on the last step or when the Trace is replaced. With `sameView`, each
+ * tick moves on to the next step that changes what the viewer sees, so nothing idles on screen.
  */
-export function usePlayback(player: Ref<Player | null>, position: Ref<number>) {
+export function usePlayback(
+  player: Ref<Player | null>,
+  position: Ref<number>,
+  sameView: () => SameView | undefined = () => undefined,
+) {
   const playing = ref(false)
   const speed = ref<Speed>(1)
   let timer: ReturnType<typeof setInterval> | null = null
@@ -53,7 +61,11 @@ export function usePlayback(player: Ref<Player | null>, position: Ref<number>) {
         return
       }
       timer = setInterval(() => {
-        position.value = p.next(position.value)
+        const from = position.value
+        const same = sameView()
+        let to = p.next(from)
+        while (same && to < p.last() && same(from, to)) to = p.next(to)
+        position.value = to
         if (position.value >= p.last()) pause()
       }, stepIntervalMs(speed.value))
     },
