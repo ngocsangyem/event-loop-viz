@@ -48,7 +48,8 @@ const { t } = useI18n()
         <AskAiMarkdown v-if="stop.body" :text="stop.body" class="pl-7.5" />
       </li>
     </ol>
-    <AskAiMarkdown v-if="answer.outro" :text="answer.outro" />
+    <!-- The recap: the rule in one line and what to say about it in an interview. -->
+    <AskAiMarkdown v-if="answer.outro" :text="answer.outro" class="border-primary/40 bg-primary/5 rounded-lg border-l-2 p-2.5" data-testid="ask-ai-recap" />
     <div v-if="done && answer.stops.length > 0" class="bg-muted/50 flex items-center justify-between gap-3 rounded-lg border p-2.5">
       <span class="text-muted-foreground text-xs">{{ t('ai.tour.ready', { total: answer.stops.length }) }}</span>
       <!-- One button whose label changes, so keyboard focus stays on it once the tour starts. -->

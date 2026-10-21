@@ -35,8 +35,18 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Use only event numbers listed in the Trace')
   })
 
+  it('teaches like an interview coach: the rule first, terms explained, a line to say out loud', () => {
+    const en = buildSystemPrompt('en')
+    expect(en).toContain('coaches developers for technical interviews')
+    expect(en).toContain('Build the mental model before the details')
+    expect(en).toContain('Explain each term the first time you use it')
+    expect(en).toContain('**In an interview, you can say:**')
+    expect(buildSystemPrompt('vi')).toContain('**Khi phỏng vấn, bạn có thể nói:**')
+  })
+
   it('stays compact', () => {
-    expect(buildSystemPrompt('vi').length).toBeLessThan(4500)
+    // About 1.5K tokens: small next to the Trace context that rides along with each question.
+    expect(buildSystemPrompt('vi').length).toBeLessThan(6000)
   })
 })
 
