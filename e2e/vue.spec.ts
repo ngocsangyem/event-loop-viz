@@ -28,7 +28,7 @@ test('Prev returns to the earlier event position and console content', async ({ 
   const next = page.getByRole('button', { name: 'Next' })
   const prev = page.getByRole('button', { name: 'Prev' })
   await revealPanel(page, 'Console')
-  const current = page.locator('[data-testid="event-list"] [aria-current="true"]')
+  const current = page.locator('[data-testid="event-list"] [aria-current="step"]')
   const consoleLines = page.getByTestId('console-panel').locator('li')
 
   await expect(next).toBeEnabled()

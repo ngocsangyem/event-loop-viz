@@ -15,6 +15,7 @@
 import { computed } from 'vue'
 import { hueVars } from '../concepts'
 import type { Concept } from '../concepts'
+import { parseListProp } from '../parse-list-prop'
 
 export interface QueueRowItem {
   /** Stable key; also the row's identity for the move animation. */
@@ -43,15 +44,7 @@ const props = withDefaults(
 const style = computed(() => hueVars(props.concept))
 
 /** Rows from the property (array) or the attribute (JSON string); bad JSON shows the empty state. */
-const rows = computed<QueueRowItem[]>(() => {
-  if (Array.isArray(props.items)) return props.items
-  try {
-    const parsed: unknown = JSON.parse(props.items || '[]')
-    return Array.isArray(parsed) ? (parsed as QueueRowItem[]) : []
-  } catch {
-    return []
-  }
-})
+const rows = computed(() => parseListProp<QueueRowItem>(props.items))
 const TAGS: Record<string, string> = { new: 'NEW', top: 'TOP', running: 'RUNNING' }
 </script>
 

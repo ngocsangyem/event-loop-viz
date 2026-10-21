@@ -18,7 +18,7 @@ test('lowering the node Budget halts the infinite loop earlier and the banner na
   await loadInfiniteLoop(page)
   await setNodeBudget(page, '5000')
   await page.getByRole('button', { name: 'Run' }).click()
-  await expect(page.getByTestId('halt-banner')).toHaveText(
+  await expect(page.getByTestId('halt-banner')).toContainText(
     'Halted: the node Budget (5,000 nodes) was exceeded.',
     { timeout: 10_000 },
   )

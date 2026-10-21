@@ -5,13 +5,15 @@ import AskAiTourAnswer from './ask-ai-tour-answer.vue'
 import type { TourAnswer } from './tour-answer-parser'
 import type { ConversationMessage } from './use-ask-ai'
 
-/** The conversation: your questions on the right, the AI's answers (laid out as tours) on the left. */
+/** The conversation: your questions as raised `❯` blocks, the AI's answers (laid out as tours) under them. */
 const props = defineProps<{
   messages: readonly ConversationMessage[]
   streaming: boolean
   answers: ReadonlyMap<number, TourAnswer>
   /** The answer the tour walks and its current stop. */
   tour: { messageId: number | null; index: number }
+  /** The step number a Trace event shows as, for the JUMP TO STEP words. */
+  stepOf: (seq: number) => number
 }>()
 const emit = defineEmits<{ go: [messageId: number, index: number] }>()
 const { t } = useI18n()
@@ -43,25 +45,29 @@ watch(
     role="region"
     tabindex="0"
     :aria-label="t('ai.conversation')"
-    class="focus-visible:ring-ring/50 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-2 outline-none focus-visible:ring-3"
+    class="focus-visible:outline-ring flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2"
     data-testid="ask-ai-messages"
   >
     <template v-for="(message, i) in messages" :key="message.id">
-      <div v-if="message.role === 'user'" class="flex justify-end" data-testid="ask-ai-user-message">
-        <p class="bg-raised text-foreground border-border-soft max-w-[85%] border px-3 py-2 font-mono text-[13px] break-words whitespace-pre-wrap before:text-brand-text before:content-['❯_']">
-          <span class="sr-only">{{ t('ai.you') }}: </span>{{ message.content }}
-        </p>
-      </div>
-      <div v-else class="max-w-[95%]" data-testid="ask-ai-answer">
+      <p
+        v-if="message.role === 'user'"
+        class="bg-raised text-foreground border-border-soft flex gap-2 border px-3 py-2.5 font-mono text-[13px] leading-5 break-words whitespace-pre-wrap"
+        data-testid="ask-ai-user-message"
+      >
+        <span class="text-brand shrink-0" aria-hidden="true">❯</span>
+        <span><span class="sr-only">{{ t('ai.you') }}: </span>{{ message.content }}</span>
+      </p>
+      <div v-else data-testid="ask-ai-answer">
         <span class="sr-only">{{ t('ai.assistant') }}: </span>
         <AskAiTourAnswer
           v-if="message.content && answers.get(message.id)"
           :answer="answers.get(message.id)!"
           :active="tour.messageId === message.id ? tour.index : -1"
           :done="!(streaming && i === messages.length - 1)"
+          :step-of="stepOf"
           @go="emit('go', message.id, $event)"
         />
-        <span v-else class="text-muted-foreground">{{ t('ai.thinking') }}</span>
+        <span v-else class="text-muted-foreground font-mono text-xs uppercase">{{ t('ai.thinking') }}</span>
         <span
           v-if="streaming && i === messages.length - 1"
           class="bg-foreground ml-0.5 inline-block h-4 w-1.5 animate-pulse align-text-bottom motion-reduce:animate-none"

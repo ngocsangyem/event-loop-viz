@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { formatConsoleLines } from '../console-lines'
+import { consoleRowsOf, formatConsoleLines } from '../console-lines'
 
 describe('formatConsoleLines', () => {
   it('prints console calls by level', () => {
@@ -40,5 +40,47 @@ describe('formatConsoleLines', () => {
       'Uncaught (in promise) nope',
       'rejectionhandled: nope',
     ])
+  })
+})
+
+describe('consoleRowsOf', () => {
+  it('tags each console level and keeps the text free of a level prefix', () => {
+    const rows = consoleRowsOf([
+      { kind: 'console', level: 'log', text: 'a' },
+      { kind: 'console', level: 'info', text: 'b' },
+      { kind: 'console', level: 'warn', text: 'c' },
+      { kind: 'console', level: 'error', text: 'd' },
+    ])
+    expect(rows.map((r) => [r.tag, r.tone, r.text, r.ruled])).toEqual([
+      ['LOG', 'log', 'a', false],
+      ['INF', 'info', 'b', false],
+      ['WRN', 'warn', 'c', false],
+      ['ERR', 'error', 'd', false],
+    ])
+  })
+
+  it('marks uncaught exceptions and unhandled rejections with their prefix and an error rule', () => {
+    const rows = consoleRowsOf([
+      { kind: 'uncaught-exception', message: 'boom', errorName: 'UnsupportedApiError' },
+      { kind: 'unhandled-rejection', message: 'nope' },
+    ])
+    expect(rows).toMatchObject([
+      { tag: 'ERR', prefix: 'uncaught', ruled: true, text: 'UnsupportedApiError: boom' },
+      { tag: 'REJ', prefix: 'unhandled-rejection', ruled: true, text: 'nope' },
+    ])
+  })
+
+  it('collapses identical consecutive lines into a count and keeps the latest meta', () => {
+    const same = { kind: 'console', level: 'log', text: 'tick' } as const
+    const rows = consoleRowsOf([same, same, { kind: 'console', level: 'warn', text: 'tick' }, same], ['L1', 'L2', 'L3', 'L4'])
+    expect(rows.map((r) => [r.tag, r.count, r.meta])).toEqual([
+      ['LOG', 2, 'L2'],
+      ['WRN', 1, 'L3'],
+      ['LOG', 1, 'L4'],
+    ])
+  })
+
+  it('leaves meta null when the Trace gave none', () => {
+    expect(consoleRowsOf([{ kind: 'console', level: 'log', text: 'x' }])[0]!.meta).toBeNull()
   })
 })

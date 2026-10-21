@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { DialogContentEmits, DialogContentProps } from 'reka-ui'
+import DialogCloseText from './DialogCloseText.vue'
 
 import type { HTMLAttributes } from 'vue'
-import { XIcon } from '@lucide/vue'
 import { reactiveOmit } from '@vueuse/core'
 import { cn } from 'cn'
 import {
-  DialogClose,
   DialogContent,
   DialogOverlay,
   DialogPortal,
@@ -28,12 +27,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 <template>
   <DialogPortal>
     <DialogOverlay
-      class="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      class="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-(--scrim) data-[state=open]:animate-in motion-reduce:animate-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
     >
       <DialogContent
         :class="
           cn(
-            'relative z-50 grid w-full max-w-lg my-8 gap-4 border border-border bg-background p-6 shadow-lg duration-200 sm:rounded-lg md:w-full',
+            'relative z-50 my-8 flex w-[500px] max-w-full flex-col border border-border bg-popover text-popover-foreground duration-100',
             props.class,
           )
         "
@@ -48,12 +47,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       >
         <slot />
 
-        <DialogClose
-          class="absolute top-4 right-4 p-0.5 transition-colors rounded-md hover:bg-secondary"
-        >
-          <XIcon class="w-4 h-4" />
-          <span class="sr-only">Close</span>
-        </DialogClose>
+        <DialogCloseText />
       </DialogContent>
     </DialogOverlay>
   </DialogPortal>

@@ -7,8 +7,8 @@ import EventList from './event-list.vue'
 
 /**
  * The right column of the replay (DESIGN.md · Why rail): why the current step happened, with its
- * spec link, then the Trace Events list. It replaces the old Trace events card and keeps its
- * region name, so "Trace events" still finds it.
+ * spec link, then the Trace Events list filling the rest of the column and scrolling on its own.
+ * It keeps the region name "Trace events", so the old card is still found by it.
  */
 const props = defineProps<{ events: readonly TraceEvent[] }>()
 const position = defineModel<number>({ required: true })
@@ -23,22 +23,16 @@ const event = computed(() => props.events[position.value])
   <section
     role="region"
     aria-label="Trace events"
-    class="flex min-w-0 flex-col gap-5 p-4 [&_a]:scroll-mb-40 [&_button]:scroll-mb-40"
+    class="flex min-w-0 flex-col xl:h-full [&_a]:scroll-mb-40 [&_button]:scroll-mb-40"
     data-testid="why-rail"
   >
-    <div class="flex min-w-0 flex-col gap-2">
-      <p v-if="event" class="label-mono text-muted-foreground flex flex-wrap gap-x-2">
+    <div class="border-border flex shrink-0 flex-col gap-3 border-b px-5 pt-4 pb-[18px] xl:max-h-[55%] xl:overflow-y-auto">
+      <p v-if="event" class="label-mono flex gap-x-3">
         <span>{{ t('rail.why') }}</span>
-        <span aria-hidden="true">·</span>
-        <span class="text-foreground-2">{{ event.k }}</span>
-        <span aria-hidden="true">·</span>
-        <span>{{ t('rail.traceEvent', { seq: event.seq }) }}</span>
+        <span class="text-muted-foreground ml-auto">{{ t('rail.traceEvent', { seq: event.seq }) }}</span>
       </p>
       <EventDetail :events="events" :position="position" @select="position = $event" />
     </div>
-    <div class="border-border-soft flex min-w-0 flex-col gap-2 border-t pt-4">
-      <h2 class="label-mono text-muted-foreground">{{ t('rail.events') }}</h2>
-      <EventList v-model="position" v-model:show-all="showAll" :events="events" />
-    </div>
+    <EventList v-model="position" v-model:show-all="showAll" :events="events" />
   </section>
 </template>

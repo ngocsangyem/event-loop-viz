@@ -18,11 +18,11 @@ async function runScript(page: Page, script: string) {
 }
 
 const current = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
 const currentRow = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').innerText()
+  page.locator('[data-testid=event-list] li[aria-current=step]').innerText()
 const lastSeq = (page: Page) =>
-  page.locator('[data-testid=event-list] li').last().getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[data-seq]').last().getAttribute('data-seq')
 
 /** Steps forward until `locator` has `count` matches; fails at the end of the Trace. */
 async function stepUntilCount(page: Page, locator: Locator, count: number) {

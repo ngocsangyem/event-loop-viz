@@ -1,4 +1,6 @@
+export { default as DialogBody } from './DialogBody.vue'
 export { default as Dialog } from './Dialog.vue'
+export { default as DialogCloseText } from './DialogCloseText.vue'
 export { default as DialogClose } from './DialogClose.vue'
 export { default as DialogContent } from './DialogContent.vue'
 export { default as DialogDescription } from './DialogDescription.vue'

@@ -1,3 +1,6 @@
+/** Height of one Trace Events line (event row or group header), in px. Windowing relies on it being fixed. */
+export const EVENT_ROW_HEIGHT = 31
+
 /** Lists up to this many rows render in full; longer ones render only the rows in view. */
 export const VIRTUALIZE_ABOVE = 1000
 

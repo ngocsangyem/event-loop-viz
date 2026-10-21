@@ -2,7 +2,6 @@
 import type { ListboxItemEmits, ListboxItemProps } from 'reka-ui'
 
 import type { HTMLAttributes } from 'vue'
-import { CheckIcon } from '@lucide/vue'
 import { reactiveOmit, useCurrentElement } from '@vueuse/core'
 import { cn } from 'cn'
 import { ListboxItem, useForwardPropsEmits, useId } from 'reka-ui'
@@ -68,12 +67,12 @@ onUnmounted(() => {
     :id="id"
     ref="itemRef"
     data-slot="command-item"
-    :class="cn('data-highlighted:bg-muted data-highlighted:text-foreground data-highlighted:*:[svg]:text-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! [&_svg:not([class*=size-])]:size-4 group/command-item data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0', props.class)"
+    :class="cn('data-highlighted:bg-accent data-highlighted:text-foreground relative flex h-[34px] cursor-default items-center gap-2 px-3 font-mono text-[13px] outline-hidden select-none [&_svg:not([class*=size-])]:size-4 group/command-item data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0', props.class)"
     @select="() => {
       filterState.search = ''
     }"
   >
     <slot />
-    <CheckIcon class="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+    <span class="ml-auto font-mono opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" aria-hidden="true">✓</span>
   </ListboxItem>
 </template>

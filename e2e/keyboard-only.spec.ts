@@ -2,7 +2,7 @@ import { test, expect } from './fixtures'
 import type { Locator, Page } from '@playwright/test'
 
 const current = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
 
 /** Moves focus forward with Tab only, failing if the target is not reachable in order. */
 async function tabTo(page: Page, target: Locator, key = 'Tab', maxPresses = 80) {

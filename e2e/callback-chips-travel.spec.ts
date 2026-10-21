@@ -81,7 +81,7 @@ test('a scrubber or event-list jump creates no ghost and rows do not fade in', a
   await watchGhosts(page)
   await page.getByRole('button', { name: 'Go to end' }).click()
   await page.getByRole('button', { name: 'Go to start' }).click()
-  const rows = page.locator('[data-testid=event-list] li')
+  const rows = page.locator('[data-testid=event-list] li[data-seq]')
   await rows.nth(Math.floor((await rows.count()) / 2)).click()
   await expect(ghosts(page)).toHaveCount(0)
   // A row that appears at once never carries the fade-in class.

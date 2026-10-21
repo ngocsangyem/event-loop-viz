@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { RotateCcwIcon } from '@lucide/vue'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import AskAiWordButton from './ask-ai-word-button.vue'
 import type { AskAiErrorKind } from './openrouter-error'
 
-/** A failed request in plain words, with Retry and, for key or model problems, a way to Settings. */
+/** A failed request: `⚠ OPENROUTER 401`, the cause in plain words, and RETRY / SETTINGS / DISMISS words. */
 defineProps<{ error: { kind: AskAiErrorKind; detail?: string } }>()
 const emit = defineEmits<{ retry: []; settings: []; dismiss: [] }>()
 const { t } = useI18n()
@@ -22,21 +21,19 @@ const ERROR_KEYS = {
 </script>
 
 <template>
-  <Alert variant="destructive" class="mx-3 mb-2 w-auto" role="alert" data-testid="ask-ai-error">
+  <Alert tone="error" class="mx-4 mb-3 w-auto shrink-0" data-testid="ask-ai-error">
+    <AlertTitle>{{ t(`ai.errors.title.${ERROR_KEYS[error.kind]}`) }}</AlertTitle>
     <AlertDescription class="flex flex-col gap-2">
       <span>{{ t(`ai.errors.${ERROR_KEYS[error.kind]}`) }}</span>
-      <span v-if="error.kind === 'unknown' && error.detail" class="text-xs">
+      <span v-if="error.kind === 'unknown' && error.detail" class="font-mono text-xs">
         {{ t('ai.errors.detail', { detail: error.detail }) }}
       </span>
-      <span class="flex gap-2">
-        <Button size="xs" variant="outline" data-testid="ask-ai-retry" @click="emit('retry')">
-          <RotateCcwIcon />
-          {{ t('ai.errors.retry') }}
-        </Button>
-        <Button v-if="error.kind === 'invalid-key' || error.kind === 'model-not-found'" size="xs" variant="outline" @click="emit('settings')">
+      <span class="flex gap-4">
+        <AskAiWordButton data-testid="ask-ai-retry" @click="emit('retry')">{{ t('ai.errors.retry') }}</AskAiWordButton>
+        <AskAiWordButton v-if="error.kind === 'invalid-key' || error.kind === 'model-not-found'" @click="emit('settings')">
           {{ t('ai.settings') }}
-        </Button>
-        <Button size="xs" variant="ghost" @click="emit('dismiss')">{{ t('ai.errors.dismiss') }}</Button>
+        </AskAiWordButton>
+        <AskAiWordButton @click="emit('dismiss')">{{ t('ai.errors.dismiss') }}</AskAiWordButton>
       </span>
     </AlertDescription>
   </Alert>

@@ -1,0 +1,167 @@
+/*
+ * The Script editor and the read-only Source, drawn on the card they sit in (editor-card.vue).
+ * Edit mode: gutter 40px, code 13/22. Source mode (data-source): number + queued-work columns,
+ * code 12.5/21, and the current row on an accent rule.
+ */
+.script-editor .cm-editor {
+  min-height: 14em;
+  font-size: var(--text-code);
+  line-height: 22px;
+  background: transparent;
+  color: var(--foreground);
+}
+.script-editor .cm-scroller {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+.script-editor .cm-gutters {
+  background: transparent;
+  color: var(--muted-foreground);
+  border: 0;
+}
+.script-editor .cm-lineNumbers .cm-gutterElement {
+  min-width: 40px;
+  padding: 0 8px 0 0;
+  text-align: right;
+}
+.script-editor .cm-foldGutter {
+  display: none;
+}
+.script-editor .cm-activeLine,
+.script-editor .cm-activeLineGutter {
+  background: var(--color-hover-row);
+}
+.script-editor .cm-cursor {
+  border-left-color: var(--brand);
+}
+.script-editor .cm-selectionBackground,
+.script-editor .cm-focused .cm-selectionBackground {
+  background: color-mix(in srgb, var(--brand) 22%, transparent) !important;
+}
+.script-editor .cm-focused {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+/*
+ * The hover-row fill on the current/active row costs the syntax colours about 0.3-0.5 of contrast
+ * (several land at 4.2-4.4:1 on the raised card). Pulling every colour 15% toward the ink on
+ * that row restores 5:1 or better in both themes while keeping each hue recognisable.
+ */
+.script-editor .cm-activeLine,
+.script-editor .cm-source-line {
+  --editor-keyword: color-mix(in srgb, var(--syn-keyword), var(--foreground) 15%);
+  --editor-string: color-mix(in srgb, var(--syn-string), var(--foreground) 15%);
+  --editor-number: color-mix(in srgb, var(--syn-number), var(--foreground) 15%);
+  --editor-comment: color-mix(in srgb, var(--color-ink-3), var(--foreground) 15%);
+  --editor-punct: color-mix(in srgb, var(--syn-punct), var(--foreground) 15%);
+  --cm-webapi: color-mix(in srgb, var(--webapi), var(--foreground) 15%);
+  --cm-job: color-mix(in srgb, var(--job), var(--foreground) 15%);
+  --cm-console: color-mix(in srgb, var(--console), var(--foreground) 15%);
+}
+.script-editor .cm-activeLineGutter {
+  color: color-mix(in srgb, var(--muted-foreground), var(--foreground) 15%);
+}
+
+/* Concept calls: both orders of nesting with the syntax colours must end up concept-coloured. */
+.script-editor .cm-concept-webapi,
+.script-editor .cm-concept-webapi * {
+  color: var(--cm-webapi, var(--webapi)) !important;
+}
+.script-editor .cm-concept-job,
+.script-editor .cm-concept-job * {
+  color: var(--cm-job, var(--job)) !important;
+}
+.script-editor .cm-concept-console,
+.script-editor .cm-concept-console * {
+  color: var(--cm-console, var(--console)) !important;
+}
+
+/* Unsupported API tokens and the syntax error: error colour, wavy underline, soft fill. */
+.script-editor .cm-unsupported-api,
+.script-editor .cm-unsupported-api * {
+  color: var(--error) !important;
+  text-decoration: underline wavy var(--error);
+  text-underline-offset: 4px;
+  background: var(--error-soft);
+}
+.script-editor .cm-syntax-error-line {
+  background: var(--error-soft);
+  box-shadow: inset 2px 0 0 var(--error);
+}
+.script-editor .cm-syntax-error-mark {
+  text-decoration: underline wavy var(--error);
+  text-underline-offset: 4px;
+  background: var(--error-soft);
+}
+.script-editor .cm-syntax-error-number {
+  color: var(--error);
+}
+.script-editor .cm-syntax-error-row {
+  padding: 4px 0 0 6px;
+  font-size: var(--text-micro);
+  line-height: 20px;
+  color: var(--error);
+  background: var(--error-soft);
+  box-shadow: inset 2px 0 0 var(--error);
+}
+
+/* The range running at the playhead is underlined; the cause range is task blue. */
+.script-editor .cm-source-highlight {
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+.script-editor .cm-cause-highlight {
+  background: var(--task-soft);
+  outline: 1px dashed var(--task);
+}
+
+/* ---- Source mode ---- */
+.script-editor[data-source] .cm-editor {
+  min-height: 0;
+  font-size: var(--text-item);
+  line-height: 21px;
+}
+.script-editor[data-source] .cm-lineNumbers .cm-gutterElement {
+  min-width: 34px;
+}
+.script-editor[data-source] .cm-activeLine,
+.script-editor[data-source] .cm-activeLineGutter {
+  background: transparent;
+}
+.script-editor[data-source] .cm-cursor {
+  display: none;
+}
+/* The fill is safe for contrast: the number and string colours were solved on this fill. */
+.script-editor .cm-source-line,
+.script-editor .cm-source-line-gutter {
+  background: var(--color-hover-row);
+  transition: background-color var(--motion-line);
+}
+.script-editor .cm-lineNumbers .cm-source-line-gutter {
+  color: color-mix(in srgb, var(--brand-text), var(--foreground) 15%);
+  box-shadow: inset 2px 0 0 var(--brand);
+}
+.script-editor .cm-queued-gutter {
+  width: 14px;
+}
+.script-editor .cm-queued-gutter .cm-gutterElement {
+  padding: 0;
+}
+.script-editor .cm-queued-squares {
+  display: flex;
+  gap: 3px;
+  padding-top: 7px;
+}
+.script-editor .cm-queued-square {
+  width: 6px;
+  height: 6px;
+}
+.script-editor .cm-queued-job {
+  background: var(--job);
+}
+.script-editor .cm-queued-task {
+  background: var(--task);
+}
+.script-editor .cm-queued-webapi {
+  background: var(--webapi);
+}

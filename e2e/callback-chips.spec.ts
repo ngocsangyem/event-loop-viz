@@ -20,11 +20,11 @@ test('a timer chip moves Web APIs, Task Queue, Call Stack, then is gone', async 
   await runScript(page, TIMER)
   const chip = `() => console.log('fired')`
   const seen: (string | null)[] = []
-  const last = await page.locator('[data-testid=event-list] li').last().getAttribute('data-seq')
+  const last = await page.locator('[data-testid=event-list] li[data-seq]').last().getAttribute('data-seq')
   for (let i = 0; i < 400; i++) {
     const place = await panelOfChip(page, chip)
     if (seen[seen.length - 1] !== place) seen.push(place)
-    const current = await page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+    const current = await page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
     if (current === last) break
     await stepAndSettle(page)
   }

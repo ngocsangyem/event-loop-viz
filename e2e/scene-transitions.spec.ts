@@ -22,7 +22,7 @@ async function runScript(page: Page) {
 const currentSeq = async (page: Page) =>
   Number(
     await page
-      .locator('[data-testid=event-list] li[aria-current=true]')
+      .locator('[data-testid=event-list] li[aria-current=step]')
       .getAttribute('data-seq'),
   )
 
@@ -61,7 +61,7 @@ const stepAndCountAnimations = (page: Page) =>
 
 async function countsThroughTheReplay(page: Page) {
   const last = Number(
-    await page.locator('[data-testid=event-list] li').last().getAttribute('data-seq'),
+    await page.locator('[data-testid=event-list] li[data-seq]').last().getAttribute('data-seq'),
   )
   const counts: number[] = []
   for (let i = 0; i < 300 && (await currentSeq(page)) !== last; i++) {

@@ -23,11 +23,12 @@ const items = computed(() => {
   const onStack = running && chips.get(running.chipId)?.place === 'stack' ? chips.get(running.chipId) : undefined
   return shown
     .map((frame, i): QueueItem => {
-      const item: QueueItem = { id: frame.frameId, label: label(frame), active: i === top }
+      const item: QueueItem = { id: frame.frameId, ref: label(frame), active: i === top }
       // The chip stands for the callback's frame; the function's own name moves to the tooltip.
       if (onStack && frame.frameId === running?.frameId) {
         const named = frame.label !== '(anonymous)' && !frame.builtin
         item.chip = named ? { ...onStack, kind: frame.label } : onStack
+        item.kind = onStack.kind || undefined
       }
       return item
     })
@@ -39,6 +40,7 @@ const items = computed(() => {
   <PanelCard
     concept="stack"
     :title="t('panels.callStack.title')"
+    :subtitle="t('panels.callStack.subtitle')"
     :info="t('panels.callStack.info')"
     :count="items.length"
     :running="items.length > 0"

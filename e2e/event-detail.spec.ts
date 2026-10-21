@@ -13,13 +13,15 @@ async function runScript(page: Page) {
   await expect(page.getByTestId('replay-banner')).toBeVisible()
 }
 
-const rows = (page: Page) => page.locator('[data-testid=event-list] li')
+const rows = (page: Page) => page.locator('[data-testid=event-list] li[data-seq]')
+/** Rows of one event kind; the row prints a sentence, the kind is on the row. */
+const kind = (page: Page, k: string) => page.locator(`[data-testid=event-list] li[data-kind="${k}"]`)
 const current = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
 
 test('selecting an event shows its explanation, spec link and cause', async ({ page }) => {
   await runScript(page)
-  await rows(page).filter({ hasText: 'job:enqueue' }).first().getByRole('button').click()
+  await kind(page, 'job:enqueue').first().getByRole('button').click()
 
   await expect(page.getByTestId('event-explanation')).toContainText('A Job')
   await expect(page.getByTestId('event-explanation')).not.toContainText('undefined')
@@ -36,13 +38,13 @@ test('selecting an event shows its explanation, spec link and cause', async ({ p
 
 test('family chips hide and show events', async ({ page }) => {
   await runScript(page)
-  await expect(rows(page).filter({ hasText: 'console' }).first()).toBeVisible()
+  await expect(kind(page, 'console').first()).toBeVisible()
   const chip = page.getByTestId('family-filters').locator('[data-family=console]')
   await chip.click()
-  await expect(rows(page).filter({ hasText: /\d+ console$/ })).toHaveCount(0)
-  await expect(rows(page).filter({ hasText: 'task:begin' }).first()).toBeVisible()
+  await expect(kind(page, 'console')).toHaveCount(0)
+  await expect(kind(page, 'task:begin').first()).toBeVisible()
   await chip.click()
-  await expect(rows(page).filter({ hasText: /\d+ console$/ }).first()).toBeVisible()
+  await expect(kind(page, 'console').first()).toBeVisible()
 })
 
 test('show all events makes Bookkeeping Events steppable', async ({ page }) => {
@@ -60,7 +62,7 @@ test('show all events makes Bookkeeping Events steppable', async ({ page }) => {
   let landedOnBookkeeping = 0
   for (let i = 0; i < allCount; i++) {
     landedOnBookkeeping += await page
-      .locator('[data-testid=event-list] li[aria-current=true][data-visible=false]')
+      .locator('[data-testid=event-list] li[aria-current=step][data-visible=false]')
       .count()
     await page.keyboard.press('ArrowRight')
   }

@@ -1,3 +1,4 @@
+import { DEFAULT_BUDGETS } from '../trace/default-budgets'
 import type { HaltReason, TraceBudgets } from '../trace/trace-event'
 
 /** The Run settings the user can change; mirrors what a share link carries. */
@@ -29,6 +30,12 @@ export function updateSetting(
   const { budgets: _oldBudgets, ...rest } = settings
   const nextBudgets = valid ? { ...budgets, [field]: value } : budgets
   return Object.keys(nextBudgets).length > 0 ? { ...rest, budgets: nextBudgets } : rest
+}
+
+/** The Budgets the next Run will use: the user's overrides over the defaults, virtual time in seconds. */
+export function budgetSummary(settings: EditableRunSettings): { tasks: number; events: number; seconds: number } {
+  const budgets = { ...DEFAULT_BUDGETS, ...settings.budgets }
+  return { tasks: budgets.tasks, events: budgets.events, seconds: budgets.virtualMs / 1000 }
 }
 
 /** The slice of vue-i18n's `t` the Halt message needs, so the model stays free of Vue. */

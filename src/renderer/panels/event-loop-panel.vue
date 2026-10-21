@@ -41,9 +41,10 @@ const ARCS = [
     concept="loop"
     :title="t('panels.eventLoop.title')"
     :info="t('panels.eventLoop.info')"
+    class="overflow-hidden"
   >
     <div class="flex items-center gap-4" data-testid="panel-event-loop" :data-phase="phase">
-      <svg viewBox="0 0 120 120" class="size-28 shrink-0" aria-hidden="true">
+      <svg viewBox="0 0 120 120" class="size-22 shrink-0" aria-hidden="true">
         <path
           v-for="arc in ARCS"
           :key="arc.id"
@@ -67,7 +68,7 @@ const ARCS = [
         <dd class="font-mono tabular-nums">{{ state.tick ?? '—' }}</dd>
       </dl>
     </div>
-    <div class="label-mono text-muted-foreground mt-2 flex gap-3 text-[11px]" aria-hidden="true">
+    <div class="label-mono text-muted-foreground flex gap-3 text-[11px]" aria-hidden="true">
       <span v-for="arc in ARCS" :key="arc.id" class="flex items-center gap-1.5">
         <span :class="cn('size-2', phase === arc.id ? arc.dot : 'bg-border')" />
         {{ t(arc.label) }}

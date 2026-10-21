@@ -20,9 +20,11 @@ test('phone width never scrolls horizontally and every transport control is tapp
   }))
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.client)
 
-  // Step controls and the speed picker; the scrubber's family markers are a pointer shortcut.
-  const controls = page.getByTestId('transport-bar').locator('[data-control], [role=combobox]')
-  expect(await controls.count()).toBeGreaterThanOrEqual(10)
+  // The five 52px targets (Tick, Step, Play), the Auto-play switch and the speed picker; Start,
+  // End and the Task jumps are keyboard extras that hide on a phone. The scrubber's family
+  // markers are a pointer shortcut.
+  const controls = page.getByTestId('transport-bar').locator('[data-control]:visible, [role=combobox]:visible')
+  expect(await controls.count()).toBeGreaterThanOrEqual(7)
   for (const control of await controls.all()) {
     await control.scrollIntoViewIfNeeded()
     const box = await control.boundingBox()
@@ -42,7 +44,7 @@ test('an example can be run and stepped through by touch at phone width', async 
   await expect(page.getByTestId('event-list')).toBeVisible()
 
   const current = () =>
-    page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+    page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
   const start = await current()
   await page.getByRole('button', { name: 'Next' }).tap()
   const next = await current()

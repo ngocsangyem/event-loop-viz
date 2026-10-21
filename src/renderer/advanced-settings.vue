@@ -32,12 +32,17 @@ function onInput(field: SettingField, value: string | number) {
 <template>
   <Popover>
     <PopoverTrigger as-child>
-      <Button variant="ghost" size="sm">
+      <!-- A word, not a box: the underline is what marks it as a control. -->
+      <Button
+        variant="ghost"
+        size="sm"
+        class="text-foreground px-0 underline underline-offset-[3px] hover:bg-transparent"
+      >
         {{ t('settings.button') }}
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" class="w-80" data-testid="advanced-settings">
-      <p class="text-muted-foreground text-xs">
+    <PopoverContent align="start" class="w-80 gap-3 p-4" data-testid="advanced-settings">
+      <p class="text-foreground-2 text-[13px] leading-5">
         {{ t('settings.hint') }}
       </p>
       <div class="grid gap-2">

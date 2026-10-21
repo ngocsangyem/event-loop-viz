@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { i18n } from '@/i18n'
-import { haltMessage, updateSetting } from '../run-settings-model'
+import { budgetSummary, haltMessage, updateSetting } from '../run-settings-model'
 
 describe('updateSetting', () => {
   it('stores a Budget override', () => {
@@ -64,5 +64,19 @@ describe('haltMessage', () => {
 
   it('reads in Vietnamese with Vietnamese number grouping', () => {
     expect(haltMessage('nodes', 5000, tIn('vi'), 'vi')).toBe('Đã dừng: vượt Budget node (5.000 node).')
+  })
+})
+
+describe('budgetSummary', () => {
+  it('shows the defaults with virtual time in seconds', () => {
+    expect(budgetSummary({})).toEqual({ tasks: 10_000, events: 200_000, seconds: 60 })
+  })
+
+  it('applies the overrides the next Run will use', () => {
+    expect(budgetSummary({ budgets: { tasks: 50, virtualMs: 1500 } })).toEqual({
+      tasks: 50,
+      events: 200_000,
+      seconds: 1.5,
+    })
   })
 })

@@ -20,6 +20,8 @@ export interface ChipModel {
   /** What the callback is ("Timer", "Promise reaction"...); the tooltip names it. */
   kind: string
   place: ChipPlace
+  /** Source line the callback starts at, for the row's `L<line>` marker. */
+  line?: number
 }
 
 export interface ChipTextLabels {
@@ -84,7 +86,7 @@ export function chipsOf(state: ReplayState, source: string, labels: ChipLabels):
   const chips = new Map<string, ChipModel>()
   const add = (id: string, info: CallbackInfo | undefined, kind: string, place: ChipPlace) => {
     const text = info && chipText(info, source, labels)
-    if (text) chips.set(id, { id, ...text, kind, place })
+    if (text) chips.set(id, { id, ...text, kind, place, ...(info.loc && { line: info.loc.line }) })
   }
   // Only timers with a card on screen have a chip: the rest are summarised, and a chip nobody
   // can see must not count as a traveller.

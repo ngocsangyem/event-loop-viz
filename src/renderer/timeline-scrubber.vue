@@ -30,13 +30,16 @@ function seekIndex(i: number) {
   position.value = target
 }
 
-/** Concept hues, the same as the panes: Task blue, Job magenta, timer cyan, console green, error red. */
-const MARKER_COLOR: Record<string, string> = {
-  task: 'bg-task',
-  job: 'bg-job',
-  timer: 'bg-webapi',
-  console: 'bg-console',
-  error: 'bg-error',
+/**
+ * Concept hues, the same as the panes. Task, Job and timer sit in 3px lanes under the track;
+ * console output and errors are ticks above it, so output reads apart from the work that made it.
+ */
+const MARKER_STYLE: Record<string, string> = {
+  task: 'bg-task top-[15px] h-[3px]',
+  job: 'bg-job top-[15px] h-[3px]',
+  timer: 'bg-webapi top-[15px] h-[3px]',
+  console: 'bg-console top-0 h-[5px]',
+  error: 'bg-error top-0 h-[5px]',
 }
 
 function onSlide(value: number[] | undefined) {
@@ -45,9 +48,9 @@ function onSlide(value: number[] | undefined) {
 </script>
 
 <template>
-  <div class="scrubber w-full" data-testid="scrubber">
+  <div class="scrubber relative h-[22px] w-full" data-testid="scrubber">
     <Slider
-      class="py-2"
+      class="h-full"
       thumb-alignment="overflow"
       :min="0"
       :max="lastIndex"
@@ -59,13 +62,13 @@ function onSlide(value: number[] | undefined) {
       @update:model-value="onSlide"
     />
     <!-- Full track width, like the thumb: with "overflow" alignment its centre travels end to end. -->
-    <div class="relative h-3">
+    <div class="pointer-events-none absolute inset-0">
       <button
         v-for="m in markers"
         :key="m.seq"
         type="button"
-        class="absolute top-0.5 h-2.5 w-0.5 -translate-x-1/2 cursor-pointer p-0 transition-transform duration-(--motion-fast) hover:scale-y-125"
-        :class="MARKER_COLOR[m.family]"
+        class="pointer-events-auto absolute w-0.5 -translate-x-1/2 cursor-pointer p-0 after:absolute after:-inset-x-1 after:-inset-y-0.5"
+        :class="MARKER_STYLE[m.family]"
         :data-seq="m.seq"
         :data-family="m.family"
         :aria-label="t('scrubber.marker', { family: m.family, seq: m.seq })"

@@ -53,22 +53,31 @@
     background-color var(--motion-fast) var(--ease-out),
     border-color var(--motion-fast) var(--ease-out);
 }
-/* The running entry (TOP of the stack, the Task or Job being run): soft fill, hue border. */
+/* TOP: the running entry (top of the stack, the Task or Job being run) takes a hue border. */
 .queue-row.queue-item-active {
-  background: var(--hue-soft);
   border-color: var(--hue-border);
 }
 .queue-row-tag {
   color: var(--hue);
 }
-/* A chip on a running row picks up the row's hue instead of the plain line. */
-.queue-item-active .callback-chip {
-  border-color: var(--hue-border);
+/* An item that left a lane: transparent, dashed line, no hue rule. */
+.queue-row-ghost {
+  border: 1px dashed var(--color-line);
+}
+/* A lane with nothing in it: a dashed slot that says so. */
+.empty-slot {
+  border: 1px dashed var(--color-line);
+  padding: 14px;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--muted-foreground);
 }
 
 /* A chip in flight between panes is the thing happening now: it carries the accent. */
 .chip-ghost {
-  border-color: var(--brand) !important;
+  border: 1px solid var(--brand);
+  padding: 0 6px;
   background: var(--background);
 }
 
@@ -84,31 +93,15 @@
 .panel-state {
   color: var(--hue);
 }
-/* A queue entry that arrived this step: soft fill, full-hue border and a NEW tag. */
+/* A queue entry that arrived this step: soft fill and a full-hue border; its NEW tag is in the row. */
 .queue-row[data-new] {
   background: var(--hue-soft);
   border-color: var(--hue);
 }
-.queue-row[data-new]::after {
-  content: attr(data-new);
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: var(--tracking-label);
-  color: var(--hue);
-}
 
-/* Phone: pane headers are 44px tap rows, and a folded pane is only its header. */
+/* Phone: pane headers are 44px tap rows (a folded pane is only its header, see panel-card.vue). */
 @media (width < 48rem) {
   .panel-card-header {
     height: 44px;
-  }
-  .panel-card[data-folded] {
-    gap: 0;
-    padding-bottom: 0;
-  }
-  .panel-card[data-folded] .panel-card-header {
-    border-bottom-width: 0;
   }
 }

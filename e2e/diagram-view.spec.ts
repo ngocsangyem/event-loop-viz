@@ -11,7 +11,7 @@ async function openDiagram(page: Page) {
   await page.getByLabel('Script').fill(SCRIPT)
   await page.getByRole('button', { name: 'Run' }).click()
   await expect(page.getByTestId('replay-banner')).toBeVisible()
-  await page.getByTestId('view-diagram').click()
+  await page.getByRole('button', { name: 'Diagram', exact: true }).click()
   await expect(page.getByTestId('diagram')).toBeVisible()
 }
 
@@ -31,7 +31,7 @@ test('the Diagram view is remembered across a reload', async ({ page }) => {
   await openDiagram(page)
   await page.reload()
   await expect(page.getByTestId('diagram')).toBeVisible()
-  await page.getByTestId('view-panels').click()
+  await page.getByRole('button', { name: 'Panels', exact: true }).click()
   await expect(page.getByTestId('diagram')).toHaveCount(0)
 })
 
@@ -75,7 +75,7 @@ test('an uncaught exception is a refusal on the Console', async ({ page }) => {
   await page.getByLabel('Script').fill(`throw new Error('boom')`)
   await page.getByRole('button', { name: 'Run' }).click()
   await expect(page.getByTestId('replay-banner')).toBeVisible()
-  await page.getByTestId('view-diagram').click()
+  await page.getByRole('button', { name: 'Diagram', exact: true }).click()
   await stepUntilActive(page, 'log')
   await expect(edge(page, 'log')).toHaveAttribute('data-refused', 'true')
   await expect(node(page, 'console')).toHaveAttribute('data-refused', 'true')

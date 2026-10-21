@@ -1,0 +1,15 @@
+    <section data-story="SampleRun">
+      <elv-console lines='[{"level":"log","text":"script start","line":1},{"level":"log","text":"script end","line":7},{"level":"log","text":"then 1","line":3},{"level":"log","text":"microtask","line":5},{"level":"log","text":"then 2","line":4},{"level":"log","text":"timeout","line":2}]'></elv-console>
+    </section>
+    <section data-story="Levels">
+      <elv-console lines='[{"level":"log","text":"script start","line":1},{"level":"info","text":"Tick 2 started","line":9},{"level":"warn","text":"Deprecated: document.write","line":12},{"level":"error","text":"RangeError: invalid array length","line":14}]'></elv-console>
+    </section>
+    <section data-story="UncaughtAndRejection">
+      <elv-console lines='[{"level":"error","text":"TypeError: cb is not a function","line":7,"uncaught":true},{"level":"rejection","text":"Error: network down","line":11}]'></elv-console>
+    </section>
+    <section data-story="CollapsedRepeat">
+      <elv-console lines='[{"level":"log","text":"tick","line":3,"repeat":498},{"level":"log","text":"done","line":6}]'></elv-console>
+    </section>
+    <section data-story="Empty">
+      <elv-console empty="Nothing printed yet"></elv-console>
+    </section>

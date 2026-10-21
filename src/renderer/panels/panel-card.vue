@@ -2,9 +2,6 @@
 import { computed, inject, shallowRef, watch } from 'vue'
 import type { HTMLAttributes } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { InfoIcon } from '@lucide/vue'
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { STEP_FOCUS_KEY } from './step-focus-keys'
 
@@ -12,9 +9,9 @@ import { STEP_FOCUS_KEY } from './step-focus-keys'
 export type PanelConcept = 'stack' | 'job' | 'task' | 'webapi' | 'console' | 'loop'
 
 /**
- * One labelled region of the visualizer: a hue square, a mono title, an optional item count,
- * an info tooltip that says what the region models, and the region's content. Every panel uses
- * it so the grid reads as one system.
+ * One labelled region of the visualizer: a header row (hue square, mono title, item count, state
+ * label), a one-line subtitle that says what the region is, and the region's content. Every panel
+ * uses it so the grid reads as one system.
  *
  * A pane the current step changed is the step's focal point: it takes its concept's soft tint,
  * a 2px top rule and a CHANGED label (RUNNING for a busy Call Stack). On a phone the panes the
@@ -23,7 +20,10 @@ export type PanelConcept = 'stack' | 'job' | 'task' | 'webapi' | 'console' | 'lo
 const props = defineProps<{
   title: string
   concept?: PanelConcept
-  info: string
+  /** One line under the header. */
+  subtitle?: string
+  /** The longer explanation of the region; reachable as the subtitle's tooltip. */
+  info?: string
   count?: number
   /** The pane is busy (a Call Stack with frames): its label reads RUNNING instead of CHANGED. */
   running?: boolean
@@ -45,50 +45,41 @@ const stateLabel = computed(() => (props.running ? t('panels.runningState') : ch
 </script>
 
 <template>
-  <Card
-    size="sm"
+  <section
     role="region"
     :aria-label="title"
     :data-concept="concept"
     :data-changed="changed || undefined"
     :data-folded="folded || undefined"
-    :class="cn('panel-card min-w-0 gap-2 pt-0!', props.class)"
+    :class="cn('panel-card bg-background flex min-w-0 flex-col', props.class)"
   >
-    <CardHeader class="panel-card-header border-border-soft h-[38px] items-center! border-b">
-      <CardTitle class="flex items-center gap-2">
-        <span class="panel-hue size-2 shrink-0" aria-hidden="true" />
-        {{ title }}
-        <span v-if="count !== undefined" class="meta-mono font-normal">{{ count }}</span>
-      </CardTitle>
-      <CardAction class="flex items-center gap-1">
-        <span v-if="stateLabel" class="panel-state label-mono" data-testid="panel-state">{{ stateLabel }}</span>
-        <slot name="actions" />
-        <!-- Phone only: a folded pane opens on demand; the label names what the button shows. -->
-        <button
-          v-if="foldable && !changed"
-          type="button"
-          class="label-mono text-muted-foreground hover:text-foreground hover:bg-accent min-h-11 px-2 outline-none md:hidden"
-          :aria-expanded="!folded"
-          @click="opened = !opened"
-        >
-          {{ folded ? t('panels.show') : t('panels.hide') }}
-        </button>
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <button
-              type="button"
-              class="text-muted-foreground hover:text-foreground hover:bg-accent p-1 outline-none"
-              :aria-label="t('panels.about', { title })"
-            >
-              <InfoIcon class="size-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">{{ info }}</TooltipContent>
-        </Tooltip>
-      </CardAction>
-    </CardHeader>
-    <CardContent :class="cn('min-h-0 flex-1', folded && 'max-md:hidden', props.contentClass)">
+    <header class="panel-card-header label-mono flex h-(--pane-header-h) shrink-0 items-center gap-2 px-4">
+      <span class="panel-hue size-2 shrink-0" aria-hidden="true" />
+      <span class="text-foreground">{{ title }}</span>
+      <span v-if="count !== undefined" class="text-muted-foreground tabular-nums">{{ count }}</span>
+      <span class="flex-1" />
+      <span v-if="stateLabel" class="panel-state" data-testid="panel-state">{{ stateLabel }}</span>
+      <slot name="actions" />
+      <!-- Phone only: a folded pane opens on demand; the label names what the button shows. -->
+      <button
+        v-if="foldable && !changed"
+        type="button"
+        class="text-muted-foreground hover:text-foreground hover:bg-accent min-h-11 px-2 outline-none md:hidden"
+        :aria-expanded="!folded"
+        @click="opened = !opened"
+      >
+        {{ folded ? t('panels.show') : t('panels.hide') }}
+      </button>
+    </header>
+    <p
+      v-if="subtitle"
+      :title="info"
+      :class="cn('text-foreground-2 px-4 pb-2.5 text-[12.5px] leading-[17px]', folded && 'max-md:hidden')"
+    >
+      {{ subtitle }}
+    </p>
+    <div :class="cn('flex min-h-0 flex-1 flex-col gap-1.5 px-4 pb-4', folded && 'max-md:hidden', props.contentClass)">
       <slot />
-    </CardContent>
-  </Card>
+    </div>
+  </section>
 </template>

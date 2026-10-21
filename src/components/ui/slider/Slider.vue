@@ -24,7 +24,8 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     data-slot="slider"
     :data-vertical="props.orientation === 'vertical' ? '' : undefined"
     :class="cn(
-      'data-vertical:min-h-40 relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:w-auto data-vertical:flex-col',
+      // The playhead moves with --motion-line: its wrapper span (reka positions it with `left`) is the one that animates.
+      'data-vertical:min-h-40 relative flex w-full touch-none items-start select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:w-auto data-vertical:flex-col [&>span:not([data-slot=slider-track])]:transition-[left] [&>span:not([data-slot=slider-track])]:duration-(--motion-line)',
       props.class,
     )"
     v-bind="forwarded"
@@ -33,13 +34,13 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       data-slot="slider-track"
       :data-horizontal="props.orientation !== 'vertical' ? '' : undefined"
       :data-vertical="props.orientation === 'vertical' ? '' : undefined"
-      class="bg-raised border-border-soft border data-horizontal:h-1 data-vertical:w-1 relative grow overflow-hidden data-horizontal:w-full data-vertical:h-full"
+      class="bg-raised data-horizontal:h-1 data-vertical:w-1 relative grow overflow-hidden shadow-[inset_0_0_0_1px_var(--border-soft)] data-horizontal:mt-2 data-horizontal:w-full data-vertical:h-full"
     >
       <SliderRange
         data-slot="slider-range"
         :data-horizontal="props.orientation !== 'vertical' ? '' : undefined"
         :data-vertical="props.orientation === 'vertical' ? '' : undefined"
-        class="bg-brand/50 absolute select-none data-horizontal:h-full data-vertical:w-full"
+        class="bg-foreground-2/55 absolute select-none data-horizontal:h-full data-vertical:w-full"
       />
     </SliderTrack>
 
@@ -50,7 +51,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       :aria-valuetext="thumbValueText"
       data-slot="slider-thumb"
       :data-vertical="props.orientation === 'vertical' ? '' : undefined"
-      class="bg-brand relative h-6 w-1 after:absolute after:-inset-x-3 after:-inset-y-2 block shrink-0 select-none disabled:pointer-events-none disabled:opacity-50"
+      class="bg-brand relative -top-0.5 block h-6 w-0.5 shrink-0 shadow-[0_0_0_2px_var(--background)] select-none after:absolute after:-inset-x-3 after:-inset-y-2 disabled:pointer-events-none disabled:opacity-50"
     />
   </SliderRoot>
 </template>

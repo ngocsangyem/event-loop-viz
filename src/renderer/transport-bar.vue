@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Component } from 'vue'
-import {
-  ChevronFirstIcon, ChevronLastIcon, ChevronsLeftIcon, ChevronsRightIcon, PauseIcon, PlayIcon,
-  RepeatIcon, SkipBackIcon, SkipForwardIcon, StepBackIcon, StepForwardIcon,
-} from '@lucide/vue'
 import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import { Button } from '@/components/ui/button'
-import { Kbd } from '@/components/ui/kbd'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Toggle } from '@/components/ui/toggle'
+import { Switch } from '@/components/ui/switch'
 import { formatVirtualMs } from './scene/timer-shelf-model'
 import { stepProgressOf } from './step-progress'
 import TimelineScrubber from './timeline-scrubber.vue'
 import TransportControlButton from './transport-control-button.vue'
+import { BACK_CONTROLS, FORWARD_CONTROLS } from './transport-controls'
 import { SPEEDS, usePlayback } from './use-playback'
 import type { SameView, Speed } from './use-playback'
+import { useStepSentence } from './use-step-sentence'
 import { useTraceNavigation } from './use-trace-navigation'
 import { useTransportShortcuts } from './use-transport-shortcuts'
 
@@ -34,6 +30,7 @@ const props = defineProps<{
 const position = defineModel<number>({ required: true })
 /** Start playing as soon as a Run produces a Trace. */
 const autoplay = defineModel<boolean>('autoplay', { required: true })
+const emit = defineEmits<{ keys: [] }>()
 
 const { playing, speed, play, toggle, pause } = usePlayback(
   computed(() => props.player),
@@ -58,37 +55,10 @@ defineExpose({
       ?.focus(),
 })
 
-interface Control {
-  id: string
-  /** Message key of the control's name. */
-  label: string
-  /** Message key of the word printed on the control. */
-  word: string
-  icon: Component
-  shortcut: string
-  keyHint: string
-  disabled: () => boolean
-  run: () => void
-}
-
-/** Back controls sit before Play/Pause, forward controls after it. */
-const BACK: Control[] = [
-  { id: 'start', label: 'transport.start', word: 'transport.word.start', icon: ChevronFirstIcon, shortcut: 'Home', keyHint: '⇱', disabled: () => atStart.value, run: () => nav.jump('first') },
-  { id: 'back-task', label: 'transport.backTask', word: 'transport.word.task', icon: ChevronsLeftIcon, shortcut: 'Alt+←', keyHint: '⌥←', disabled: () => atStart.value, run: () => nav.jumpBy('Task', 'prev') },
-  { id: 'back-tick', label: 'transport.backTick', word: 'transport.word.tick', icon: SkipBackIcon, shortcut: 'Shift+←', keyHint: '⇧←', disabled: () => atStart.value, run: () => nav.jumpBy('Tick', 'prev') },
-  { id: 'prev', label: 'transport.prev', word: 'transport.word.prev', icon: StepBackIcon, shortcut: '←', keyHint: '←', disabled: () => atStart.value, run: () => nav.step('prev') },
-]
-const FORWARD: Control[] = [
-  { id: 'next', label: 'transport.next', word: 'transport.word.next', icon: StepForwardIcon, shortcut: '→', keyHint: '→', disabled: () => atEnd.value, run: () => nav.step('next') },
-  { id: 'forward-tick', label: 'transport.forwardTick', word: 'transport.word.tick', icon: SkipForwardIcon, shortcut: 'Shift+→', keyHint: '⇧→', disabled: () => atEnd.value, run: () => nav.jumpBy('Tick', 'next') },
-  { id: 'forward-task', label: 'transport.forwardTask', word: 'transport.word.task', icon: ChevronsRightIcon, shortcut: 'Alt+→', keyHint: '⌥→', disabled: () => atEnd.value, run: () => nav.jumpBy('Task', 'next') },
-  { id: 'end', label: 'transport.end', word: 'transport.word.end', icon: ChevronLastIcon, shortcut: 'End', keyHint: '⇲', disabled: () => atEnd.value, run: () => nav.jump('last') },
-]
-
 const progress = computed(() => stepProgressOf(props.events, position.value))
 const clock = computed(() => formatVirtualMs(props.clockUs))
-/** The dock's "what just happened" line: the current Trace Event's tag. */
-const current = computed(() => props.events[position.value])
+const sentence = useStepSentence(() => props.events, () => position.value)
+const edge = (control: { side: 'start' | 'end' }) => (control.side === 'start' ? atStart.value : atEnd.value)
 
 /** The speed Select works in strings; playback keeps the number. */
 const speedText = computed({
@@ -104,64 +74,65 @@ const speedText = computed({
     role="toolbar"
     :aria-label="t('transport.region')"
     data-testid="transport-bar"
-    class="flex flex-col gap-1"
+    class="flex min-h-0 flex-1 flex-col"
   >
-    <div class="flex items-center gap-3">
-      <span class="meta-mono shrink-0 uppercase max-sm:hidden" data-testid="dock-step">
+    <div :class="['flex h-[38px] shrink-0 items-center gap-4 px-5 max-sm:px-3', !player && 'opacity-40']">
+      <span class="text-foreground min-w-[132px] shrink-0 font-mono text-xs leading-none font-medium tracking-[0.02em] tabular-nums uppercase max-sm:hidden" data-testid="dock-step">
         {{ t('caption.step', progress) }}
       </span>
       <TimelineScrubber v-model="position" class="min-w-0 flex-1" :player="player" :events="events" @scrub="pause" />
-      <span class="meta-mono shrink-0 uppercase max-sm:hidden" data-testid="dock-clock">
-        {{ t('dock.clock') }} <span class="text-foreground">{{ clock }}</span>
+      <span class="text-muted-foreground shrink-0 font-mono text-xs leading-none tabular-nums uppercase max-sm:hidden" data-testid="dock-clock">
+        {{ t('dock.clock') }} <span class="normal-case">{{ clock }}</span>
       </span>
     </div>
-    <div class="flex flex-wrap items-center gap-1">
+    <div class="border-border-soft flex min-h-0 flex-1 flex-wrap items-center gap-0.5 border-t px-3 max-sm:gap-1 xl:flex-nowrap">
       <TransportControlButton
-        v-for="control in BACK"
+        v-for="control in BACK_CONTROLS"
         :key="control.id"
-        :id="control.id"
+        v-bind="control.props"
         :label="t(control.label)"
         :word="t(control.word)"
-        :icon="control.icon"
-        :shortcut="control.shortcut"
-        :key-hint="control.keyHint"
-        :disabled="control.disabled()"
-        @press="control.run"
+        :disabled="edge(control)"
+        @press="control.run(nav)"
       />
       <!-- The only filled control: playing is the primary action of a replay. -->
       <Button
-        size="sm"
-        class="min-w-24 gap-1.5 max-sm:h-11!"
+        size="lg"
+        hotkey="␣"
+        class="min-w-24 max-sm:h-[52px] max-sm:min-w-0 max-sm:flex-1"
         :disabled="!player"
         :aria-pressed="playing"
         data-control="play"
         @click="toggle"
       >
-        <Kbd aria-hidden="true" class="text-primary-foreground/70 max-sm:hidden">␣</Kbd>
-        <PauseIcon v-if="playing" class="sm:hidden" />
-        <PlayIcon v-else class="sm:hidden" />
         {{ playing ? t('transport.pause') : t('transport.play') }}
       </Button>
       <TransportControlButton
-        v-for="control in FORWARD"
+        v-for="control in FORWARD_CONTROLS"
         :key="control.id"
-        :id="control.id"
+        v-bind="control.props"
         :label="t(control.label)"
         :word="t(control.word)"
-        :icon="control.icon"
-        :shortcut="control.shortcut"
-        :key-hint="control.keyHint"
-        :disabled="control.disabled()"
-        @press="control.run"
+        :disabled="edge(control)"
+        @press="control.run(nav)"
       />
       <p
-        class="meta-mono mx-2 hidden min-w-0 flex-1 truncate xl:block"
-        :title="t('dock.lastEvent')"
+        class="text-foreground-2 hidden min-w-0 flex-1 truncate px-4 font-sans text-[13px] xl:block"
+        :title="sentence || t('dock.lastEvent')"
         data-testid="dock-last-event"
       >
-        <template v-if="current"><span class="text-brand-text" aria-hidden="true">▸ </span>#{{ current.seq }} {{ current.k }}</template>
+        {{ player ? sentence : t('dock.noTrace') }}
       </p>
-      <div class="ml-auto flex items-center gap-1">
+      <div class="ml-auto flex items-center gap-0.5 max-sm:w-full max-sm:flex-wrap max-sm:justify-end">
+        <Switch
+          v-model="autoplay"
+          class="max-sm:h-11"
+          data-control="autoplay"
+          :title="t('transport.autostartHint')"
+          :label="t('transport.autostart')"
+          :on-label="t('switch.on')"
+          :off-label="t('switch.off')"
+        />
         <Select v-model="speedText" :disabled="!player">
           <SelectTrigger size="sm" :aria-label="t('transport.speed')" class="w-20 max-sm:h-11!">
             <SelectValue />
@@ -170,17 +141,11 @@ const speedText = computed({
             <SelectItem v-for="s in SPEEDS" :key="s" :value="String(s)">{{ s }}×</SelectItem>
           </SelectContent>
         </Select>
-        <Toggle
-          v-model="autoplay"
-          size="sm"
-          variant="outline"
-          class="max-sm:h-11!"
-          data-control="autoplay"
-          :title="t('transport.autostartHint')"
-        >
-          <RepeatIcon class="sm:hidden" />
-          {{ t('transport.autostart') }}
-        </Toggle>
+        <Button variant="secondary" size="lg" hotkey="?" data-control="keys" class="max-xl:hidden" @click="emit('keys')">
+          {{ t('dock.keys') }}
+        </Button>
+        <div class="bg-border mx-2 h-7 w-px shrink-0 max-sm:hidden" aria-hidden="true" />
+        <slot name="trailing" />
       </div>
     </div>
   </div>

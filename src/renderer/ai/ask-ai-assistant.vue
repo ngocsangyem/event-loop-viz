@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { LoaderCircleIcon } from '@lucide/vue'
 import type { Ref } from 'vue'
 import type { Locale } from '@/i18n/locales'
 import type { Player } from '../../player/player'
@@ -9,21 +8,25 @@ import type { ReplayState } from '../../player/replay-state'
 import type { TraceEvent } from '../../trace/trace-event'
 import { createApiKeyStore } from './api-key-store'
 import AskAiComposer from './ask-ai-composer.vue'
+import AskAiContextLine from './ask-ai-context-line.vue'
 import AskAiEmptyState from './ask-ai-empty-state.vue'
 import AskAiErrorAlert from './ask-ai-error-alert.vue'
 import AskAiMessages from './ask-ai-messages.vue'
 import AskAiPanelHeader from './ask-ai-panel-header.vue'
+import AskAiPreparingLine from './ask-ai-preparing-line.vue'
 import AskAiSettingsDialog from './ask-ai-settings-dialog.vue'
 import AskAiTourControls from './ask-ai-tour-controls.vue'
 import { buildRunContext } from './build-run-context'
+import { focusAutofocusTarget } from './focus-autofocus-target'
+import { stepNumberAt } from './step-number'
 import { useAiTour } from './use-ai-tour'
 import { useAskAi } from './use-ask-ai'
+import { useAskAiSend } from './use-ask-ai-send'
 import { useOpenRouterModelChoice } from './use-openrouter-model-choice'
 
 /**
- * The Ask AI chat, a settings dialog, and the tour. On a wide screen the panel takes the right
- * column in place of the Why rail; narrower, it is a bottom sheet above the dock. Answers
- * walk the whole Run; Next / Previous emit `seek` so the replay shows each stop. Minimized, the
+ * The Ask AI chat, its settings dialog and the tour. Wide screens give it the right column
+ * (the Why rail's place); narrower it is a bottom sheet. Next / Prev emit `seek`; minimized, the
  * tour controls become a segment of the dock.
  */
 const open = defineModel<boolean>('open', { required: true })
@@ -35,6 +38,8 @@ const props = defineProps<{
   player: Player | null
   /** Runs the Script when there is no Trace yet, so a question always sees the whole Run. */
   ensureRun: () => Promise<void>
+  /** Which Run this is, for the context line; omitted until the app numbers its Runs. */
+  runNumber?: number
 }>()
 const emit = defineEmits<{ seek: [position: number]; minimize: [] }>()
 
@@ -45,6 +50,9 @@ const settingsOpen = shallowRef(false)
 const announcement = shallowRef('')
 const panel = useTemplateRef('panel')
 const stepCount = computed(() => props.events.filter((e) => e.visible).length)
+
+const stepOf = (seq: number) => stepNumberAt(props.events, seq)
+const currentStep = computed(() => stepOf(props.position))
 
 const ai = useAskAi({
   apiKey: store.key,
@@ -59,7 +67,6 @@ const ai = useAskAi({
       finalState: props.player ? props.player.stateAt(props.player.last()) : props.state,
     }),
 })
-
 const tour = useAiTour({
   messages: ai.messages,
   streaming: ai.streaming,
@@ -76,47 +83,32 @@ const tour = useAiTour({
 
 watch(ai.completed, () => (announcement.value = t('ai.answerReady')))
 
-/** The cursor goes where the next action is: the question box, or Connect without a key. */
+/** The cursor goes where the next action is. */
 async function focusPanel() {
   await nextTick()
-  panel.value?.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+  focusAutofocusTarget(panel.value)
 }
 watch(open, (isOpen) => isOpen && void focusPanel(), { immediate: true })
 
-/** True while the Script runs because a question came before any Run. */
-const preparing = shallowRef(false)
-
-async function send(question: string) {
-  announcement.value = ''
-  if (!store.key.value) {
-    settingsOpen.value = true
-    return
-  }
-  // Without a Trace the AI has no events to stop at, so the Script runs first.
-  if (props.events.length === 0 && !preparing.value) {
-    preparing.value = true
-    announcement.value = t('ai.preparing')
-    try {
-      await props.ensureRun()
-      await nextTick()
-    } finally {
-      preparing.value = false
-    }
-  }
-  void ai.ask(question)
-}
+const { preparing, send } = useAskAiSend({
+  hasKey: () => !!store.key.value,
+  hasTrace: () => props.events.length > 0,
+  ensureRun: () => props.ensureRun(),
+  ask: (question) => ai.ask(question),
+  openSettings: () => (settingsOpen.value = true),
+  announce: (message) => (announcement.value = message),
+  preparingMessage: () => t('ai.preparing'),
+})
 
 function minimize() {
   open.value = false
   emit('minimize')
 }
-
-// However the dialog closes (Done, Esc, the X), focus comes back into the panel.
+// However the dialog closes (Save, Cancel, Esc), focus comes back into the panel.
 watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
 </script>
 
 <template>
-  <!-- A crossfade in; it leaves at once so the Why rail it covered never shows under it. -->
   <Transition
     enter-from-class="opacity-0"
     enter-active-class="transition-opacity duration-(--motion-base) ease-out motion-reduce:transition-none"
@@ -129,23 +121,26 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
       aria-modal="false"
       aria-labelledby="ask-ai-title"
       aria-describedby="ask-ai-description"
-      class="bg-background text-popover-foreground fixed inset-x-0 bottom-(--ai-dock) z-40 flex h-[max(16rem,min(640px,calc(100dvh-var(--ai-dock)-4rem)))] w-full flex-col overflow-hidden border-t text-sm xl:static xl:z-auto xl:h-full xl:border-t-0"
+      class="bg-popover text-popover-foreground fixed inset-x-0 bottom-(--ai-dock) z-40 flex h-[max(16rem,min(640px,calc(100dvh-var(--ai-dock)-4rem)))] w-full flex-col overflow-hidden border-t text-sm xl:static xl:z-auto xl:h-full xl:border-t-0"
       data-testid="ask-ai-panel"
       @keydown.esc.stop="minimize"
     >
       <AskAiPanelHeader
-        :step-count="stepCount"
         :can-clear="ai.messages.value.length > 0"
+        :tour-active="tour.index.value >= 0"
         @clear="ai.clear()"
         @settings="settingsOpen = true"
         @minimize="minimize"
+        @close="minimize"
       />
+      <AskAiContextLine :step="currentStep" :total="stepCount" :run-number="runNumber" />
       <AskAiMessages
         v-if="ai.messages.value.length > 0"
         :messages="ai.messages.value"
         :streaming="ai.streaming.value"
         :answers="tour.answers.value"
         :tour="{ messageId: tour.messageId.value, index: tour.index.value }"
+        :step-of="stepOf"
         @go="tour.go"
       />
       <AskAiEmptyState v-else :has-key="!!store.key.value" @pick="send" @connect="settingsOpen = true" />
@@ -154,7 +149,7 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
         v-if="ai.error.value"
         :error="ai.error.value"
         @retry="ai.retry()"
-        @settings="settingsOpen = true; ai.dismissError()"
+        @settings="settingsOpen = true"
         @dismiss="ai.dismissError()"
       />
       <!-- Before the tour starts, the Start button inside the answer is the way in. -->
@@ -162,22 +157,18 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
         v-if="tour.index.value >= 0"
         :stops="tour.stops.value"
         :index="tour.index.value"
+        :step-of="stepOf"
         @next="tour.next()"
         @prev="tour.prev()"
       />
-      <p v-if="preparing" class="text-muted-foreground flex items-center gap-2 border-t px-3 py-2 text-xs" data-testid="ask-ai-preparing">
-        <LoaderCircleIcon class="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-        {{ t('ai.preparing') }}
-      </p>
+      <AskAiPreparingLine v-if="preparing" />
       <AskAiComposer
         v-if="store.key.value"
-        v-model:model="model"
+        :model="model"
         :streaming="ai.streaming.value || preparing"
-        :models="models"
-        :model-status="modelStatus"
         @send="send"
         @stop="ai.stop()"
-        @retry-models="fetchModels"
+        @settings="settingsOpen = true"
       />
     </section>
   </Transition>
@@ -189,6 +180,7 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
       floating
       :stops="tour.stops.value"
       :index="tour.index.value"
+      :step-of="stepOf"
       @next="tour.next()"
       @prev="tour.prev()"
     />
@@ -200,7 +192,8 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
     :store="store"
     :models="models"
     :model-status="modelStatus"
-    @done="settingsOpen = false"
+    :key-rejected="ai.error.value?.kind === 'invalid-key'"
+    @saved="ai.dismissError()"
     @retry-models="fetchModels"
   />
   <div class="sr-only" role="status" aria-live="polite">{{ announcement }}</div>

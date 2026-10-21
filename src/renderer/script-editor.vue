@@ -10,12 +10,25 @@ import type { SyntaxErrorPosition } from './syntax-error-marker'
 import { applySourceHighlight, sourceHighlight } from './source-highlight'
 import type { SourceHighlight } from './source-highlight'
 import { editorSyntaxTheme } from './editor-syntax-theme'
+import { conceptCallHighlight } from './concept-call-highlight'
+import { setUnsupportedApis, unsupportedApiMarks } from './unsupported-api-marks'
+import { queuedLineGutter, setQueuedLines } from './queued-line-markers'
+import type { QueuedConcept } from './queued-line-markers'
+import './script-editor.css'
 
 /** The Script text; edits in the editor write it back. */
 const script = defineModel<string>({ required: true })
 const props = defineProps<{
+  /** No edits: during a Run and during replay. */
   readOnly: boolean
+  /** Replay look: Source columns (number, queued work) and the current row on its rule. */
+  source?: boolean
   errorAt?: SyntaxErrorPosition | null
+  /** The engine's message, shown on the lint row under the failing line. */
+  errorMessage?: string
+  unsupportedApis?: readonly string[]
+  /** Lines (1-based) with work still queued at the playhead, by concept. */
+  queuedLines?: ReadonlyMap<number, QueuedConcept[]>
   /** Ranges of the current replay position; null/absent clears the highlight. */
   highlight?: SourceHighlight | null
 }>()
@@ -27,6 +40,7 @@ let view: EditorView | null = null
 // Read-only is a facet, not contenteditable=false, so the editor stays focusable and selectable.
 const readOnlyCompartment = new Compartment()
 const errorCompartment = new Compartment()
+const queuedCompartment = new Compartment()
 // The accessible name follows the UI language, so it lives in a compartment too.
 const labelCompartment = new Compartment()
 const scriptLabel = () => EditorView.contentAttributes.of({ 'aria-label': t('editor.script') })
@@ -57,6 +71,9 @@ onMounted(() => {
         editorSyntaxTheme,
         readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
         errorCompartment.of([]),
+        queuedCompartment.of(props.source ? queuedLineGutter() : []),
+        conceptCallHighlight(),
+        unsupportedApiMarks(),
         sourceHighlight(),
         labelCompartment.of(scriptLabel()),
         EditorView.updateListener.of((update) => {
@@ -65,7 +82,27 @@ onMounted(() => {
       ],
     }),
   })
+  view.dispatch({ effects: setUnsupportedApis.of(props.unsupportedApis ?? []) })
+  pushQueuedLines()
 })
+
+watch(
+  () => props.source,
+  (source) => {
+    view?.dispatch({ effects: queuedCompartment.reconfigure(source ? queuedLineGutter() : []) })
+    pushQueuedLines()
+  },
+)
+
+function pushQueuedLines() {
+  view?.dispatch({ effects: setQueuedLines.of(new Map(props.queuedLines ?? [])) })
+}
+watch(() => props.queuedLines, pushQueuedLines)
+
+watch(
+  () => props.unsupportedApis,
+  (apis) => view?.dispatch({ effects: setUnsupportedApis.of(apis ?? []) }),
+)
 
 watch(
   () => props.readOnly,
@@ -76,11 +113,11 @@ watch(
 watch(locale, () => view?.dispatch({ effects: labelCompartment.reconfigure(scriptLabel()) }))
 
 watch(
-  () => props.errorAt,
-  (at) => {
+  () => [props.errorAt, props.errorMessage] as const,
+  ([at, message]) => {
     if (view)
       view.dispatch({
-        effects: errorCompartment.reconfigure(syntaxErrorMarker(view.state, at ?? null)),
+        effects: errorCompartment.reconfigure(syntaxErrorMarker(view.state, at ?? null, message)),
       })
   },
 )
@@ -103,72 +140,17 @@ watch(
 
 onBeforeUnmount(() => view?.destroy())
 
-defineExpose({ focus: () => view?.focus() })
+/** Puts the caret at the start of a 1-based line and scrolls it into view. */
+function goToLine(line: number) {
+  if (!view) return
+  const target = view.state.doc.line(Math.min(Math.max(line, 1), view.state.doc.lines))
+  view.dispatch({ selection: { anchor: target.from }, effects: EditorView.scrollIntoView(target.from, { y: 'center' }) })
+  view.focus()
+}
+
+defineExpose({ focus: () => view?.focus(), goToLine })
 </script>
 
 <template>
-  <div ref="host" class="script-editor" />
+  <div ref="host" class="script-editor" :data-source="source ? '' : undefined" />
 </template>
-
-<style scoped>
-/* Ruled, not boxed: one 1px line, square corners, the page tone behind the code. */
-.script-editor {
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-.script-editor :deep(.cm-syntax-error-line) {
-  background: var(--error-soft);
-  box-shadow: inset 2px 0 0 var(--error);
-}
-.script-editor :deep(.cm-syntax-error-mark) {
-  text-decoration: underline wavy var(--error);
-  background: var(--error-soft);
-}
-/*
- * Orange means now: the range running at the playhead is underlined, and its line carries the
- * 2px accent rule. Neither gets a fill: any tint under the code drops some syntax colours below
- * 4.5:1.
- */
-.script-editor :deep(.cm-source-highlight) {
-  box-shadow: inset 0 -2px 0 var(--brand);
-}
-.script-editor :deep(.cm-line:has(.cm-source-highlight)) {
-  box-shadow: inset 2px 0 0 var(--brand);
-}
-/* The range that scheduled the current Task or Job, in task blue. */
-.script-editor :deep(.cm-cause-highlight) {
-  background: var(--task-soft);
-  outline: 1px dashed var(--task);
-}
-.script-editor :deep(.cm-editor) {
-  min-height: 14em;
-  font-size: var(--text-code);
-  line-height: 22px;
-  background: var(--background);
-  color: var(--foreground);
-}
-.script-editor :deep(.cm-scroller) {
-  font-family: var(--font-mono);
-  font-variant-ligatures: none;
-}
-.script-editor :deep(.cm-gutters) {
-  background: var(--background);
-  color: var(--syn-gutter);
-  border-right: 1px solid var(--border-soft);
-}
-.script-editor :deep(.cm-activeLine),
-.script-editor :deep(.cm-activeLineGutter) {
-  background: var(--color-hover-row);
-}
-.script-editor :deep(.cm-cursor) {
-  border-left-color: var(--brand);
-}
-.script-editor :deep(.cm-selectionBackground),
-.script-editor :deep(.cm-focused .cm-selectionBackground) {
-  background: color-mix(in srgb, var(--brand) 22%, transparent) !important;
-}
-.script-editor :deep(.cm-focused) {
-  outline: 2px solid var(--ring);
-  outline-offset: -2px;
-}
-</style>

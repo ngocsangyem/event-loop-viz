@@ -4,7 +4,7 @@ import type { useTraceNavigation, JumpUnit } from './use-trace-navigation'
 type Navigation = ReturnType<typeof useTraceNavigation>
 
 /** Typing in the editor or a field must never trigger transport shortcuts. */
-function isTyping(el: HTMLElement): boolean {
+export function isTyping(el: HTMLElement): boolean {
   return el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)
 }
 
@@ -12,7 +12,7 @@ function isTyping(el: HTMLElement): boolean {
 const OWNS_SPACE = 'button, a[href], summary, [role=button]'
 
 /** Menus, listboxes, toggle groups and sliders use arrows, Home and End for their own focus. */
-const OWNS_KEYS = '[role=menu], [role=listbox], [role=group], [role=radiogroup], [role=slider], [role=combobox]'
+export const OWNS_KEYS = '[role=menu], [role=listbox], [role=group], [role=radiogroup], [role=slider], [role=combobox]'
 
 /**
  * Page-wide playback keys: Space plays/pauses, arrows step, Shift/Alt+arrows jump a Tick/Task,

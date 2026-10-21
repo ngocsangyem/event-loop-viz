@@ -42,22 +42,22 @@ const sourceLine = computed(() => {
     v-if="event && explanation"
     :aria-label="t('detail.region')"
     data-testid="event-detail"
-    class="flex min-w-0 flex-col gap-2 text-sm"
+    class="flex min-w-0 flex-col gap-3 text-sm"
   >
     <h2 class="font-mono text-sm font-medium">
       #{{ event.seq }} {{ event.k }}{{ event.visible ? '' : ` ${t('detail.bookkeeping')}` }}
     </h2>
-    <p data-testid="event-explanation" class="text-foreground-2 leading-[22px]">{{ explanation.text }}</p>
+    <p data-testid="event-explanation" class="text-foreground-2 text-sm leading-[22px]">{{ explanation.text }}</p>
     <dl class="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-2 text-xs">
       <dt class="label-mono text-muted-foreground text-[11px]">{{ t('detail.specStep') }}</dt>
       <dd>
         <a
           data-testid="event-spec-link"
-          class="text-brand-text underline underline-offset-4 after:content-['_↗']"
+          class="text-brand-text font-sans text-[13px] leading-[19px] underline underline-offset-4"
           :href="explanation.spec.url"
           target="_blank"
           rel="noopener noreferrer"
-          >{{ explanation.spec.label }}</a
+          >{{ explanation.spec.label }}<span aria-hidden="true">&nbsp;↗</span></a
         >
       </dd>
       <dt class="label-mono text-muted-foreground text-[11px]">{{ t('detail.payload') }}</dt>

@@ -3,17 +3,38 @@ import type en from '../en/core-editor'
 export default {
   editor: {
     region: 'Trình soạn code',
-    code: 'Code',
+    title: 'Script',
     script: 'Script',
+    editing: 'Đang sửa',
+    locked: 'Khóa khi đang chạy',
+    sourceTitle: 'Source',
+    readOnlyTag: 'Chỉ đọc',
     run: 'Chạy',
     cancel: 'Hủy',
     running: 'Đang chạy',
     runningText: 'Đang chạy…',
-    readOnly: 'Chỉ đọc trong lúc replay.',
+    recording: 'Đang ghi Trace…',
+    budget: 'Budget {tasks} Task · {events} event · {seconds} s',
+    editLabel: 'Sửa',
     edit: 'Sửa (sẽ bỏ Trace)',
+  },
+  source: {
+    legend: 'Việc đang chờ do dòng này tạo ra',
+    run: 'Run',
+    runNumber: 'Run #{n}',
+    endedNaturally: 'Kết thúc tự nhiên',
+    halted: 'Halt · Budget',
+    events: '{n} Trace Event',
+    ticks: '{n} Tick',
+    stats: '{events} · {ticks} · {from} → {to} ms',
+  },
+  syntax: {
+    title: 'SyntaxError',
+    goToLine: 'Đến dòng {line}',
   },
   examples: {
     button: 'Ví dụ',
+    custom: 'Tùy chỉnh',
     menuLabel: 'Nạp một Script mẫu',
     items: {
       awaitVsThen: {
@@ -51,7 +72,7 @@ export default {
     },
   },
   settings: {
-    button: 'Cài đặt nâng cao',
+    button: 'Cài đặt Run',
     hint: 'Giá trị đã đổi áp dụng cho lần Run sau, và được lưu trong Trace cũng như liên kết chia sẻ.',
     field: {
       nodes: 'Node Budget',
@@ -63,6 +84,9 @@ export default {
   },
   supportedApis: {
     button: 'API được hỗ trợ',
+    title: 'Được hỗ trợ trong mô hình Chrome 155',
+    group: { timer: 'Timer · Web API', job: 'Job · Promise', console: 'Log · Console' },
+    footer: 'Mọi thứ khác là Unsupported API và chặn Run ngay từ trước khi chạy.',
     promises: 'Promise, async/await, generator, async generator, for await',
     timers: 'setTimeout, setInterval, clearTimeout, clearInterval',
     microtask: 'queueMicrotask',
@@ -72,8 +96,8 @@ export default {
     random: 'Math.random (seed theo từng Run)',
   },
   unsupported: {
-    title: 'Script dùng API chưa được hỗ trợ',
-    touching: '— chạm vào một trong số này sẽ ném UnsupportedApiError.',
+    title: 'Unsupported API · Run bị chặn',
+    line: 'Dòng {line}',
   },
   timing: {
     badge: 'Nhạy về thời gian: thứ tự phụ thuộc vào thời gian tính toán và có thể khác trên trình duyệt của bạn.',

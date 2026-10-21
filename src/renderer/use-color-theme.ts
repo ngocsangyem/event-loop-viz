@@ -1,23 +1,35 @@
-import { computed, onScopeDispose, shallowRef, watchEffect } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { useStoredChoice } from './use-stored-choice'
 
-export type ThemeChoice = 'system' | 'light' | 'dark'
+export type ThemeChoice = 'light' | 'dark'
 
-const DARK_QUERY = '(prefers-color-scheme: dark)'
+const THEMES: readonly ThemeChoice[] = ['light', 'dark']
+const STORAGE_KEY = 'elv-theme'
 
 /**
- * The colour theme. Two token sets read it: shadcn-vue keys off the `dark` class on <html>,
- * the Scene and editor tokens (theme.css) off `data-theme`. "system" follows the OS setting.
+ * Older builds also stored "system". The two-state toggle has no such value, so a stored
+ * "system" becomes the OS setting once (and is rewritten), and anything else unreadable is dark.
+ */
+function migratedFallback(): ThemeChoice {
+  try {
+    if (localStorage.getItem(STORAGE_KEY) === 'system') {
+      const os: ThemeChoice = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      localStorage.setItem(STORAGE_KEY, os)
+      return os
+    }
+  } catch {
+    // Unreadable storage: fall through to the default.
+  }
+  return 'dark'
+}
+
+/**
+ * The colour theme, DARK or LIGHT (dark by default). Two token sets read it: shadcn-vue keys
+ * off the `dark` class on <html>, the Scene and editor tokens (theme.css) off `data-theme`.
  */
 export function useColorTheme() {
-  const choice = useStoredChoice<ThemeChoice>('elv-theme', ['system', 'light', 'dark'], 'system')
-  const media = window.matchMedia(DARK_QUERY)
-  const systemDark = shallowRef(media.matches)
-  const onSystemChange = (event: MediaQueryListEvent) => (systemDark.value = event.matches)
-  media.addEventListener('change', onSystemChange)
-  onScopeDispose(() => media.removeEventListener('change', onSystemChange))
-
-  const dark = computed(() => (choice.value === 'system' ? systemDark.value : choice.value === 'dark'))
+  const choice = useStoredChoice<ThemeChoice>(STORAGE_KEY, THEMES, migratedFallback())
+  const dark = computed(() => choice.value === 'dark')
 
   watchEffect(() => {
     const root = document.documentElement
@@ -25,5 +37,9 @@ export function useColorTheme() {
     root.dataset.theme = dark.value ? 'dark' : 'light'
   })
 
-  return { choice }
+  function toggle() {
+    choice.value = dark.value ? 'light' : 'dark'
+  }
+
+  return { choice, toggle }
 }

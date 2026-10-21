@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Badge } from '@/components/ui/badge'
 import CallbackChip from './callback-chip.vue'
 import type { ChipModel } from './callback-chip-model'
 import type { WebApiCardModel } from './web-api-card-model'
@@ -17,22 +18,22 @@ const percent = computed(() => Math.round(props.card.progress * 100))
   <li
     :data-id="card.key"
     :title="t('panels.due', { due: card.due })"
-    class="web-api-card queue-row px-2.5 py-2 text-xs"
+    class="web-api-card queue-row px-2.5 py-[7px] text-xs"
   >
-    <div class="flex items-center justify-between gap-2 font-mono">
-      <span class="truncate font-medium">
+    <div class="flex items-center justify-between gap-2 font-mono text-[11.5px] leading-[15px] font-medium">
+      <span class="truncate">
         <span class="queue-row-tag">{{ card.api }}</span><span class="text-muted-foreground"> #{{ card.tid }}</span>
       </span>
-      <span v-if="card.repeat" class="queue-row-tag label-mono shrink-0 text-[11px]">{{ t('panels.webApis.repeats') }}</span>
+      <Badge v-if="card.repeat" class="queue-row-tag shrink-0">{{ t('panels.webApis.repeats') }}</Badge>
     </div>
     <div class="web-api-slots">
       <div class="web-api-slot">
-        <span class="label-mono text-muted-foreground text-[11px]">{{ t('panels.webApis.callback') }}</span>
+        <span class="text-muted-foreground font-mono text-[11px] leading-[14px] tracking-(--tracking-label) uppercase">{{ t('panels.webApis.callback') }}</span>
         <CallbackChip v-if="chip" :chip="chip" />
         <span v-else class="text-muted-foreground font-mono">{{ t('panels.webApis.callback') }}</span>
       </div>
       <div class="web-api-slot">
-        <span class="label-mono text-muted-foreground text-[11px]">{{ t('panels.webApis.delay') }}</span>
+        <span class="text-muted-foreground font-mono text-[11px] leading-[14px] tracking-(--tracking-label) uppercase">{{ t('panels.webApis.delay') }}</span>
         <span class="font-mono">{{ card.delay }}</span>
         <span v-if="card.clamped" class="text-muted-foreground">
           {{ t('panels.webApis.clamped', { requested: card.requestedMs }) }}
@@ -41,7 +42,7 @@ const percent = computed(() => Math.round(props.card.progress * 100))
     </div>
     <div class="web-api-arrow">
       <span class="web-api-arrow-line" aria-hidden="true" />
-      <span class="label-mono text-foreground text-[11px]">{{ t('panels.webApis.browser') }}</span>
+      <span class="text-foreground font-mono text-[11px] leading-[14px] tracking-(--tracking-label) uppercase">{{ t('panels.webApis.browser') }}</span>
       <span class="font-mono">· {{ left }}</span>
     </div>
     <div

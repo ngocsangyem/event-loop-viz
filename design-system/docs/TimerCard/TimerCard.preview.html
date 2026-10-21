@@ -1,0 +1,12 @@
+    <section data-story="PendingMidDelay">
+      <elv-timer-card label="TIMER #1" api="setTimeout" delay="100" elapsed="40" due="104" line="2" code="() => console.log('timeout')"></elv-timer-card>
+    </section>
+    <section data-story="New">
+      <elv-timer-card label="TIMER #1" api="setTimeout" delay="0" elapsed="0" due="4" line="2" state="new" code="() => console.log('timeout')"></elv-timer-card>
+    </section>
+    <section data-story="FiredGhost">
+      <elv-timer-card label="TIMER #1" api="setTimeout" delay="0" elapsed="4" due="4" line="2" state="fired" task="TASK #2" code="() => console.log('timeout')"></elv-timer-card>
+    </section>
+    <section data-story="Interval">
+      <elv-timer-card label="TIMER #2" api="setInterval" delay="50" elapsed="20" due="170" line="2" state="interval" fires="3" code="() => console.log('tick')"></elv-timer-card>
+    </section>

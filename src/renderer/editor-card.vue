@@ -1,86 +1,123 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { LoaderCircleIcon } from '@lucide/vue'
 import type { SharedSettings } from '@/share/share-link-codec'
 import { EXAMPLES } from '@/examples/example-library'
-import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Kbd } from '@/components/ui/kbd'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import type { ReplayState } from '../player/replay-state'
+import type { Trace } from '../trace/trace-event'
 import ScriptEditor from './script-editor.vue'
-import ExamplePicker from './example-picker.vue'
-import AdvancedSettings from './advanced-settings.vue'
-import SupportedApis from './supported-apis.vue'
+import EditorPaneHeader from './editor-pane-header.vue'
+import EditorRunFooter from './editor-run-footer.vue'
+import SourceRunSummary from './source-run-summary.vue'
 import UnsupportedApiNotice from './unsupported-api-notice.vue'
+import { queuedLinesAt } from './queued-line-markers'
+import { findUnsupportedUsages } from './unsupported-api-marks'
 import type { SourceHighlight } from './source-highlight'
 import type { SyntaxErrorPosition } from './syntax-error-marker'
 
-/** The Script editor with everything that acts on the Script: Run, examples and settings. */
-defineProps<{
-  replaying: boolean
-  running: boolean
-  syntaxError: string | null
-  syntaxErrorAt: SyntaxErrorPosition | null
-  highlight: SourceHighlight | null
-  unsupportedApis: readonly string[]
-}>()
+/**
+ * The Script editor pane (Edit) and the read-only Source pane (Replay): everything that acts on
+ * the Script. The optional props feed the Source pane and default to an empty replay.
+ */
+const props = withDefaults(
+  defineProps<{
+    replaying: boolean
+    running: boolean
+    syntaxError: string | null
+    syntaxErrorAt: SyntaxErrorPosition | null
+    highlight: SourceHighlight | null
+    unsupportedApis: readonly string[]
+    /** The Trace being replayed: sizes the Source footer. */
+    trace?: Trace | null
+    /** The replay state at the playhead: places the queued-work squares in the Source gutter. */
+    replayState?: ReplayState | null
+    /** Which Run this is; the Source footer prints `RUN #n`. */
+    runNumber?: number | null
+  }>(),
+  { trace: null, replayState: null, runNumber: null },
+)
 const script = defineModel<string>('script', { required: true })
 const settings = defineModel<SharedSettings>('settings', { required: true })
 const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string] }>()
 
 const { t } = useI18n()
 const editor = useTemplateRef('editor')
-const runButton = useTemplateRef<InstanceType<typeof Button>>('runButton')
+const footer = useTemplateRef('footer')
 defineExpose({
   focus: () => editor.value?.focus(),
-  focusRun: () => (runButton.value?.$el as HTMLElement | undefined)?.focus(),
+  focusRun: () => footer.value?.focusRun(),
 })
+
+/** Unsupported APIs block the Run; a replayed Trace already ran, so only editing can be blocked. */
+const blocked = computed(() => !props.replaying && props.unsupportedApis.length > 0)
+const usages = computed(() => findUnsupportedUsages(script.value, props.unsupportedApis))
+const currentExampleId = computed(() => EXAMPLES.find((e) => e.script === script.value)?.id ?? null)
+const queuedLines = computed(() => (props.replayState ? queuedLinesAt(props.replayState) : new Map()))
+// The engine's message without the position suffix the session appends: the lint row sits at the position.
+const syntaxMessage = computed(() => props.syntaxError?.replace(/\s*\(line \d+, column \d+\)$/, '') ?? '')
+
+function requestRun() {
+  if (!props.running && !blocked.value) emit('run')
+}
 </script>
 
 <template>
-  <Card size="sm" class="min-w-0 gap-3" role="region" :aria-label="t('editor.region')">
-    <CardHeader>
-      <CardTitle>{{ t('editor.code') }}</CardTitle>
-      <CardAction class="flex items-center gap-1.5">
-        <Button v-if="running" variant="destructive" size="sm" @click="emit('cancel')">
-          {{ t('editor.cancel') }}
-        </Button>
-        <Button ref="runButton" size="sm" :disabled="running" @click="emit('run')">
-          <LoaderCircleIcon v-if="running" class="animate-spin" />
-          <Kbd v-else aria-hidden="true" class="text-primary-foreground/70 hidden sm:inline-flex">⌘↵</Kbd>
-          {{ t('editor.run') }}
-        </Button>
-      </CardAction>
-    </CardHeader>
-    <CardContent class="flex flex-col gap-2">
-      <!-- The action flows after the text and wraps under it, so a long label never covers it. -->
-      <Alert v-if="replaying" data-testid="replay-banner" class="flex! flex-wrap items-center justify-between gap-2 py-2 pr-3!">
-        <AlertDescription>{{ t('editor.readOnly') }}</AlertDescription>
-        <AlertAction class="static">
-          <Button variant="outline" size="xs" @click="emit('edit')">
-            {{ t('editor.edit') }}
-          </Button>
-        </AlertAction>
-      </Alert>
-      <progress v-if="running" class="sr-only" :aria-label="t('editor.running')">{{ t('editor.runningText') }}</progress>
+  <section class="flex min-h-full min-w-0 flex-col" role="region" :aria-label="t('editor.region')">
+    <EditorPaneHeader
+      :mode="replaying ? 'source' : 'edit'"
+      :running="running"
+      :examples="EXAMPLES"
+      :current-example-id="currentExampleId"
+      @edit="emit('edit')"
+      @load-example="emit('load-example', $event)"
+    />
+    <progress v-if="running" class="sr-only" :aria-label="t('editor.running')">{{ t('editor.runningText') }}</progress>
+    <div
+      :class="[
+        'border-border-soft bg-secondary mx-4 min-w-0 border',
+        replaying ? 'source-card mt-4 py-2' : 'mt-4 mb-3',
+      ]"
+    >
+      <div
+        v-if="!replaying"
+        class="text-muted-foreground flex h-8 items-center px-3 font-mono text-[11px] leading-none font-medium uppercase"
+      >
+        JS · SCRIPT.JS
+      </div>
       <ScriptEditor
         ref="editor"
         v-model="script"
-        :read-only="replaying"
+        :read-only="replaying || running"
+        :source="replaying"
         :error-at="syntaxErrorAt"
+        :error-message="syntaxMessage"
+        :unsupported-apis="unsupportedApis"
+        :queued-lines="queuedLines"
         :highlight="highlight"
-        @run="emit('run')"
+        @run="requestRun"
       />
-      <Alert v-if="syntaxError" variant="destructive">
+    </div>
+    <template v-if="!replaying">
+      <Alert v-if="syntaxError" tone="syntax" class="mx-4 mb-4 w-auto" data-testid="syntax-error-notice">
+        <AlertTitle>{{ t('syntax.title') }}</AlertTitle>
         <AlertDescription>{{ syntaxError }}</AlertDescription>
+        <AlertAction v-if="syntaxErrorAt" class="mt-1">
+          <button type="button" class="cursor-pointer uppercase underline underline-offset-[3px]" @click="editor?.goToLine(syntaxErrorAt.line)">
+            {{ t('syntax.goToLine', { line: syntaxErrorAt.line }) }}
+          </button>
+        </AlertAction>
       </Alert>
-      <UnsupportedApiNotice :apis="unsupportedApis" />
-    </CardContent>
-    <CardFooter class="flex flex-wrap gap-1 border-t !py-2">
-      <ExamplePicker :examples="EXAMPLES" @load="emit('load-example', $event)" />
-      <AdvancedSettings v-model="settings" />
-      <SupportedApis />
-    </CardFooter>
-  </Card>
+      <UnsupportedApiNotice :apis="unsupportedApis" :usages="usages" />
+      <EditorRunFooter
+        ref="footer"
+        v-model:settings="settings"
+        :running="running"
+        :blocked="blocked"
+        @run="requestRun"
+        @cancel="emit('cancel')"
+      />
+    </template>
+    <SourceRunSummary v-else-if="trace" :trace="trace" :run-number="runNumber" />
+  </section>
 </template>

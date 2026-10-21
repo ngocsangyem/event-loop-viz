@@ -6,6 +6,9 @@ import type { ReplayState } from '../player/replay-state'
 import type { TraceEvent } from '../trace/trace-event'
 import { Card, CardContent } from '@/components/ui/card'
 import ConsolePanel from './console-panel.vue'
+import GhostStage from './ghost-stage.vue'
+import type { GhostStageState } from './ghost-stage.vue'
+import { consoleMetaOf } from './console-line-meta'
 import StepCaption from './step-caption.vue'
 import CallStackPanel from './panels/call-stack-panel.vue'
 import ChipTravelLayer from './panels/chip-travel-layer.vue'
@@ -38,6 +41,8 @@ const props = defineProps<{
   /** The Script the Trace ran; chips quote it. */
   source: string
   running: boolean
+  /** Edit-mode ghost stage only: 'blocked' when the Script uses an Unsupported API. Defaults from `running`. */
+  runState?: GhostStageState
   sameView?: SameView
   travelMs: number
 }>()
@@ -46,12 +51,17 @@ const props = defineProps<{
 const EMPTY = createInitialState()
 const focus = computed(() => stepFocusOf(props.player ? (props.previous ?? EMPTY) : null, props.state))
 provide(STEP_FOCUS_KEY, focus)
+
+const ghostState = computed<GhostStageState>(() => props.runState ?? (props.running ? 'running' : 'idle'))
+// Where each console line was printed, read off the Trace up to the playhead.
+const consoleMeta = computed(() => consoleMetaOf(props.events, props.position))
 </script>
 
 <template>
   <div class="flex min-w-0 flex-col">
-    <StepCaption :events="events" :position="position" :state="state" :running="running" />
-    <div class="ruled bg-border grid gap-px border-t">
+    <StepCaption v-if="player" :events="events" :position="position" :state="state" :running="running" />
+    <GhostStage v-if="!player" :state="ghostState" class="flex-1 border-t" />
+    <div v-else class="ruled bg-border grid gap-px border-t">
       <template v-if="view === 'panels'">
         <ChipTravelLayer
           :player="player"
@@ -67,7 +77,7 @@ provide(STEP_FOCUS_KEY, focus)
           <WebApisPanel :state="state" :source="source" />
         </div>
         <div class="ruled bg-border grid gap-px md:grid-cols-[minmax(0,1fr)_auto]">
-          <ConsolePanel :output="state.console" class="max-md:order-last" />
+          <ConsolePanel :output="state.console" :meta="consoleMeta" class="max-md:order-last" />
           <EventLoopPanel :state="state" />
         </div>
       </template>
@@ -78,7 +88,7 @@ provide(STEP_FOCUS_KEY, focus)
             <SceneView v-else :state="state" :previous="previous" />
           </CardContent>
         </Card>
-        <ConsolePanel :output="state.console" />
+        <ConsolePanel :output="state.console" :meta="consoleMeta" />
       </template>
     </div>
   </div>

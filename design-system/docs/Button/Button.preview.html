@@ -1,0 +1,31 @@
+    <section data-story="Variants">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <elv-button variant="primary" hotkey="⌘↵">Run</elv-button>
+        <elv-button hotkey="?">Supported APIs</elv-button>
+        <elv-button variant="outline" hotkey="A">Ask AI</elv-button>
+        <elv-button variant="destructive" hotkey="Esc">Cancel</elv-button>
+      </div>
+    </section>
+    <section data-story="Transport">
+      <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">
+        <elv-button hotkey="⇧←" label="Previous Tick">Tick</elv-button>
+        <elv-button hotkey="←" label="Step back">Step</elv-button>
+        <elv-button variant="primary" hotkey="␣">Play</elv-button>
+        <elv-button hotkey="→" label="Step forward">Step</elv-button>
+        <elv-button hotkey="⇧→" label="Next Tick">Tick</elv-button>
+      </div>
+    </section>
+    <section data-story="States">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <elv-button variant="outline" hotkey="A" pressed>Ask AI</elv-button>
+        <elv-button variant="primary" hotkey="⌘↵" disabled>Run</elv-button>
+        <elv-button hotkey="N" disabled>Next stop</elv-button>
+      </div>
+    </section>
+    <section data-story="Touch">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+        <elv-button size="touch" label="Step back">← Step</elv-button>
+        <elv-button size="touch" variant="primary">Play</elv-button>
+        <elv-button size="touch" label="Step forward">Step →</elv-button>
+      </div>
+    </section>

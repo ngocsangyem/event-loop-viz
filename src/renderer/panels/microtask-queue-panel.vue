@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { ReplayState } from '../../player/replay-state'
 import { chipLabelsOf, chipOf, chipsOf } from './callback-chip-model'
 import { jobQueueOf } from '../scene/job-queue-model'
+import { jobRef } from './queue-item-labels'
 import PanelCard from './panel-card.vue'
 import QueueList from './queue-list.vue'
 import type { QueueItem } from './queue-list.vue'
@@ -18,7 +19,8 @@ const items = computed(() => {
   const queued = jobs.map(
     (job): QueueItem => ({
       id: job.jobId,
-      label: t(`panels.jobKind.${job.kind}`),
+      ref: jobRef(job.jobId),
+      kind: t(`panels.jobKind.${job.kind}`),
       ...chipOf(chips, job.jobId, 'microq'),
     }),
   )
@@ -26,8 +28,8 @@ const items = computed(() => {
     ? [
         {
           id: running.jobId,
-          label: t(`panels.jobKind.${running.kind}`),
-          detail: t('panels.running'),
+          ref: jobRef(running.jobId),
+          kind: t(`panels.jobKind.${running.kind}`),
           active: true,
           ...chipOf(chips, running.jobId, 'microq-running'),
         },
@@ -41,6 +43,7 @@ const items = computed(() => {
   <PanelCard
     concept="job"
     :title="t('panels.microtaskQueue.title')"
+    :subtitle="t('panels.microtaskQueue.subtitle')"
     :info="t('panels.microtaskQueue.info')"
     :count="state.jobs.length"
   >

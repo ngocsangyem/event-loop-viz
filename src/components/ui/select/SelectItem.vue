@@ -2,12 +2,10 @@
 import type { SelectItemProps } from 'reka-ui'
 
 import type { HTMLAttributes } from 'vue'
-import { CheckIcon } from '@lucide/vue'
 import { reactiveOmit } from '@vueuse/core'
 import { cn } from 'cn'
 import {
   SelectItem,
-  SelectItemIndicator,
   SelectItemText,
   useForwardProps,
 } from 'reka-ui'
@@ -25,19 +23,11 @@ const forwardedProps = useForwardProps(delegatedProps)
     v-bind="forwardedProps"
     :class="
       cn(
-        'focus:bg-accent focus:text-accent-foreground data-[state=checked]:bg-accent data-[state=checked]:shadow-[inset_2px_0_0_var(--brand)] not-data-[variant=destructive]:focus:**:text-accent-foreground gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm [&_svg:not([class*=size-])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 relative flex w-full cursor-default items-center outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+        'focus:bg-accent focus:text-accent-foreground data-[state=checked]:bg-accent data-[state=checked]:shadow-[inset_2px_0_0_var(--brand)] border-border-soft not-first:border-t h-[34px] px-3 font-mono text-[13px] font-normal relative flex w-full cursor-default items-center outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         props.class,
       )
     "
   >
-    <span class="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
-      <SelectItemIndicator>
-        <slot name="indicator-icon">
-          <CheckIcon class="pointer-events-none" />
-        </slot>
-      </SelectItemIndicator>
-    </span>
-
     <SelectItemText>
       <slot />
     </SelectItemText>

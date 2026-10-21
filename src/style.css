@@ -144,6 +144,15 @@
 }
 
 /*
+ * KEYS OFF (header switch): every printed hotkey disappears. Button `hotkey`, NavTabs and Kbd all
+ * render the Kbd primitive, so one rule covers them; the keys themselves keep working. Unlayered
+ * on purpose, so it beats the `inline-flex` utility on the element.
+ */
+html[data-keys='off'] [data-slot='kbd'] {
+  display: none;
+}
+
+/*
  * One focus style everywhere: a 2px accent outline, 2px off the control, shown at once. The
  * shadcn-vue focus rings are box-shadows; they are cleared so a control never shows two.
  */

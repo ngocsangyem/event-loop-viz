@@ -49,3 +49,7 @@ playwright-report/
 # design-sync build output
 ds-bundle/
 design-system/dist/
+.ds-sync/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

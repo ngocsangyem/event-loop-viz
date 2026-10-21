@@ -1,37 +1,30 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { cn } from '@/lib/utils'
+import { NavTabs } from '@/components/ui/nav-tabs'
+import type { NavTabItem } from '@/components/ui/nav-tabs'
 import type { ModeTab } from './use-app-layout'
 
-/** Phone only: SCRIPT / REPLAY. Replay waits for a Trace, like the rest of the replay. */
-defineProps<{ canReplay: boolean }>()
+/** Phone only: SCRIPT / REPLAY, 44px tall. Replay waits for a Trace, like the rest of the replay. */
+const props = defineProps<{ canReplay: boolean }>()
 const tab = defineModel<ModeTab>({ required: true })
 const { t } = useI18n()
 
-const TABS: { id: ModeTab; label: string }[] = [
-  { id: 'script', label: 'modeTabs.script' },
-  { id: 'replay', label: 'modeTabs.replay' },
-]
+const items = computed((): NavTabItem[] => [
+  { key: 'script', label: t('modeTabs.script') },
+  { key: 'replay', label: t('modeTabs.replay'), disabled: !props.canReplay },
+])
 </script>
 
 <template>
-  <div role="tablist" :aria-label="t('modeTabs.label')" class="border-border grid grid-cols-2 border-b" data-testid="mode-tabs">
-    <button
-      v-for="item in TABS"
-      :key="item.id"
-      type="button"
-      role="tab"
-      :aria-selected="tab === item.id"
-      :disabled="item.id === 'replay' && !canReplay"
-      :class="
-        cn(
-          'label-mono h-11 outline-none disabled:opacity-50',
-          tab === item.id ? 'text-foreground shadow-[inset_0_-2px_0_var(--foreground)]' : 'text-foreground-2',
-        )
-      "
-      @click="tab = item.id"
-    >
-      {{ t(item.label) }}
-    </button>
-  </div>
+  <NavTabs
+    fill
+    height="44px"
+    class="border-border border-b"
+    data-testid="mode-tabs"
+    :aria-label="t('modeTabs.label')"
+    :items="items"
+    :model-value="tab"
+    @update:model-value="tab = $event as ModeTab"
+  />
 </template>

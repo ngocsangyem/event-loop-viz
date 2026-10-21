@@ -26,5 +26,5 @@ test('the infinite-loop example halts instead of hanging', async ({ page }) => {
   await page.getByTestId('example-infinite-loop').click()
   await page.getByRole('button', { name: 'Run' }).click()
   await expect(page.getByTestId('event-list')).toBeVisible({ timeout: 25_000 })
-  await expect(page.getByTestId('event-list').locator('li').last()).toContainText('run:halted')
+  await expect(page.getByTestId('event-list').locator('li[data-seq]').last()).toHaveAttribute('data-kind', 'run:halted')
 })

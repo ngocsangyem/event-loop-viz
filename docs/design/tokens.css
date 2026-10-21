@@ -145,6 +145,43 @@
   --text-meta: 0.71875rem;    /* 11.5 · mono 400 · ink-3 */
   --text-code: 0.8125rem;     /* 13/22 */
   --text-item: 0.78125rem;    /* 12.5/18 · queue items, console */
+  --text-small: 0.78125rem;   /* 12.5/17 · Inter · pane subtitles, empty slots */
+  --text-micro: 0.6875rem;    /* 11/14 · mono · console tags, trace tags, hints */
+
+  /* line heights and tracking per step */
+  --text-display-line: 30px;  --text-display-tracking: -0.02em;
+  --text-caption-line: 28px;  --text-caption-tracking: -0.01em;
+  --text-heading-line: 24px;  --text-heading-tracking: -0.01em;
+  --text-body-line: 22px;
+  --text-row-line: 30px;
+  --text-small-line: 17px;
+  --text-meta-line: 16px;
+  --text-micro-line: 14px;
+  --text-code-line: 22px;
+  --text-item-line: 18px;
+
+  /* spacing: 4-pt base with the half-steps the app uses */
+  --space-1: 4px;
+  --space-1h: 6px;
+  --space-2: 8px;
+  --space-2h: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  /* shape: 1px hairlines, 2px rules (radius 0, no shadows) */
+  --hairline: 1px;
+  --rule: 2px;
+
+  /* control heights */
+  --control-sm: 30px;
+  --control-md: 36px;
+  --control-lg: 40px;
+  --control-touch: 48px;
+  --pane-header-h: 38px;
 
   /* motion */
   --motion-instant: 0ms;
@@ -157,9 +194,11 @@
   --ease-out: cubic-bezier(.19, 1, .22, 1);
   --ease-swift: cubic-bezier(.55, 0, .1, 1);
   --ease-term: steps(1, end);
+  --reveal-distance: 4px;     /* NEW items and changed panes rise this far */
 
   /* layout */
   --header-h: 48px;
+  --banner-h: 44px;
   --dock-h: 92px;
   --col-source: 320px;
   --col-editor: 600px;
@@ -169,6 +208,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   :root {
+    --motion-tick: 0ms;
+    --reveal-distance: 0px;
     --motion-line: 0ms;
     --motion-fast: 0ms;
     --motion-base: 0ms;
@@ -181,6 +222,33 @@ html {
   color: var(--foreground);
   font-family: var(--font-sans);
   font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A `font` shorthand resets ligature settings per element, so they are forced off everywhere:
+   `=>` and `!==` must read as typed. */
+*,
+*::before,
+*::after {
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "calt" 0 !important;
+}
+
+a {
+  color: var(--foreground);
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border);
+}
+
+a:hover {
+  color: var(--brand-text);
+  text-decoration-color: currentColor;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--primary-foreground);
 }
 
 :focus-visible {

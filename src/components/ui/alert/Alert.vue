@@ -1,20 +1,27 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
-import type { AlertVariants } from '.'
+import type { AlertTone, AlertVariant } from '.'
 import { cn } from 'cn'
-import { alertVariants } from '.'
+import { computed, provide } from 'vue'
+import { alertToneKey, alertTones, alertVariants } from '.'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
-  variant?: AlertVariants['variant']
+  tone?: AlertTone
+  variant?: AlertVariant
 }>()
+
+const tone = computed<AlertTone>(() => props.tone ?? (props.variant === 'destructive' ? 'error' : 'note'))
+provide(alertToneKey, tone)
 </script>
 
 <template>
+  <!-- Only urgent tones interrupt a screen reader; a caller's own `role` attribute still wins. -->
   <div
     data-slot="alert"
-    :class="cn(alertVariants({ variant }), props.class)"
-    role="alert"
+    :data-tone="tone"
+    :role="alertTones[tone].urgent ? 'alert' : undefined"
+    :class="cn(alertVariants({ tone }), props.class)"
   >
     <slot />
   </div>

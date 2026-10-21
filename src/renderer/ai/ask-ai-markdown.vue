@@ -1,35 +1,35 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import AskAiInline from './ask-ai-inline.vue'
 import { parseMarkdown } from './markdown-lite'
 
 /**
- * Renders model output as Markdown-lite. Every piece goes through text interpolation, so
- * nothing the model returns can inject markup.
+ * Renders model output as Markdown-lite in the answer voice (Inter 14/22, ink-2). Numbered lists
+ * print `01 02 03` counters, as the tour stops do.
  */
 const props = defineProps<{ text: string }>()
 const blocks = computed(() => parseMarkdown(props.text))
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 break-words">
+  <div class="text-foreground-2 flex flex-col gap-2 font-sans text-sm leading-[22px] break-words">
     <template v-for="(block, i) in blocks" :key="i">
-      <p v-if="block.kind === 'paragraph'">
-        <template v-for="(part, j) in block.inlines" :key="j">
-          <code v-if="part.kind === 'code'" class="bg-muted rounded px-1 py-0.5 font-mono text-[0.85em]">{{ part.text }}</code>
-          <strong v-else-if="part.kind === 'strong'">{{ part.text }}</strong>
-          <template v-else>{{ part.text }}</template>
-        </template>
-      </p>
+      <p v-if="block.kind === 'paragraph'"><AskAiInline :parts="block.inlines" /></p>
       <pre v-else-if="block.kind === 'code'" tabindex="0" class="bg-raised border-border-soft overflow-x-auto border p-2 font-mono text-xs"><code>{{ block.text }}</code></pre>
-      <component :is="block.ordered ? 'ol' : 'ul'" v-else :class="['ml-5 flex flex-col gap-1', block.ordered ? 'list-decimal' : 'list-disc']">
-        <li v-for="(item, k) in block.items" :key="k">
-          <template v-for="(part, j) in item" :key="j">
-            <code v-if="part.kind === 'code'" class="bg-muted rounded px-1 py-0.5 font-mono text-[0.85em]">{{ part.text }}</code>
-            <strong v-else-if="part.kind === 'strong'">{{ part.text }}</strong>
-            <template v-else>{{ part.text }}</template>
-          </template>
+      <ol v-else-if="block.ordered" class="flex flex-col gap-1 [counter-reset:step]">
+        <li
+          v-for="(item, k) in block.items"
+          :key="k"
+          class="flex gap-3 [counter-increment:step] before:text-muted-foreground before:w-5 before:shrink-0 before:font-mono before:text-[11px] before:leading-[22px] before:content-[counter(step,decimal-leading-zero)]"
+        >
+          <span class="min-w-0"><AskAiInline :parts="item" /></span>
         </li>
-      </component>
+      </ol>
+      <ul v-else class="flex flex-col gap-1">
+        <li v-for="(item, k) in block.items" :key="k" class="flex gap-3 before:text-muted-foreground before:w-5 before:shrink-0 before:font-mono before:text-[11px] before:leading-[22px] before:content-['—']">
+          <span class="min-w-0"><AskAiInline :parts="item" /></span>
+        </li>
+      </ul>
     </template>
   </div>
 </template>

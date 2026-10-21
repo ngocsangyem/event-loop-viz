@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { sourceHighlight, setSourceHighlight, highlightedRanges } from '../source-highlight'
+import { sourceHighlight, setSourceHighlight, highlightedRanges, currentHighlightLine } from '../source-highlight'
 import type { SourceLocation } from '../../trace/trace-event'
 
 const loc = (start: number, end: number): SourceLocation => ({ start, end, line: 1, column: start })
@@ -47,5 +47,20 @@ describe('source highlight', () => {
     }).state
     const edited = set.update({ changes: { from: 0, insert: 'XX' } }).state
     expect(highlightedRanges(edited)).toEqual([{ from: 4, to: 6, kind: 'source' }])
+  })
+
+  it('puts the current-line rule on the row the range starts on, not every row it spans', () => {
+    const state = stateWith('one\ntwo\nthree').update({
+      effects: setSourceHighlight.of({ source: loc(5, 12), cause: null }),
+    }).state
+    expect(currentHighlightLine(state)).toBe(2)
+  })
+
+  it('has no current line when nothing is highlighted or the range is stale', () => {
+    expect(currentHighlightLine(stateWith('abc'))).toBeNull()
+    const stale = stateWith('abc').update({
+      effects: setSourceHighlight.of({ source: loc(50, 60), cause: null }),
+    }).state
+    expect(currentHighlightLine(stale)).toBeNull()
   })
 })

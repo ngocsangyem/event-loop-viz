@@ -1,8 +1,9 @@
 /** The queue panels, the Event Loop panel and the Console. */
 export default {
   panels: {
-    about: 'About {title}',
     running: 'running',
+    /** Tag of the entry that is running now (the top frame, the Task or Job being run). */
+    topItem: 'TOP',
     /** Focal state of a pane the current step changed, and of an entry that just arrived. */
     changed: 'Changed',
     runningState: 'Running',
@@ -14,7 +15,8 @@ export default {
     callStack: {
       title: 'Call Stack',
       info: 'Frames of the code running now, top first. The event loop picks the next Task only when the stack is empty. Built-ins called by other built-ins are hidden.',
-      empty: 'Empty',
+      subtitle: 'Runs now. The top frame executes.',
+      empty: 'Empty — the loop can move on',
     },
     eventLoop: {
       title: 'Event Loop',
@@ -32,16 +34,19 @@ export default {
     microtaskQueue: {
       title: 'Microtask Queue',
       info: 'Promise reactions, thenable resolution and queueMicrotask callbacks. It drains completely after every Task, before the next Task starts.',
-      empty: 'No microtasks queued',
+      subtitle: 'Jobs. All of them drain at each Checkpoint.',
+      empty: 'No Jobs waiting',
     },
     taskQueue: {
       title: 'Task Queue',
-      info: 'Macrotasks: the Script itself, timer callbacks and MessagePort messages. The event loop runs one Task, then drains the microtask queue.',
-      empty: 'No tasks queued',
+      info: 'Tasks: the Script itself, timer callbacks and MessagePort messages. The event loop runs one Task, then drains the microtask queue.',
+      subtitle: 'One Task per Tick, after the Checkpoint.',
+      empty: 'No Tasks waiting',
     },
     webApis: {
       title: 'Web APIs',
       info: 'Timers the browser is counting down. When one is due, its callback moves to the Task Queue.',
+      subtitle: 'Timers and MessageChannel ports.',
       empty: 'No pending timers',
       callback: 'callback',
       delay: 'delay',
@@ -59,5 +64,28 @@ export default {
     title: 'Console',
     info: 'Observable Output so far: console lines, uncaught exceptions and unhandled rejections.',
     empty: 'No console output at this step.',
+    /** Chrome's own prefixes for errors that nothing caught; they end with a space. */
+    uncaught: 'Uncaught ',
+    unhandledRejection: 'Unhandled rejection ',
+    rejectionHandled: 'Rejection handled ',
+    repeated: 'repeated {count} times',
+  },
+  /** Edit mode: ghost cells show where each part of a Run will appear; the card says what to do. */
+  ghostStage: {
+    stack: 'What runs right now',
+    jobs: 'Jobs: promise reactions, queueMicrotask',
+    tasks: 'Tasks: timer callbacks, messages',
+    webApis: 'Timers waiting on the Virtual Clock',
+    console: 'Output, errors and rejections',
+    ready: 'Ready',
+    busy: 'Worker busy',
+    blocked: 'Run blocked',
+    readyTitle: 'press run to record a trace',
+    busyTitle: 'recording the trace…',
+    blockedTitle: 'unsupported api in the script',
+    readyBody:
+      'The Script runs once in a sandboxed Worker against a Chrome 155 event loop model. Then you replay every step — forwards and back.',
+    busyBody: 'Replay starts as soon as the Run ends. Cancel stops the Worker.',
+    blockedBody: 'The Script calls an API this model does not simulate. Remove it to run.',
   },
 }

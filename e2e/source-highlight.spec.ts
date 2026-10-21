@@ -13,7 +13,7 @@ async function runScript(page: Page, script: string) {
   await expect(page.getByTestId('replay-banner')).toBeVisible()
 }
 
-const currentEvent = (page: Page) => page.locator('[data-testid=event-list] li[aria-current=true]')
+const currentEvent = (page: Page) => page.locator('[data-testid=event-list] li[aria-current=step]')
 
 /** Presses Next until the playhead sits on the nth (1-based) event of the given kind. */
 async function stepToEvent(page: Page, kind: string, nth = 1) {

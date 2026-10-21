@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { ReplayState } from '../../player/replay-state'
 import { chipLabelsOf, chipOf, chipsOf } from './callback-chip-model'
 import { taskQueueOf } from '../scene/task-queue-model'
+import { taskRef } from './queue-item-labels'
 import PanelCard from './panel-card.vue'
 import QueueList from './queue-list.vue'
 import type { QueueItem } from './queue-list.vue'
@@ -18,7 +19,8 @@ const items = computed(() => {
   const queued = tasks.map(
     (task): QueueItem => ({
       id: task.taskId,
-      label: t(`panels.taskSource.${task.source}`),
+      ref: taskRef(task.taskId),
+      kind: t(`panels.taskSource.${task.source}`),
       ...chipOf(chips, task.taskId, 'taskq'),
     }),
   )
@@ -26,8 +28,8 @@ const items = computed(() => {
     ? [
         {
           id: running.taskId,
-          label: t(`panels.taskSource.${running.source}`),
-          detail: t('panels.running'),
+          ref: taskRef(running.taskId),
+          kind: t(`panels.taskSource.${running.source}`),
           active: true,
           ...chipOf(chips, running.taskId, 'taskq-running'),
         },
@@ -41,6 +43,7 @@ const items = computed(() => {
   <PanelCard
     concept="task"
     :title="t('panels.taskQueue.title')"
+    :subtitle="t('panels.taskQueue.subtitle')"
     :info="t('panels.taskQueue.info')"
     :count="state.tasks.length"
   >

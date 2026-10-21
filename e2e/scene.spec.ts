@@ -23,9 +23,9 @@ const frameLabels = (page: Page) =>
     .locator('[data-testid=scene-frame]')
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-label')))
 const current = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
 const lastSeq = (page: Page) =>
-  page.locator('[data-testid=event-list] li').last().getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[data-seq]').last().getAttribute('data-seq')
 
 test('stepping through nested calls pushes and pops frames in the Scene', async ({ page }) => {
   await runScript(page, NESTED)

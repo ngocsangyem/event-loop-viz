@@ -1,52 +1,43 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { MinusIcon, SettingsIcon, SparklesIcon, Trash2Icon } from '@lucide/vue'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-/** Title, what the AI reads (the whole Run), and the clear / settings / minimize buttons. */
-defineProps<{ stepCount: number; canClear: boolean }>()
-const emit = defineEmits<{ clear: []; settings: []; minimize: [] }>()
+/**
+ * Header band: `ASK AI` + `INTERVIEW COACH`, then text actions. MINIMIZE only shows while a tour
+ * runs, because only then does minimizing differ from closing (the tour moves to the dock).
+ */
+defineProps<{ canClear: boolean; tourActive: boolean }>()
+const emit = defineEmits<{ clear: []; settings: []; minimize: []; close: [] }>()
 const { t } = useI18n()
 </script>
 
 <template>
-  <header class="flex flex-col gap-1.5 border-b px-3 pt-3 pb-2.5">
-    <div class="flex items-center gap-1">
-      <SparklesIcon class="text-brand mr-1 size-4" aria-hidden="true" />
-      <h2 id="ask-ai-title" class="label-mono mr-auto">{{ t('ai.title') }}</h2>
-      <Tooltip v-if="canClear">
-        <TooltipTrigger as-child>
-          <Button variant="ghost" size="icon-sm" :aria-label="t('ai.clear')" data-testid="ask-ai-clear" @click="emit('clear')">
-            <Trash2Icon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{{ t('ai.clear') }}</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <Button variant="ghost" size="icon-sm" :aria-label="t('ai.settings')" data-testid="ask-ai-settings-button" @click="emit('settings')">
-            <SettingsIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{{ t('ai.settings') }}</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <Button variant="ghost" size="icon-sm" :aria-label="t('ai.minimize')" data-testid="ask-ai-minimize" @click="emit('minimize')">
-            <MinusIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{{ t('ai.minimize') }}</TooltipContent>
-      </Tooltip>
+  <header class="border-border flex h-10 shrink-0 items-center gap-3.5 border-b px-4 font-mono whitespace-nowrap text-xs font-medium tracking-[0.02em] uppercase">
+    <h2 id="ask-ai-title" class="text-foreground shrink-0">{{ t('ai.title') }}</h2>
+    <span class="text-muted-foreground min-w-0 truncate">{{ t('ai.subtitle') }}</span>
+    <span class="flex-1" />
+    <div class="-mr-1.5 flex shrink-0 items-center">
+      <Button
+        v-if="canClear"
+        variant="ghost"
+        size="sm"
+        class="px-1.5 max-sm:h-11!"
+        :aria-label="t('ai.clear')"
+        data-testid="ask-ai-clear"
+        @click="emit('clear')"
+      >
+        {{ t('ai.clearShort') }}
+      </Button>
+      <Button variant="ghost" size="sm" class="px-1.5 max-sm:h-11!" data-testid="ask-ai-settings-button" @click="emit('settings')">
+        {{ t('ai.settings') }}
+      </Button>
+      <Button v-if="tourActive" variant="ghost" size="sm" class="px-1.5 max-sm:h-11!" data-testid="ask-ai-minimize" @click="emit('minimize')">
+        {{ t('ai.minimize') }}
+      </Button>
+      <Button variant="secondary" size="sm" hotkey="ESC" class="px-1.5 max-sm:h-11!" data-testid="ask-ai-close" @click="emit('close')">
+        {{ t('ai.close') }}
+      </Button>
     </div>
     <p id="ask-ai-description" class="sr-only">{{ t('ai.description') }}</p>
-    <div>
-      <Badge variant="outline" data-testid="ask-ai-context">
-        <span class="sr-only">{{ t('ai.context.label') }}: </span>
-        {{ stepCount > 0 ? t('ai.context.run', { count: stepCount }) : t('ai.context.none') }}
-      </Badge>
-    </div>
   </header>
 </template>

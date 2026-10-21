@@ -8,7 +8,7 @@
 
 /* Phone REPLAY tab: the Script shrinks to a few lines around the current one (the Source peek). */
 @media (width < 48rem) {
-  .source-peek [data-slot='card-footer'] {
+  .source-peek .source-summary {
     display: none;
   }
   .source-peek .script-editor .cm-editor.cm-editor {

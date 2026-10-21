@@ -1,0 +1,18 @@
+    <section data-story="Note">
+      <elv-admonition tone="note" label="Why 'timeout' still waits">A Task only runs once the Call Stack is empty and the microtask checkpoint has drained every Job, so <code>setTimeout(fn, 0)</code> prints after <code>then 2</code>.</elv-admonition>
+    </section>
+    <section data-story="UnsupportedApi">
+      <elv-admonition tone="error" label="Unsupported API · Run blocked"><code>fetch</code> on line 2 has no model in this simulator. Replace it with a timer or a Promise.<elv-button slot="actions" hotkey="?">Supported APIs</elv-button></elv-admonition>
+    </section>
+    <section data-story="SyntaxError">
+      <elv-admonition tone="syntax" label="SyntaxError · Unexpected token ')'">The Script could not be parsed, so nothing was recorded.<elv-button slot="actions">Go to line 3</elv-button></elv-admonition>
+    </section>
+    <section data-story="Halt">
+      <elv-admonition tone="halt" label="Halt · Task budget">The Script queued more than 500 Tasks. The Trace stops here so the page stays responsive.</elv-admonition>
+    </section>
+    <section data-story="InterviewOneLiner">
+      <elv-admonition tone="success" label="Interview one-liner">Synchronous code first, then every microtask, then one Task per Tick.</elv-admonition>
+    </section>
+    <section data-story="YourTurn">
+      <elv-admonition tone="turn">Before you press Next: which line prints first, <code>then 1</code> or <code>timeout</code>?</elv-admonition>
+    </section>

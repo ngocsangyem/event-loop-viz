@@ -1,7 +1,7 @@
 /* Timer card: header, callback + delay slots, then an arrow out to the Browser tag. */
 .web-api-card {
   display: grid;
-  gap: 0.5rem;
+  gap: 6px;
   grid-template-columns: minmax(0, 1fr);
 }
 

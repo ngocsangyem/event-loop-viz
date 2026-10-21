@@ -25,9 +25,9 @@ export async function runScript(page: Page, script: string) {
 export const ghosts = (page: Page) => page.locator('.chip-ghost')
 
 export const currentSeq = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
 
-const lastSeq = (page: Page) => page.locator('[data-testid=event-list] li').last().getAttribute('data-seq')
+const lastSeq = (page: Page) => page.locator('[data-testid=event-list] li[data-seq]').last().getAttribute('data-seq')
 
 /** Steps forward until `locator` matches something; fails at the end of the Trace. */
 export async function stepUntilPresent(page: Page, locator: Locator, maxSteps = 400) {

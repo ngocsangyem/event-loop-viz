@@ -2,8 +2,8 @@ import type en from '../en/core-panels'
 
 export default {
   panels: {
-    about: 'Giới thiệu {title}',
     running: 'đang chạy',
+    topItem: 'TOP',
     changed: 'Đã đổi',
     runningState: 'Đang chạy',
     newItem: 'MỚI',
@@ -13,7 +13,8 @@ export default {
     callStack: {
       title: 'Call Stack',
       info: 'Các frame của đoạn code đang chạy, frame trên cùng ở đầu. Event loop chỉ lấy Task kế tiếp khi stack đã trống. Built-in do built-in khác gọi sẽ bị ẩn.',
-      empty: 'Trống',
+      subtitle: 'Đang chạy. Frame trên cùng được thực thi.',
+      empty: 'Trống — vòng lặp có thể đi tiếp',
     },
     eventLoop: {
       title: 'Event Loop',
@@ -31,16 +32,19 @@ export default {
     microtaskQueue: {
       title: 'Microtask Queue',
       info: 'Promise reaction, thenable resolution và callback của queueMicrotask. Hàng đợi này được xả hết sau mỗi Task, trước khi Task kế tiếp bắt đầu.',
-      empty: 'Chưa có microtask nào trong hàng đợi',
+      subtitle: 'Các Job. Tất cả được xả hết ở mỗi Checkpoint.',
+      empty: 'Chưa có Job nào đang chờ',
     },
     taskQueue: {
       title: 'Task Queue',
-      info: 'Macrotask: chính Script, callback của timer và message của MessagePort. Event loop chạy một Task rồi xả hàng đợi microtask.',
-      empty: 'Chưa có task nào trong hàng đợi',
+      info: 'Task: chính Script, callback của timer và message của MessagePort. Event loop chạy một Task rồi xả hàng đợi microtask.',
+      subtitle: 'Mỗi Tick chạy một Task, sau Checkpoint.',
+      empty: 'Chưa có Task nào đang chờ',
     },
     webApis: {
       title: 'Web APIs',
       info: 'Các timer mà trình duyệt đang đếm ngược. Khi đến hạn, callback của timer chuyển sang Task Queue.',
+      subtitle: 'Timer và cổng MessageChannel.',
       empty: 'Không có timer nào đang chờ',
       callback: 'callback',
       delay: 'độ trễ',
@@ -58,5 +62,26 @@ export default {
     title: 'Console',
     info: 'Observable Output tính đến lúc này: các dòng console, exception không bắt và unhandled rejection.',
     empty: 'Bước này chưa có output console nào.',
+    uncaught: 'Uncaught ',
+    unhandledRejection: 'Unhandled rejection ',
+    rejectionHandled: 'Rejection handled ',
+    repeated: 'lặp lại {count} lần',
+  },
+  ghostStage: {
+    stack: 'Đang chạy ngay lúc này',
+    jobs: 'Job: promise reaction, queueMicrotask',
+    tasks: 'Task: callback của timer, message',
+    webApis: 'Timer đang chờ trên Virtual Clock',
+    console: 'Output, lỗi và rejection',
+    ready: 'Sẵn sàng',
+    busy: 'Worker đang bận',
+    blocked: 'Run bị chặn',
+    readyTitle: 'nhấn run để ghi lại trace',
+    busyTitle: 'đang ghi lại trace…',
+    blockedTitle: 'script dùng api chưa hỗ trợ',
+    readyBody:
+      'Script chạy một lần trong Worker sandbox trên mô hình event loop của Chrome 155. Sau đó bạn replay từng bước — tiến và lùi.',
+    busyBody: 'Replay bắt đầu ngay khi Run kết thúc. Cancel sẽ dừng Worker.',
+    blockedBody: 'Script gọi một API mà mô hình này không mô phỏng. Hãy bỏ nó để chạy.',
   },
 } satisfies typeof en

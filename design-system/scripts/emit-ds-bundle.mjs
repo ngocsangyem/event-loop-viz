@@ -43,29 +43,43 @@ const write = (rel, data) => {
 copyFileSync(join(ROOT, 'docs/design/tokens.css'), join(OUT, 'tokens/tokens.css'))
 write('styles.css', `@import url("${FONTS_URL}");\n@import "./tokens/tokens.css";\n`)
 
-/** A preview card: first line is the @dsCard marker; ?story=<Name> renders one cell full-bleed. */
+/**
+ * A preview card: first line is the @dsCard marker; ?story=<Name> renders one cell full-bleed.
+ * Each authored `<section data-story="Name">…</section>` becomes a labeled `.ds-cell` whose body
+ * mounts in `#r<i>` (the ids the render check measures). `cardMode: "column"` in meta.json gives
+ * wide elements one full-width story per row.
+ */
 function card(c, body) {
+  const cells = [...body.matchAll(/<section data-story="([^"]+)"([^>]*)>([\s\S]*?)<\/section>/g)]
+  if (!cells.length) throw new Error(`${c.name}.preview.html has no <section data-story> cells`)
+  const html = cells
+    // Extra attributes on an authored section (e.g. a max-width style) move onto its mount root.
+    .map(([, story, attrs, inner], i) => `    <section class="ds-cell" data-story="${story}"><h4>${story}</h4><div id="r${i}"${attrs}>${inner}</div></section>`)
+    .join('\n')
+  const column = c.cardMode === 'column'
   return `<!-- @dsCard group="${c.group}" -->
 <!doctype html>
 <html data-theme="dark"><head><meta charset="utf-8">
   <link rel="stylesheet" href="../../../styles.css">
   <style>
     body{margin:0;padding:24px;background:var(--color-bg);color:var(--color-ink);font-family:var(--font-sans)}
-    .ds-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;align-items:start}
-    .ds-grid>section{border:1px solid var(--color-line-soft);padding:12px;min-width:0;overflow:hidden}
-    .ds-grid>section>h4{margin:0 0 8px;font:500 11.5px var(--font-mono);color:var(--color-ink-3);text-transform:uppercase;letter-spacing:.02em}
+    .ds-grid{display:grid;grid-template-columns:${column ? '1fr' : 'repeat(auto-fill,minmax(300px,1fr))'};gap:20px;align-items:start}
+    .ds-cell{border:1px solid var(--color-line-soft);padding:12px;min-width:0;overflow:hidden}
+    .ds-cell>h4{margin:0 0 8px;font:500 11.5px var(--font-mono);color:var(--color-ink-3);text-transform:uppercase;letter-spacing:.02em}
+    body.ds-single{padding:16px}
+    body.ds-single .ds-cell{border:0;padding:0}
   </style>
   <script src="../../../_ds_bundle.js"></script>
 </head><body>
-  <div class="ds-grid" id="g">
-${body}
+  <div class="ds-grid">
+${html}
   </div>
   <script>
-    var cells=[].slice.call(document.querySelectorAll('[data-story]'));
+    window.__dsMode=${JSON.stringify(column ? 'column' : 'grid')};
+    var cells=[].slice.call(document.querySelectorAll('.ds-cell'));
     window.__dsCells=cells.map(function(s){return s.dataset.story});
-    cells.forEach(function(s){var h=document.createElement('h4');h.textContent=s.dataset.story;s.prepend(h)});
     var q=null;try{q=new URLSearchParams(location.search).get('story')}catch(e){}
-    if(q){cells.forEach(function(s){if(s.dataset.story.toLowerCase()!==q.toLowerCase())s.remove();else s.firstChild.remove()})}
+    if(q){document.body.className='ds-single';cells.forEach(function(s){if(s.dataset.story.toLowerCase()!==q.toLowerCase())s.remove();else s.querySelector('h4').remove()})}
   </script>
 </body></html>
 `
@@ -76,7 +90,7 @@ for (const c of components) {
   const base = `components/${c.group}/${c.name}/${c.name}`
   for (const ext of ['.d.ts', '.prompt.md']) write(base + ext, readFileSync(join(c.dir, c.name + ext)))
   // The component's source entry for the self-check: a plain JS module naming its tag (no React).
-  write(`${base}.js`, `// <${c.tag}> is registered by _ds_bundle.js; use the tag in markup.\nexport const tag = '${c.tag}'\nexport default window.${GLOBAL}.${c.export}\n`)
+  write(`${base}.js`, `// <${c.tag}> is registered by _ds_bundle.js; use the tag in markup.\nexport const tag = '${c.tag}'\nexport default window.${GLOBAL}.${c.name}\n`)
   write(base + '.html', card(c, readFileSync(join(c.dir, c.name + '.preview.html'), 'utf8')))
   out.push(c)
 }
@@ -107,4 +121,6 @@ write(
     out.map((c) => `- \`<${c.tag}>\` (${c.name}, ${c.group}): ${readFileSync(join(c.dir, c.name + '.prompt.md'), 'utf8').split('\n')[0]}`).join('\n') +
     '\n',
 )
+// Local-only build metadata (dot-prefixed, never uploaded) the validator reads for counts.
+write('.ds-build-meta.json', JSON.stringify({ shape: 'custom-elements', componentCount: out.length }))
 console.log(`ds-bundle: ${out.length} components → ${OUT}`)

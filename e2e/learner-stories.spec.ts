@@ -11,7 +11,7 @@ async function runScript(page: Page, script: string) {
 
 const consoleLines = (page: Page) => page.getByTestId('console-panel').locator('li')
 const currentSeq = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
 
 async function goToEnd(page: Page) {
   await page.getByRole('button', { name: 'Go to end' }).click()

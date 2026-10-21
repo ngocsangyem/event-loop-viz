@@ -23,26 +23,26 @@ console.log('sync')`)
 
 test('the 3D view swaps the panels for the Scene and is remembered', async ({ page }) => {
   await page.goto('/')
-  await page.getByTestId('view-3d').click()
+  await page.getByRole('button', { name: '3D Scene', exact: true }).click()
   await expect(page.getByTestId('scene')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Call Stack', exact: true })).toHaveCount(0)
   await page.reload()
   await expect(page.getByTestId('scene')).toBeVisible()
-  await page.getByTestId('view-panels').click()
+  await page.getByRole('button', { name: 'Panels', exact: true }).click()
   await expect(page.getByTestId('scene')).toHaveCount(0)
 })
 
-test('arrow keys on the view switch move between views without stepping the Trace', async ({ page }) => {
+test('the number keys switch the view and are not typed into the editor', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Run' }).click()
-  await expect(page.getByTestId('replay-banner')).toBeVisible()
-  const current = () =>
-    page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
-  const before = await current()
-  await page.getByTestId('view-panels').focus()
-  await page.keyboard.press('ArrowRight')
-  await page.keyboard.press('End')
-  expect(await current()).toBe(before)
+  await page.keyboard.press('3')
+  await expect(page.getByTestId('scene')).toBeVisible()
+  await page.keyboard.press('1')
+  await expect(page.getByTestId('scene')).toHaveCount(0)
+
+  // Typing in the editor must never trigger a hotkey.
+  await page.getByLabel('Script').click()
+  await page.keyboard.type('3')
+  await expect(page.getByTestId('scene')).toHaveCount(0)
 })
 
 test('with Autostart on, a Run plays by itself and fills the panels step by step', async ({ page }) => {

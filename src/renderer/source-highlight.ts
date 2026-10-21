@@ -1,6 +1,6 @@
-import { StateEffect, StateField } from '@codemirror/state'
-import type { EditorState, Extension, Range } from '@codemirror/state'
-import { Decoration, EditorView } from '@codemirror/view'
+import { RangeSet, StateEffect, StateField } from '@codemirror/state'
+import type { EditorState, Extension, Range, Text } from '@codemirror/state'
+import { Decoration, EditorView, GutterMarker, gutterLineClass } from '@codemirror/view'
 import type { DecorationSet } from '@codemirror/view'
 import type { SourceLocation } from '../trace/trace-event'
 
@@ -20,8 +20,17 @@ const CLASS_OF: Record<HighlightKind, string> = {
 
 export const setSourceHighlight = StateEffect.define<SourceHighlight>()
 
-function decorationsFor(docLength: number, highlight: SourceHighlight): DecorationSet {
+const CURRENT_LINE_CLASS = 'cm-source-line'
+
+function decorationsFor(doc: Text, highlight: SourceHighlight): DecorationSet {
+  const docLength = doc.length
   const ranges: Range<Decoration>[] = []
+  // The row the playhead is on, not every row its range spans: a multi-line callback would
+  // otherwise paint the whole block as "now".
+  if (highlight.source && highlight.source.start < docLength) {
+    const line = doc.lineAt(Math.max(highlight.source.start, 0))
+    ranges.push(Decoration.line({ class: CURRENT_LINE_CLASS }).range(line.from))
+  }
   for (const [kind, loc] of [
     ['cause', highlight.cause],
     ['source', highlight.source],
@@ -39,21 +48,44 @@ const highlightField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update(value, tr) {
     for (const effect of tr.effects) {
-      if (effect.is(setSourceHighlight)) return decorationsFor(tr.state.doc.length, effect.value)
+      if (effect.is(setSourceHighlight)) return decorationsFor(tr.state.doc, effect.value)
     }
     return tr.docChanged ? value.map(tr.changes) : value
   },
   provide: (field) => EditorView.decorations.from(field),
 })
 
+/** Marks the gutter cells of the current row so the line number can turn accent. */
+class CurrentLineGutterMarker extends GutterMarker {
+  elementClass = 'cm-source-line-gutter'
+}
+const currentLineMarker = new CurrentLineGutterMarker()
+
+const currentLineGutterField = StateField.define<RangeSet<GutterMarker>>({
+  create: () => RangeSet.empty,
+  update(value, tr) {
+    for (const effect of tr.effects) {
+      if (!effect.is(setSourceHighlight)) continue
+      const { doc } = tr.state
+      const source = effect.value.source
+      if (!source || source.start >= doc.length) return RangeSet.empty
+      const line = doc.lineAt(Math.max(source.start, 0))
+      return RangeSet.of([currentLineMarker.range(line.from)])
+    }
+    return tr.docChanged ? value.map(tr.changes) : value
+  },
+  provide: (field) => gutterLineClass.from(field),
+})
+
 export function sourceHighlight(): Extension {
-  return highlightField
+  return [highlightField, currentLineGutterField]
 }
 
 /** The highlighted ranges currently in the editor state. */
 export function highlightedRanges(state: EditorState) {
   const out: { from: number; to: number; kind: HighlightKind }[] = []
   state.field(highlightField).between(0, state.doc.length, (from, to, deco) => {
+    if (deco.spec.class === CURRENT_LINE_CLASS) return
     const kind = deco.spec.class === CLASS_OF.source ? 'source' : 'cause'
     out.push({ from, to, kind })
   })
@@ -68,4 +100,13 @@ export function applySourceHighlight(view: EditorView, highlight: SourceHighligh
     effects.push(EditorView.scrollIntoView(highlight.source.start, { y: 'nearest' }))
   }
   view.dispatch({ effects })
+}
+
+/** 1-based number of the row carrying the current-line rule, or null when nothing is highlighted. */
+export function currentHighlightLine(state: EditorState): number | null {
+  let found: number | null = null
+  state.field(highlightField).between(0, state.doc.length, (from, _to, deco) => {
+    if (deco.spec.class === CURRENT_LINE_CLASS) found = state.doc.lineAt(from).number
+  })
+  return found
 }

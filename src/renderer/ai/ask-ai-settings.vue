@@ -1,98 +1,71 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { EyeIcon, EyeOffIcon, ExternalLinkIcon } from '@lucide/vue'
-import { Button } from '@/components/ui/button'
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
+import { DialogBody, DialogDescription } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
+import { TextField } from '@/components/ui/text-field'
 import AskAiModelPicker from './ask-ai-model-picker.vue'
-import type { ApiKeyStore } from './api-key-store'
 import type { ModelInfo } from './openrouter-models'
 
-/** API key, where it is kept, and the model: the body of the settings dialog. */
-const props = defineProps<{
-  store: ApiKeyStore
+/** The settings form: key, whether to remember it, and the model. It edits a draft; the dialog decides when to save. */
+defineProps<{
   models: readonly ModelInfo[]
   modelStatus: 'loading' | 'ready' | 'error'
+  /** Shown under the key field when OpenRouter rejected this key. */
+  keyRejected: boolean
 }>()
+const apiKey = defineModel<string>('apiKey', { required: true })
+const remember = defineModel<boolean>('remember', { required: true })
 const model = defineModel<string>('model', { required: true })
-const emit = defineEmits<{ done: []; retryModels: [] }>()
-
+const reveal = defineModel<boolean>('reveal', { required: true })
+const emit = defineEmits<{ retryModels: []; submit: [] }>()
 const { t } = useI18n()
-const reveal = shallowRef(false)
 </script>
 
 <template>
-  <section class="flex flex-col gap-4" data-testid="ask-ai-settings">
-    <p v-if="!store.key.value" class="text-sm">{{ t('ai.key.needed') }}</p>
+  <DialogBody data-testid="ask-ai-settings">
+    <DialogDescription>{{ t('ai.settingsDescription') }}</DialogDescription>
 
-    <div class="flex flex-col gap-1.5">
-      <Label for="ask-ai-key">{{ t('ai.key.label') }}</Label>
-      <InputGroup>
-        <InputGroupInput
-          id="ask-ai-key"
-          :type="reveal ? 'text' : 'password'"
-          :model-value="store.key.value"
-          :placeholder="t('ai.key.placeholder')"
-          autocomplete="off"
-          autocapitalize="off"
-          spellcheck="false"
-          data-autofocus
-          data-testid="ask-ai-key"
-          @update:model-value="store.setKey(String($event))"
-        />
-        <InputGroupAddon align="inline-end">
-          <InputGroupButton
-            size="icon-xs"
-            :aria-label="reveal ? t('ai.key.hide') : t('ai.key.show')"
-            :aria-pressed="reveal"
-            @click="reveal = !reveal"
-          >
-            <EyeOffIcon v-if="reveal" />
-            <EyeIcon v-else />
-          </InputGroupButton>
-        </InputGroupAddon>
-      </InputGroup>
+    <div class="flex flex-col gap-2">
+      <TextField
+        v-model="apiKey"
+        class="[&_label]:uppercase"
+        :label="t('ai.key.label')"
+        :type="reveal ? 'text' : 'password'"
+        :placeholder="t('ai.key.placeholder')"
+        :action="reveal ? t('ai.key.hide') : t('ai.key.show')"
+        :error="keyRejected ? t('ai.key.rejected') : undefined"
+        :helper="t('ai.key.stored')"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        data-autofocus
+        data-testid="ask-ai-key"
+        @action="reveal = !reveal"
+        @keydown.enter.prevent="emit('submit')"
+      />
       <a
         href="https://openrouter.ai/keys"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-brand-text inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline"
-      >
-        {{ t('ai.key.get') }}
-        <ExternalLinkIcon class="size-3" aria-hidden="true" />
-      </a>
+        class="text-foreground hover:bg-accent focus-visible:outline-ring -mx-1 w-fit px-1 text-[13px] leading-5 underline underline-offset-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+      >{{ t('ai.key.get') }} <span aria-hidden="true">↗</span></a>
     </div>
 
-    <div class="flex items-start gap-3">
+    <div class="flex flex-col gap-1">
       <Switch
-        id="ask-ai-remember"
-        :model-value="store.remember.value"
-        class="mt-0.5"
+        v-model="remember"
+        :label="t('ai.key.remember')"
+        :on-label="t('ai.key.on')"
+        :off-label="t('ai.key.off')"
+        class="-ml-2 w-fit"
         data-testid="ask-ai-remember"
-        @update:model-value="store.setRemember($event === true)"
       />
-      <div class="flex flex-col gap-1">
-        <Label for="ask-ai-remember">{{ t('ai.key.remember') }}</Label>
-        <p class="text-muted-foreground text-xs">{{ t('ai.key.rememberHint') }}</p>
-      </div>
+      <p class="text-muted-foreground text-[13px] leading-5">{{ t('ai.key.rememberHint') }}</p>
     </div>
-
-    <p class="bg-raised text-foreground-2 border-l-task border-l-2 p-2.5 text-xs">{{ t('ai.key.privacy') }}</p>
 
     <div class="flex flex-col gap-1.5">
-      <Label>{{ t('ai.models.label') }}</Label>
-      <AskAiModelPicker v-model="model" :models="props.models" :status="modelStatus" @retry="emit('retryModels')" />
+      <span class="text-muted-foreground font-mono text-[11.5px] leading-[14px] font-medium tracking-[0.02em] uppercase">{{ t('ai.models.label') }}</span>
+      <AskAiModelPicker v-model="model" :models="models" :status="modelStatus" @retry="emit('retryModels')" />
     </div>
-
-    <div class="flex items-center justify-between gap-2 pt-1">
-      <Button variant="outline" size="sm" :disabled="!store.key.value" data-testid="ask-ai-forget" @click="store.forget()">
-        {{ t('ai.key.forget') }}
-      </Button>
-      <Button size="sm" :disabled="!store.key.value" data-testid="ask-ai-done" @click="emit('done')">
-        {{ t('ai.key.done') }}
-      </Button>
-    </div>
-  </section>
+  </DialogBody>
 </template>

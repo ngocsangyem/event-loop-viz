@@ -1,0 +1,39 @@
+    <section data-story="ReplayLine3">
+      <elv-source current="3" code="console.log('script start')
+setTimeout(() => console.log('timeout'), 0)
+Promise.resolve().then(() => console.log('then 1'))
+  .then(() => console.log('then 2'))
+queueMicrotask(() => console.log('microtask'))
+
+console.log('script end')" queued='[{"line":2,"concept":"webapi"},{"line":3,"concept":"job"},{"line":5,"concept":"job"}]'></elv-source>
+    </section>
+    <section data-story="TimerFired">
+      <elv-source current="2" code="console.log('script start')
+setTimeout(() => console.log('timeout'), 0)
+Promise.resolve().then(() => console.log('then 1'))
+  .then(() => console.log('then 2'))
+queueMicrotask(() => console.log('microtask'))
+
+console.log('script end')" queued='[{"line":2,"concept":"task"},{"line":4,"concept":"job"}]'></elv-source>
+    </section>
+    <section data-story="UnsupportedFetch">
+      <elv-source code="console.log('script start')
+fetch('/api/data')
+console.log('script end')" diagnostics='[{"line":2,"from":0,"to":5,"kind":"unsupported","message":"fetch"}]'></elv-source>
+    </section>
+    <section data-story="SyntaxError">
+      <elv-source code="console.log('script start')
+setTimeout(() => console.log('timeout'), 0)
+Promise.resolve().then(() => console.log('then 1')))" diagnostics='[{"line":3,"from":51,"to":52,"kind":"syntax","message":"SyntaxError: Unexpected token &#39;)&#39;"}]'></elv-source>
+    </section>
+    <section data-story="LightTheme">
+      <div data-theme="light" style="background:var(--color-bg);padding:12px">
+        <elv-source current="3" code="console.log('script start')
+setTimeout(() => console.log('timeout'), 0)
+Promise.resolve().then(() => console.log('then 1'))
+  .then(() => console.log('then 2'))
+queueMicrotask(() => console.log('microtask'))
+
+console.log('script end')" queued='[{"line":2,"concept":"webapi"},{"line":3,"concept":"job"},{"line":5,"concept":"job"}]'></elv-source>
+      </div>
+    </section>

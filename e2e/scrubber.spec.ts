@@ -12,7 +12,7 @@ async function runScript(page: Page) {
   await expect(page.getByTestId('replay-banner')).toBeVisible()
 }
 
-const currentRow = (page: Page) => page.locator('[data-testid=event-list] li[aria-current=true]')
+const currentRow = (page: Page) => page.locator('[data-testid=event-list] li[aria-current=step]')
 const currentSeq = async (page: Page) => Number(await currentRow(page).getAttribute('data-seq'))
 const currentKind = async (page: Page) => (await currentRow(page).innerText()).split(' ')[1]
 
@@ -71,7 +71,7 @@ test('Tick and Task jumps by button land on job:begin and task:begin', async ({ 
 
   await page.getByRole('button', { name: 'Go to end' }).click()
   expect(await currentSeq(page)).toBe(
-    Number(await page.locator('[data-testid=event-list] li').last().getAttribute('data-seq')),
+    Number(await page.locator('[data-testid=event-list] li[data-seq]').last().getAttribute('data-seq')),
   )
 })
 

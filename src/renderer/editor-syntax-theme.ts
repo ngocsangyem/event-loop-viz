@@ -4,7 +4,8 @@ import { tags } from '@lezer/highlight'
 /**
  * Syntax colors come from `--editor-*` custom properties (theme.css) so one palette per theme
  * keeps every token readable on the editor background. The stock highlight style is tuned for
- * a white page and fails contrast on the dark theme.
+ * a white page and fails contrast on the dark theme. Concept colours (timers, Jobs, console)
+ * are layered on top by concept-call-highlight.ts.
  */
 const style = HighlightStyle.define([
   { tag: [tags.keyword, tags.operatorKeyword, tags.modifier], color: 'var(--editor-keyword)' },

@@ -1,67 +1,46 @@
 <script setup lang="ts">
-import { shallowRef, useTemplateRef } from 'vue'
+import { computed, shallowRef, useTemplateRef } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
-import { SendIcon, SquareIcon } from '@lucide/vue'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import AskAiModelPicker from './ask-ai-model-picker.vue'
-import type { ModelInfo } from './openrouter-models'
+import { PromptInput } from '@/components/ui/prompt-input'
 
-/** The footer: question box, the model button, Send / Stop and the fine print. */
-const props = defineProps<{
-  streaming: boolean
-  models: readonly ModelInfo[]
-  modelStatus: 'loading' | 'ready' | 'error'
-}>()
-const model = defineModel<string>('model', { required: true })
-const emit = defineEmits<{ send: [text: string]; stop: []; retryModels: [] }>()
+/**
+ * The footer: a single-line prompt with the model id and key note under it. The model is changed
+ * in Settings; sending with no model chosen opens Settings instead of failing silently.
+ */
+const props = defineProps<{ streaming: boolean; model: string }>()
+const emit = defineEmits<{ send: [text: string]; stop: []; settings: [] }>()
 
 const { t } = useI18n()
 const draft = shallowRef('')
-const box = useTemplateRef('box')
+const input = useTemplateRef('input')
+// Below the xl breakpoint the panel is a bottom sheet, which wants 48px touch targets.
+const wide = useMediaQuery('(min-width: 1280px)')
+const hint = computed(() => t('ai.input.hint', { model: props.model || t('ai.models.choose') }))
 
-function submit() {
-  const text = draft.value.trim()
-  if (text === '') return
+function submit(text: string) {
+  if (!props.model) return emit('settings')
   emit('send', text)
   draft.value = ''
 }
 
-function onKeydown(event: KeyboardEvent) {
-  // Enter sends; Shift+Enter adds a line; Enter while an IME is composing belongs to the IME.
-  if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return
-  event.preventDefault()
-  if (!model.value) return
-  if (!props.streaming) submit()
-}
-
-defineExpose({ focus: () => (box.value?.$el as HTMLElement | undefined)?.focus() })
+defineExpose({ focus: () => input.value?.focus() })
 </script>
 
 <template>
-  <form class="flex flex-col gap-2 border-t p-3" @submit.prevent="submit">
-    <Textarea
-      ref="box"
+  <div class="border-border shrink-0 border-t px-4 pt-3 pb-3.5">
+    <PromptInput
+      ref="input"
       v-model="draft"
-      :aria-label="t('ai.input.label')"
+      :size="wide ? 'lg' : 'touch'"
       :placeholder="t('ai.input.placeholder')"
-      rows="2"
-      class="max-h-40 min-h-16 resize-none"
+      :label="t('ai.input.label')"
+      :hint="hint"
+      :busy="streaming"
       data-autofocus
       data-testid="ask-ai-input"
-      @keydown="onKeydown"
+      @send="submit"
+      @stop="emit('stop')"
     />
-    <div class="flex items-center justify-between gap-2">
-      <AskAiModelPicker v-model="model" :models="models" :status="modelStatus" compact @retry="emit('retryModels')" />
-      <Button v-if="streaming" type="button" size="sm" variant="outline" data-testid="ask-ai-stop" @click="emit('stop')">
-        <SquareIcon />
-        {{ t('ai.input.stop') }}
-      </Button>
-      <Button v-else type="submit" size="sm" :disabled="draft.trim() === '' || !model" data-testid="ask-ai-send">
-        <SendIcon />
-        {{ t('ai.input.send') }}
-      </Button>
-    </div>
-    <p class="text-muted-foreground text-xs">{{ t('ai.input.finePrint') }}</p>
-  </form>
+  </div>
 </template>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { defineAsyncComponent, nextTick, onMounted, useTemplateRef } from 'vue'
+import { defineAsyncComponent, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { findExample } from '@/examples/example-library'
+import { LOCALES } from '@/i18n/locales'
 import { decodeShareFragment } from '@/share/share-link-codec'
 import { useRunSession } from '@/use-run-session'
 import { useShareLink } from '@/use-share-link'
@@ -17,8 +18,11 @@ import StepAnnouncer from '@/renderer/step-announcer.vue'
 import ReplayStage from '@/renderer/replay-stage.vue'
 import WhyRail from '@/renderer/why-rail.vue'
 import ModeTabs from '@/renderer/mode-tabs.vue'
+import ShortcutSheet from '@/renderer/shortcut-sheet.vue'
 import { useAppLayout } from '@/renderer/use-app-layout'
+import { useAppHotkeys } from '@/renderer/use-app-hotkeys'
 import { useColorTheme } from '@/renderer/use-color-theme'
+import { useKeysVisibility } from '@/renderer/use-keys-visibility'
 import { useVisualizerView } from '@/renderer/use-visualizer-view'
 import { useLocale } from '@/renderer/use-locale'
 import { useAutoplayPreference } from '@/renderer/use-autoplay-preference'
@@ -31,10 +35,15 @@ const { t } = useI18n()
 const shared = decodeShareFragment(window.location.hash)
 let autoRun = false // a share link runs on load; that Run must not move focus the user never placed
 const [editor, transport] = [useTemplateRef('editor'), useTemplateRef('transport')]
-const { choice: theme } = useColorTheme()
+const { choice: theme, toggle: toggleTheme } = useColorTheme()
+const keys = useKeysVisibility()
 const view = useVisualizerView()
 const locale = useLocale()
 const autoplay = useAutoplayPreference()
+/** Runs that produced a Trace this session; the header prints it as `RUN #n`. */
+const runCount = shallowRef(0)
+const shareOpen = shallowRef(false)
+const sheetOpen = shallowRef(false)
 
 /**
  * After a Run: start playback when auto-play is on, then put keyboard focus back. The Run button
@@ -42,6 +51,7 @@ const autoplay = useAutoplayPreference()
  * playback controls after a Trace, the Run button after a failure.
  */
 async function afterRun() {
+  if (session.trace.value) runCount.value++
   await nextTick()
   // The panels animate the Run by themselves, like a video, unless the viewer opted out.
   if (session.trace.value && autoplay.value) transport.value?.play()
@@ -80,6 +90,47 @@ async function editScript() {
   editor.value?.focus()
 }
 
+/** E: the Script becomes editable, which ends the replay; with no Trace it just focuses the editor. */
+function editFromKey() {
+  if (replaying.value) void editScript()
+  else editor.value?.focus()
+}
+
+/** R: back to the replay (the phone's REPLAY tab) with the playback controls focused. */
+function replayFromKey() {
+  if (!replaying.value) return
+  tab.value = 'replay'
+  transport.value?.focusStep()
+}
+
+const toggleLocale = () => (locale.value = LOCALES[(LOCALES.indexOf(locale.value) + 1) % LOCALES.length]!)
+
+/** P / N: the tour's Prev and Next live in the Ask AI panel or its dock segment, whichever shows. */
+function tourStep(direction: 'prev' | 'next') {
+  document.querySelector<HTMLButtonElement>(`[data-testid="ask-ai-tour-${direction}"]:not(:disabled)`)?.click()
+}
+
+useAppHotkeys({
+  edit: editFromKey,
+  replay: replayFromKey,
+  setView: (next) => (view.value = next),
+  toggleLocale,
+  toggleTheme,
+  toggleShare: () => {
+    shareOpen.value = !shareOpen.value
+    if (shareOpen.value) share()
+  },
+  toggleAsk,
+  toggleSheet: () => (sheetOpen.value = !sheetOpen.value),
+  tourStep,
+  run: () => {
+    if (!replaying.value && !running.value && unsupportedApis.value.length === 0) void run()
+  },
+  cancelRun: () => {
+    if (running.value) cancel()
+  },
+})
+
 function loadExample(id: string) {
   const example = findExample(id)
   if (example) session.replaceScript(example.script)
@@ -98,23 +149,38 @@ onMounted(() => {
 <template>
   <TooltipProvider :delay-duration="300">
     <!-- Wide screens: a full-height shell whose columns scroll on their own above the pinned dock. -->
-    <main class="mx-auto flex max-w-[1440px] flex-col xl:h-dvh" :style="dockStyle">
-      <div class="px-4 pt-3">
-        <AppHeader v-model:view="view" v-model:theme="theme" v-model:locale="locale" :share-url="shareUrl" :share-copied="shareCopied" @share="share" />
-      </div>
+    <main class="flex flex-col xl:h-dvh" :style="dockStyle">
+      <AppHeader
+        v-model:view="view"
+        v-model:share-open="shareOpen"
+        :theme="theme"
+        :locale="locale"
+        :keys-on="keys.stored.value === 'on'"
+        :mode="replaying ? 'replay' : 'edit'"
+        :can-replay="replaying"
+        :run-number="runCount"
+        :share-url="shareUrl"
+        :share-copied="shareCopied"
+        @share="share"
+        @edit="editFromKey"
+        @replay="replayFromKey"
+        @toggle-locale="toggleLocale"
+        @toggle-theme="toggleTheme"
+        @toggle-keys="keys.toggle"
+      />
       <StepAnnouncer :events="events" :position="position" />
-      <div class="flex flex-col gap-2 px-4 pt-2 empty:hidden">
-        <HaltBanner :halt="halt" />
+      <div class="border-border flex flex-col border-b empty:hidden">
+        <HaltBanner :halt="halt" @raise-budget="editScript" />
         <TimingSensitiveBadge :timing-sensitive="trace?.header.timingSensitive ?? false" />
       </div>
-      <ModeTabs v-model="tab" :can-replay="replaying" class="mt-2 md:hidden" />
+      <ModeTabs v-model="tab" :can-replay="replaying" class="md:hidden" />
 
       <!--
         Edit: Script | stage. Replay: Source | stage | Why rail; Ask AI takes the right column.
-        Columns are ruled by a 1px gap on the line colour. A phone shows one tab at a time.
+        Columns are ruled by a 1px gap on the line colour, full bleed. A phone shows one tab at a time.
       -->
       <div
-        class="ruled bg-border mt-2 grid min-h-0 flex-1 gap-px border-y max-md:mt-0 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-(--app-cols)"
+        class="ruled bg-border grid min-h-0 flex-1 gap-px lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-(--app-cols)"
         :style="gridStyle"
       >
         <div :class="['bg-background min-w-0 xl:overflow-y-auto', tab === 'replay' && 'source-peek']">
@@ -169,19 +235,31 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- The pinned dock: an opaque raised band, no blur or shadow; depth is the tone step. -->
+      <!-- The pinned dock: page-tone band with a top rule; depth is a line, not a shadow. -->
       <div
         ref="transportCard"
         :aria-label="t('dock.region')"
         role="region"
-        class="bg-raised sticky bottom-0 z-10 flex flex-wrap items-end gap-2 px-4 py-2 xl:min-h-[92px] xl:flex-nowrap"
+        class="bg-background border-border sticky bottom-0 z-10 flex flex-col border-t xl:h-(--dock-h)"
       >
-        <TransportBar ref="transport" v-model="position" v-model:autoplay="autoplay" class="min-w-0 flex-1 basis-full xl:basis-auto"
-          :same-view="sameView" :player="player" :events="events" :clock-us="replayState.clockUs" />
-        <!-- The minimized Ask AI tour docks here as a segment, next to the ASK AI word. -->
-        <div id="dock-tour" class="contents" />
-        <AskAiLauncher ref="launcher" :open="askOpen" class="ml-auto" @toggle="toggleAsk" />
+        <TransportBar
+          ref="transport"
+          v-model="position"
+          v-model:autoplay="autoplay"
+          :same-view="sameView"
+          :player="player"
+          :events="events"
+          :clock-us="replayState.clockUs"
+          @keys="sheetOpen = true"
+        >
+          <template #trailing>
+            <!-- The minimized Ask AI tour docks here as a segment, next to the ASK AI word. -->
+            <div id="dock-tour" class="contents" />
+            <AskAiLauncher ref="launcher" :open="askOpen" @toggle="toggleAsk" />
+          </template>
+        </TransportBar>
       </div>
+      <ShortcutSheet v-model:open="sheetOpen" />
     </main>
   </TooltipProvider>
 </template>

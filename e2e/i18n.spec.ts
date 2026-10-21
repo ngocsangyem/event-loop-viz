@@ -5,8 +5,8 @@ const SCRIPT = `const p = Promise.resolve(1)
 p.then(() => console.log('then'))`
 
 async function chooseVietnamese(page: Page) {
+  // The header's [L] toggle flips EN to VI.
   await page.getByTestId('locale').click()
-  await page.getByRole('option', { name: 'Tiếng Việt' }).click()
 }
 
 test('switching to Vietnamese translates labels, event explanations and <html lang>', async ({ page }) => {
@@ -27,7 +27,7 @@ test('switching to Vietnamese translates labels, event explanations and <html la
   await expect(page.getByRole('button', { name: 'Phát', exact: true })).toBeVisible()
 
   // Step to the first Job the Script queues; its explanation is Vietnamese, the kind is data.
-  await page.locator('[data-testid=event-list] li').filter({ hasText: 'job:enqueue' }).first().getByRole('button').click()
+  await page.locator('[data-testid=event-list] li[data-kind="job:enqueue"]').first().getByRole('button').click()
   await expect(page.getByTestId('event-explanation')).toContainText('vào hàng đợi để chạy reaction')
   await expect(page.getByTestId('event-explanation')).not.toContainText('A Job')
   await expect(page.getByRole('heading', { name: /job:enqueue/ })).toBeVisible()

@@ -65,7 +65,7 @@ async function runExample(page: Page) {
 
 /** The event the replay shows, read from the event list. */
 const playhead = async (page: Page) =>
-  Number(await page.locator('[data-testid=event-list] [aria-current=true]').getAttribute('data-seq'))
+  Number(await page.locator('[data-testid=event-list] [aria-current=step]').getAttribute('data-seq'))
 
 /** Opens the panel from the launcher, fills the settings dialog and leaves the question box focused. */
 async function connect(page: Page) {
@@ -234,7 +234,6 @@ test('with the UI in Vietnamese the system prompt asks for Vietnamese', async ({
   const mock = await mockOpenRouter(page)
   await runExample(page)
   await page.getByTestId('locale').click()
-  await page.getByRole('option', { name: 'Tiếng Việt' }).click()
   await page.getByTestId('ask-ai').click()
   await expect(page.getByRole('heading', { name: 'Hỏi AI' })).toBeVisible()
   await page.getByTestId('ask-ai-connect').click()

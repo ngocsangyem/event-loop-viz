@@ -12,9 +12,9 @@ async function runScript(page: Page) {
 }
 
 const current = (page: Page) =>
-  page.locator('[data-testid=event-list] li[aria-current=true]').getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[aria-current=step]').getAttribute('data-seq')
 const lastSeq = (page: Page) =>
-  page.locator('[data-testid=event-list] li').last().getAttribute('data-seq')
+  page.locator('[data-testid=event-list] li[data-seq]').last().getAttribute('data-seq')
 
 test('play advances, pause freezes, play stops at the last event', async ({ page }) => {
   await runScript(page)

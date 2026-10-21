@@ -2,17 +2,38 @@
 export default {
   editor: {
     region: 'Code editor',
-    code: 'Code',
+    title: 'Script',
     script: 'Script',
+    editing: 'Editing',
+    locked: 'Locked while running',
+    sourceTitle: 'Source',
+    readOnlyTag: 'Read-only',
     run: 'Run',
     cancel: 'Cancel',
     running: 'Running',
     runningText: 'Running…',
-    readOnly: 'Read-only during replay.',
+    recording: 'Recording Trace…',
+    budget: 'Budget {tasks} Tasks · {events} events · {seconds} s',
+    editLabel: 'Edit',
     edit: 'Edit (discards Trace)',
   },
+  source: {
+    legend: 'Queued work this line created',
+    run: 'Run',
+    runNumber: 'Run #{n}',
+    endedNaturally: 'Ended naturally',
+    halted: 'Halted · Budget',
+    events: '{n} Trace Event | {n} Trace Events',
+    ticks: '{n} Tick | {n} Ticks',
+    stats: '{events} · {ticks} · {from} → {to} ms',
+  },
+  syntax: {
+    title: 'SyntaxError',
+    goToLine: 'Go to line {line}',
+  },
   examples: {
-    button: 'Examples',
+    button: 'Example',
+    custom: 'Custom',
     menuLabel: 'Load an example Script',
     items: {
       awaitVsThen: {
@@ -50,7 +71,7 @@ export default {
     },
   },
   settings: {
-    button: 'Advanced settings',
+    button: 'Run settings',
     hint: 'Changed values apply to the next Run and are saved in the Trace and in share links.',
     field: {
       nodes: 'Node Budget',
@@ -62,6 +83,9 @@ export default {
   },
   supportedApis: {
     button: 'Supported APIs',
+    title: 'Supported in the Chrome 155 model',
+    group: { timer: 'Timer · Web APIs', job: 'Job · Promises', console: 'Log · Console' },
+    footer: 'Anything else is an Unsupported API and blocks the Run before it starts.',
     promises: 'Promise, async/await, generators, async generators, for await',
     timers: 'setTimeout, setInterval, clearTimeout, clearInterval',
     microtask: 'queueMicrotask',
@@ -71,8 +95,8 @@ export default {
     random: 'Math.random (seeded per Run)',
   },
   unsupported: {
-    title: 'Unsupported APIs referenced',
-    touching: '— touching one throws UnsupportedApiError.',
+    title: 'Unsupported API · Run blocked',
+    line: 'Line {line}',
   },
   timing: {
     badge: 'Timing-sensitive: ordering depends on compute time and may differ in your browser.',
