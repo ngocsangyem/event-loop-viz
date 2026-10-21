@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { cn } from '@/lib/utils'
 import { CHIP_TRAVEL_KEY } from './chip-travel-keys'
+import { STEP_FOCUS_KEY } from './step-focus-keys'
 import CallbackChip from './callback-chip.vue'
 import type { ChipModel } from './callback-chip-model'
 
@@ -25,6 +27,10 @@ defineProps<{ items: readonly QueueItem[]; empty: string; testid: string }>()
 const travel = inject(CHIP_TRAVEL_KEY, null)
 /** A name with no styles: after a jump rows appear and vanish at once instead of fading in en masse. */
 const transitionName = computed(() => (travel?.snapping.value ? 'queue-snap' : 'queue-item'))
+// The NEW tag is drawn from the attribute (panel-skin.css), so it never joins the row's text.
+const focus = inject(STEP_FOCUS_KEY, null)
+const { t } = useI18n()
+const newTag = (id: string) => (focus?.value.newIds.has(id) ? t('panels.newItem') : undefined)
 </script>
 
 <template>
@@ -36,6 +42,7 @@ const transitionName = computed(() => (travel?.snapping.value ? 'queue-snap' : '
         :key="item.id"
         :data-id="item.id"
         :aria-current="item.active ? 'step' : undefined"
+        :data-new="newTag(item.id)"
         :class="
           cn(
             'queue-row flex w-full items-center justify-between gap-2 px-2.5 py-1.5 font-mono text-[12.5px] leading-[18px]',

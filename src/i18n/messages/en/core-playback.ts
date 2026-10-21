@@ -25,6 +25,44 @@ export default {
       end: 'End',
     },
   },
+  /** The caption above the stage: what this step is and what it changed. */
+  caption: {
+    region: 'Current step',
+    step: 'Step {step} / {total}',
+    tick: 'Tick {tick}',
+    line: 'Line {line}',
+    clock: 'Virtual Clock {clock}',
+    ready: 'Ready · example loaded',
+    readyText: 'Press Run to record a Trace.',
+    running: 'Recording Trace…',
+    phases: 'Event loop phase',
+    task: 'Task',
+    taskId: 'Task {id}',
+    checkpoint: 'Microtask Checkpoint',
+    jobsQueued: '{count} queued',
+    next: 'Next: {what}',
+    nothingNext: 'Next: idle',
+    halt: 'Halt · {reason}',
+  },
+  /** The pinned dock under the stage. */
+  dock: {
+    region: 'Playback dock',
+    clock: 'Virtual Clock',
+    lastEvent: 'What just happened',
+  },
+  /** The right column of the replay: why this step happened, then every Trace Event. */
+  rail: {
+    region: 'Why this step',
+    why: 'Why',
+    traceEvent: 'Trace Event {seq}',
+    events: 'Trace Events',
+  },
+  /** Phone only: the Script and the replay are two tabs. */
+  modeTabs: {
+    label: 'Mode',
+    script: 'Script',
+    replay: 'Replay',
+  },
   scrubber: {
     timeline: 'Timeline',
     step: 'Step {step} of {total}',

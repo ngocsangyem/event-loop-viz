@@ -1,5 +1,5 @@
 import { computed, shallowRef, useTemplateRef } from 'vue'
-import type { ComponentPublicInstance, Ref } from 'vue'
+import type { Ref } from 'vue'
 import { until, useElementSize } from '@vueuse/core'
 
 interface AskAiDockOptions {
@@ -13,8 +13,8 @@ interface AskAiDockOptions {
 
 /**
  * Open state, focus return, Run-before-ask and playhead hand-over of the Ask AI assistant,
- * plus the offset that keeps its launcher above the sticky playback bar. Reads the template
- * refs `launcher` and `transportCard` of the component that calls it.
+ * plus the dock height a bottom-sheet panel sits on. Reads the template refs `launcher` and
+ * `transportCard` (the dock) of the component that calls it.
  */
 export function useAskAiDock(options: AskAiDockOptions) {
   const askOpen = shallowRef(false)
@@ -38,11 +38,11 @@ export function useAskAiDock(options: AskAiDockOptions) {
     options.pausePlayback()
     options.position.value = seq
   }
-  /** The launcher floats just above the sticky playback bar, which sits 0.75rem off the bottom. */
-  const transportCard = useTemplateRef<ComponentPublicInstance>('transportCard')
+  /** On narrow screens the panel is a bottom sheet that sits on the pinned dock. */
+  const transportCard = useTemplateRef<HTMLElement>('transportCard')
   const { height: transportHeight } = useElementSize(transportCard, undefined, { box: 'border-box' })
-  // Before the first measurement, assume the bar's usual desktop height so nothing overlaps it.
-  const dockStyle = computed(() => ({ '--ai-dock': `${Math.round(transportHeight.value || 96) + 24}px` }))
+  // Before the first measurement, assume the dock's desktop height so nothing overlaps it.
+  const dockStyle = computed(() => ({ '--ai-dock': `${Math.round(transportHeight.value || 92)}px` }))
 
   return { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, dockStyle }
 }

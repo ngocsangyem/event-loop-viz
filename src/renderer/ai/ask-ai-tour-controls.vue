@@ -7,8 +7,8 @@ import type { TourStop } from './tour-answer-parser'
 
 /**
  * Previous / Next for a started tour, with "2 / 6" and the current stop's title. Docked above the
- * question box in the panel; `floating` is the small card beside the launcher when the panel is
- * minimized, so the tour goes on while the whole visualizer is in view.
+ * question box in the panel; `floating` is the one-row tour segment in the dock when the panel
+ * is minimized, so the tour goes on while the whole visualizer is in view.
  */
 const props = defineProps<{ stops: readonly TourStop[]; index: number; floating?: boolean }>()
 const emit = defineEmits<{ next: []; prev: [] }>()
@@ -22,26 +22,26 @@ const percent = computed(() => ((props.index + 1) / props.stops.length) * 100)
   <section
     :aria-label="t('ai.tour.region')"
     :class="[
-      'bg-popover text-popover-foreground flex min-w-0 flex-col gap-2',
-      floating ? 'bg-raised w-72 max-w-[calc(100vw-6rem)] border p-2.5' : 'border-t px-3 pt-2.5 pb-1',
+      'bg-popover text-popover-foreground flex min-w-0',
+      floating ? 'bg-raised border-border items-center gap-2 border px-2 py-1' : 'flex-col gap-2 border-t px-3 pt-2.5 pb-1',
     ]"
     data-testid="ask-ai-tour"
   >
-    <div class="flex min-w-0 items-center gap-2 text-xs">
+    <div :class="['flex min-w-0 items-center gap-2 text-xs', floating && 'max-w-56']">
       <span class="label-mono text-brand-text shrink-0 tabular-nums" data-testid="ask-ai-tour-progress">
         {{ t('ai.tour.progress', { current: index + 1, total: stops.length }) }}
       </span>
-      <span class="truncate font-medium" :title="title">{{ title }}</span>
+      <span :class="['truncate font-medium', floating && 'max-lg:sr-only']" :title="title">{{ title }}</span>
     </div>
-    <div class="bg-border-soft h-1 overflow-hidden" aria-hidden="true">
+    <div v-if="!floating" class="bg-border-soft h-1 overflow-hidden" aria-hidden="true">
       <div class="bg-brand h-full transition-[width] duration-300 motion-reduce:transition-none" :style="{ width: `${percent}%` }" />
     </div>
     <div class="flex items-center justify-between gap-2">
-      <Button size="sm" variant="ghost" :disabled="index === 0" data-testid="ask-ai-tour-prev" @click="emit('prev')">
+      <Button size="sm" variant="ghost" class="max-sm:h-11!" :disabled="index === 0" data-testid="ask-ai-tour-prev" @click="emit('prev')">
         <ChevronLeftIcon />
         {{ t('ai.tour.prev') }}
       </Button>
-      <Button size="sm" :disabled="index === stops.length - 1" data-testid="ask-ai-tour-next" @click="emit('next')">
+      <Button size="sm" class="max-sm:h-11!" :disabled="index === stops.length - 1" data-testid="ask-ai-tour-next" @click="emit('next')">
         {{ t('ai.tour.next') }}
         <ChevronRightIcon />
       </Button>

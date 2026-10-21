@@ -109,5 +109,7 @@ export default defineConfig({
     command: process.env.CI ? 'pnpm run preview' : 'pnpm run dev',
     port: process.env.CI ? 4173 : 5173,
     reuseExistingServer: !process.env.CI,
+    // Leaves the Vue DevTools launcher out: it floats over the dock's controls.
+    env: { ELV_E2E: '1' },
   },
 })

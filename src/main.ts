@@ -5,6 +5,7 @@ import './style.css'
 import './renderer/theme.css'
 import './renderer/panels/panel-motion.css'
 import './renderer/panels/panel-skin.css'
+import './renderer/app-layout.css'
 
 const app = createApp(App)
 
