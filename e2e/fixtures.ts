@@ -14,3 +14,14 @@ export const test = base.extend({
 })
 
 export { expect } from '@playwright/test'
+
+/**
+ * Steps the replay with the arrow shortcuts, which run the same step as the Next/Prev buttons.
+ * Long step loops use them because each button click waits out a tooltip and a press transition,
+ * which made hundreds of clicks too slow for WebKit on CI. Focus leaves any widget first, since
+ * menus, sliders and toggle groups keep the arrow keys for themselves.
+ */
+export async function pressStep(page: import('@playwright/test').Page, direction: 'next' | 'prev') {
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+  await page.keyboard.press(direction === 'next' ? 'ArrowRight' : 'ArrowLeft')
+}

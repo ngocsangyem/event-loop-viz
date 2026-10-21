@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures'
+import { test, expect, pressStep } from './fixtures'
 import type { Locator, Page } from '@playwright/test'
 import { preferSceneView } from './reveal-panel'
 
@@ -30,7 +30,7 @@ async function stepUntilCount(page: Page, locator: Locator, count: number) {
   for (let i = 0; i < 400; i++) {
     if ((await locator.count()) === count) return
     expect(await current(page), 'reached the end without seeing it').not.toBe(last)
-    await page.getByRole('button', { name: 'Next' }).click()
+    await pressStep(page, 'next')
   }
   throw new Error('not seen within 400 steps')
 }

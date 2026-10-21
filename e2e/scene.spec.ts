@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { test, expect } from './fixtures'
+import { test, expect, pressStep } from './fixtures'
 import type { Page } from '@playwright/test'
 import { preferSceneView } from './reveal-panel'
 
@@ -34,7 +34,7 @@ test('stepping through nested calls pushes and pops frames in the Scene', async 
   const seen: (string | null)[][] = [await frameLabels(page)]
   const last = await lastSeq(page)
   for (let i = 0; i < 200 && (await current(page)) !== last; i++) {
-    await page.getByRole('button', { name: 'Next' }).click()
+    await pressStep(page, 'next')
     seen.push(await frameLabels(page))
   }
 

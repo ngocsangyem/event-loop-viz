@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures'
+import { test, expect, pressStep } from './fixtures'
 import type { Page } from '@playwright/test'
 import { preferSceneView } from './reveal-panel'
 
@@ -89,11 +89,10 @@ test('the same position gives an identical Scene whether played, stepped, scrubb
   const played = await sceneDom(page)
   expect(played).toContain('data-testid="scene-job"')
 
-  // Stepped one event at a time, with the → shortcut: the same step as the Next button, without
-  // a hover tooltip per press (its open delay runs on the frozen test clock).
+  // Stepped one event at a time.
   await goToStart(page)
   for (let i = 0; i < 400 && (await currentSeq(page)) < target; i++) {
-    await page.keyboard.press('ArrowRight')
+    await pressStep(page, 'next')
   }
   expect(await currentSeq(page)).toBe(target)
   expect(await sceneDom(page)).toBe(played)
@@ -105,10 +104,9 @@ test('the same position gives an identical Scene whether played, stepped, scrubb
   expect(await sceneDom(page)).toBe(played)
 
   // Stepped back from the end of the Run.
-  await page.locator('body').click()
-  await page.keyboard.press('End')
+  await page.getByRole('button', { name: 'Go to end' }).click()
   for (let i = 0; i < 400 && (await currentSeq(page)) > target; i++) {
-    await page.getByRole('button', { name: 'Prev' }).click()
+    await pressStep(page, 'prev')
   }
   expect(await currentSeq(page)).toBe(target)
   expect(await sceneDom(page)).toBe(played)
