@@ -46,6 +46,8 @@ onMounted(() => {
         // editor and keyboard-only users are never trapped (do not add indentWithTab).
         basicSetup,
         javascript(),
+        // Wrapping keeps the narrow editor column free of a horizontal scroller.
+        EditorView.lineWrapping,
         editorSyntaxTheme,
         readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
         errorCompartment.of([]),
@@ -102,16 +104,18 @@ defineExpose({ focus: () => view?.focus() })
 
 <style scoped>
 .script-editor {
-  border: 1px solid #8884;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  overflow: hidden;
 }
 .script-editor :deep(.cm-syntax-error-line) {
-  background: #c6282822;
+  background: color-mix(in oklab, var(--destructive) 15%, transparent);
 }
 .script-editor :deep(.cm-syntax-error-mark) {
-  text-decoration: underline wavy #c62828;
+  text-decoration: underline wavy var(--destructive);
 }
 .script-editor :deep(.cm-source-highlight) {
-  background: #ffd54f66;
+  background: #ffd54f55;
   outline: 1px solid #f9a825;
 }
 .script-editor :deep(.cm-cause-highlight) {
@@ -119,24 +123,28 @@ defineExpose({ focus: () => view?.focus() })
   outline: 1px dashed #0288d1;
 }
 .script-editor :deep(.cm-editor) {
-  min-height: 12em;
-  background: var(--anatomy-card);
-  color: var(--anatomy-strong);
+  min-height: 14em;
+  font-size: 13px;
+  background: var(--background);
+  color: var(--foreground);
+}
+.script-editor :deep(.cm-scroller) {
+  font-family: var(--font-mono);
 }
 .script-editor :deep(.cm-gutters) {
-  background: var(--anatomy-card);
-  color: var(--anatomy-text);
-  border-right: 1px solid var(--anatomy-faint);
+  background: var(--background);
+  color: var(--muted-foreground);
+  border-right: 1px solid var(--border);
 }
 .script-editor :deep(.cm-activeLine),
 .script-editor :deep(.cm-activeLineGutter) {
-  background: var(--anatomy-shade-2);
+  background: color-mix(in oklab, var(--muted) 60%, transparent);
 }
 .script-editor :deep(.cm-cursor) {
-  border-left-color: var(--anatomy-strong);
+  border-left-color: var(--foreground);
 }
 .script-editor :deep(.cm-focused) {
-  outline: 2px solid var(--anatomy-blue);
+  outline: 2px solid var(--ring);
   outline-offset: -2px;
 }
 </style>

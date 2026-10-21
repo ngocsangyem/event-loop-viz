@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { openBottomTab } from './bottom-tabs'
+import { revealPanel } from './reveal-panel'
 
 test('a Script using fetch shows the pre-run notice and the replay console shows the error', async ({
   page,
@@ -14,7 +14,7 @@ test('a Script using fetch shows the pre-run notice and the replay console shows
   // The console shows lines up to the playhead; step to the end.
   const next = page.getByRole('button', { name: 'Next' })
   while (await next.isEnabled()) await next.click()
-  await openBottomTab(page, 'Console')
+  await revealPanel(page, 'Console')
   await expect(page.getByTestId('console-panel')).toContainText(
     'Uncaught UnsupportedApiError: fetch is not supported in v1',
   )

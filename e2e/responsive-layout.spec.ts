@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { openBottomTab } from './bottom-tabs'
+import { revealPanel } from './reveal-panel'
 
 test.use({ viewport: { width: 375, height: 812 }, hasTouch: true })
 
@@ -20,7 +20,8 @@ test('phone width never scrolls horizontally and every transport control is tapp
   }))
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.client)
 
-  const controls = page.getByTestId('transport-bar').locator('button, select')
+  // Step controls and the speed picker; the scrubber's family markers are a pointer shortcut.
+  const controls = page.getByTestId('transport-bar').locator('[data-control], [role=combobox]')
   expect(await controls.count()).toBeGreaterThanOrEqual(10)
   for (const control of await controls.all()) {
     await control.scrollIntoViewIfNeeded()
@@ -48,6 +49,6 @@ test('an example can be run and stepped through by touch at phone width', async 
   expect(Number(next)).toBeGreaterThan(Number(start))
   await page.getByRole('button', { name: 'Prev' }).tap()
   expect(await current()).toBe(start)
-  await openBottomTab(page, 'Console')
-  await expect(page.getByRole('tabpanel', { name: 'Console' })).toBeVisible()
+  await revealPanel(page, 'Console')
+  await expect(page.getByTestId('console-panel')).toBeAttached()
 })

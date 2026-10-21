@@ -1,8 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
+import './style.css'
 import './renderer/theme.css'
-import './renderer/app-layout.css'
 
 const app = createApp(App)
 

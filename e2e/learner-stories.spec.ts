@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { openBottomTab } from './bottom-tabs'
+import { revealPanel } from './reveal-panel'
 
 async function runScript(page: Page, script: string) {
   await page.goto('/')
@@ -31,7 +31,7 @@ test('after an Unsupported API throws, the rest of the Script still runs', async
     `setTimeout(() => console.log('still runs'), 0)\nfetch('/x')\nconsole.log('unreached')`,
   )
   await goToEnd(page)
-  await openBottomTab(page, 'Console')
+  await revealPanel(page, 'Console')
   await expect(page.getByTestId('console-panel')).toContainText(
     'Uncaught UnsupportedApiError: fetch is not supported in v1',
   )
@@ -42,14 +42,14 @@ test('after an Unsupported API throws, the rest of the Script still runs', async
 test('the console shows unhandled rejections as Uncaught (in promise) lines', async ({ page }) => {
   await runScript(page, `Promise.reject(new Error('boom'))`)
   await goToEnd(page)
-  await openBottomTab(page, 'Console')
+  await revealPanel(page, 'Console')
   await expect(page.getByTestId('console-panel')).toContainText('Uncaught (in promise) boom')
 })
 
 test('console values use the canonical text format', async ({ page }) => {
   await runScript(page, `console.log(1, 'a', null, undefined, true)`)
   await goToEnd(page)
-  await openBottomTab(page, 'Console')
+  await revealPanel(page, 'Console')
   await expect(consoleLines(page)).toHaveText(['log: 1 a null undefined true'])
 })
 

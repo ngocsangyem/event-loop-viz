@@ -1,8 +1,9 @@
 /*
- * App-wide theme tokens. The scene draws with the same custom properties the rest of the
- * app reads, so one switch (system preference, or an explicit data-theme on <html>) re-skins
- * both. Dark is the default; the light block is declared twice because CSS has no mixins:
- * once for the system preference, once for the explicit override.
+ * Tokens for the isometric 3D Scene and the editor syntax colours. The shadcn-vue tokens in
+ * style.css skin everything else. use-color-theme keeps both in step: it sets data-theme on
+ * <html> for these tokens and the `dark` class for shadcn-vue. Dark is the default; the light
+ * block is declared twice because CSS has no mixins: once for the system preference, once for
+ * the explicit override.
  */
 :root {
   color-scheme: dark;
@@ -122,40 +123,4 @@
   --anatomy-lift:
     inset 0 1px 0 0 #ffffff, 0 0 0 1px #0000000f, 0 1px 1px -0.5px #0000000a,
     0 3px 3px -1.5px #0000000a, 0 6px 6px -3px #0000000a, 0 12px 12px -6px #0000000a;
-}
-
-body {
-  background: var(--anatomy-page);
-  color: var(--anatomy-text);
-}
-
-/*
- * Base form-control skin. Native controls take their colours from the UA, which on some engines
- * (WebKit in a dark colour scheme) pairs dark text with a dark surface and fails contrast.
- * :where() keeps specificity at zero so any component rule still wins.
- */
-:where(button, select, input:not([type='checkbox'], [type='range'], [type='radio']), textarea) {
-  font: inherit;
-  color: var(--anatomy-strong);
-  background: var(--anatomy-card);
-  border: 1px solid var(--anatomy-lo);
-  border-radius: 6px;
-  padding: 4px 10px;
-}
-:where(button:not(:disabled), select:not(:disabled), summary) {
-  cursor: pointer;
-}
-:where(button, select):disabled {
-  color: var(--anatomy-muted);
-  cursor: default;
-}
-:where(button:not(:disabled):hover, select:not(:disabled):hover) {
-  background: var(--anatomy-face);
-  border-color: var(--anatomy-mid);
-}
-:where(button)[aria-pressed='true'] {
-  border-color: var(--anatomy-blue);
-}
-:where(summary) {
-  color: var(--anatomy-strong);
 }

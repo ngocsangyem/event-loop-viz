@@ -219,7 +219,7 @@
   animation-delay: var(--pulse-at, 0ms);
 }
 .iso-figure {
-  margin: 32px 0 36px;
+  margin: 0;
 }
 .iso-plate {
   position: relative;
@@ -375,4 +375,5 @@
 }
 .iso-figure[data-testid='scene'] {
   max-width: 760px;
+  margin-inline: auto;
 }

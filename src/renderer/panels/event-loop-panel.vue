@@ -1,0 +1,56 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import type { ReplayState } from '../../player/replay-state'
+import { formatVirtualMs } from '../scene/timer-shelf-model'
+import { cn } from '@/lib/utils'
+import { LOOP_PHASE_TEXT, loopPhaseOf } from './event-loop-phase'
+import PanelCard from './panel-card.vue'
+
+const props = defineProps<{ state: ReplayState }>()
+
+const phase = computed(() => loopPhaseOf(props.state))
+const clock = computed(() => formatVirtualMs(props.state.clockUs))
+
+/** The ring: one Task, then every microtask, then around again. Arcs are half circles. */
+const R = 52
+const ARCS = [
+  { id: 'task', label: 'Task', d: `M 60 ${60 - R} A ${R} ${R} 0 0 1 60 ${60 + R}` },
+  { id: 'microtasks', label: 'Microtasks', d: `M 60 ${60 + R} A ${R} ${R} 0 0 1 60 ${60 - R}` },
+] as const
+</script>
+
+<template>
+  <PanelCard
+    title="Event Loop"
+    info="Each turn runs the oldest Task to completion, then drains the microtask queue, then waits for the next Task."
+  >
+    <div class="flex items-center gap-4" data-testid="panel-event-loop" :data-phase="phase">
+      <svg viewBox="0 0 120 120" class="size-28 shrink-0" aria-hidden="true">
+        <path
+          v-for="arc in ARCS"
+          :key="arc.id"
+          :d="arc.d"
+          fill="none"
+          stroke-width="10"
+          stroke-linecap="round"
+          :class="cn('transition-colors', phase === arc.id ? 'stroke-primary' : 'stroke-muted')"
+        />
+        <circle cx="60" cy="60" r="4" :class="phase === 'idle' ? 'fill-primary' : 'fill-muted-foreground/40'" />
+      </svg>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+        <dt class="text-muted-foreground">Phase</dt>
+        <dd class="text-foreground font-medium" data-testid="loop-phase">{{ LOOP_PHASE_TEXT[phase] }}</dd>
+        <dt class="text-muted-foreground">Clock</dt>
+        <dd class="font-mono tabular-nums" data-testid="loop-clock">{{ clock }}</dd>
+        <dt class="text-muted-foreground">Tick</dt>
+        <dd class="font-mono tabular-nums">{{ state.tick ?? '—' }}</dd>
+      </dl>
+    </div>
+    <div class="text-muted-foreground mt-2 flex gap-3 text-[11px]" aria-hidden="true">
+      <span v-for="arc in ARCS" :key="arc.id" class="flex items-center gap-1">
+        <span :class="cn('size-2 rounded-full', phase === arc.id ? 'bg-primary' : 'bg-muted')" />
+        {{ arc.label }}
+      </span>
+    </div>
+  </PanelCard>
+</template>

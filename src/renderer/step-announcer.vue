@@ -14,7 +14,7 @@ const text = computed(() => {
 <template>
   <!-- Always mounted so assistive tech registers the region before the first step changes it. -->
   <div
-    class="visually-hidden"
+    class="sr-only"
     role="status"
     aria-live="polite"
     aria-atomic="true"

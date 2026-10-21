@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
+import { preferSceneView } from './reveal-panel'
+
+// The 3D Scene is opt-in; these specs exercise it.
+test.beforeEach(({ page }) => preferSceneView(page))
 
 const SCRIPT = `setTimeout(() => console.log('timer'), 10)
 Promise.resolve().then(() => console.log('a')).then(() => console.log('b'))

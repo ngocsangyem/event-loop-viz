@@ -1,6 +1,10 @@
 import { existsSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
+import { preferSceneView } from './reveal-panel'
+
+// The 3D Scene is opt-in; these specs exercise it.
+test.beforeEach(({ page }) => preferSceneView(page))
 
 const NESTED = `function c() { console.log('deep') }
 function b() { c() }

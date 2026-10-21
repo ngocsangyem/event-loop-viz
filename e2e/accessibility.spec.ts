@@ -35,10 +35,13 @@ for (const theme of THEMES) {
   test.describe(`axe in the ${theme} theme`, () => {
     test('editor view before a Run has no serious violations', async ({ page }) => {
       await openApp(page, theme)
-      await page.getByText('Examples', { exact: true }).click()
-      await page.getByText('Advanced settings', { exact: true }).click()
-      await page.getByText('Supported APIs', { exact: true }).click()
       expect(await seriousViolations(page)).toEqual([])
+      // Menus and popovers open one at a time; check each while it is open.
+      for (const name of ['Examples', 'Advanced settings', 'Supported APIs']) {
+        await page.getByRole('button', { name }).click()
+        expect(await seriousViolations(page)).toEqual([])
+        await page.keyboard.press('Escape')
+      }
     })
 
     test('replay view has no serious violations', async ({ page }) => {
@@ -49,7 +52,6 @@ for (const theme of THEMES) {
       // The end of the Trace shows every console line, including the error line.
       await page.getByRole('button', { name: 'Go to end' }).click()
       expect(await seriousViolations(page)).toEqual([])
-      await page.getByRole('tab', { name: 'Console' }).click()
       await expect(page.getByTestId('console-panel').locator('li').first()).toBeVisible()
       expect(await seriousViolations(page)).toEqual([])
     })

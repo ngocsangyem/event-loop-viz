@@ -17,16 +17,15 @@ test('load an example, run, step, jump and play with the keyboard alone', async 
   await page.clock.install()
   await page.goto('/')
 
-  // Load an example: open the Examples disclosure, then pick the first one.
-  await tabTo(page, page.getByText('Examples', { exact: true }))
+  // Load an example: open the Examples menu; keyboard opening focuses the first item.
+  await tabTo(page, page.getByRole('button', { name: 'Examples' }))
   await page.keyboard.press('Enter')
-  const firstExample = page.getByTestId('example-library').getByRole('button').first()
-  await tabTo(page, firstExample)
+  await expect(page.getByRole('menuitem').first()).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.getByLabel('Script')).toContainText('async function f')
 
-  // Run.
-  await tabTo(page, page.getByRole('button', { name: 'Run', exact: true }))
+  // Run: it sits in the editor's header, before the Examples menu that keeps focus.
+  await tabTo(page, page.getByRole('button', { name: 'Run', exact: true }), 'Shift+Tab')
   await page.keyboard.press('Enter')
   await expect(page.getByTestId('replay-banner')).toBeVisible()
 

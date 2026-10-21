@@ -2,26 +2,36 @@
 import { computed } from 'vue'
 import { formatConsoleLines } from './console-lines'
 import type { ObservableOutput } from '../trace/observable-output'
+import { cn } from '@/lib/utils'
+import PanelCard from './panels/panel-card.vue'
 
 const props = defineProps<{ output: ObservableOutput }>()
 const lines = computed(() => formatConsoleLines(props.output))
 </script>
 
 <template>
-  <p v-if="lines.length === 0" class="console-empty">No console output at this step.</p>
-  <ul data-testid="console-panel">
-    <li v-for="(line, i) in lines" :key="i" :class="{ 'console-error': line.kind === 'error' }">
-      {{ line.text }}
-    </li>
-  </ul>
+  <PanelCard
+    title="Console"
+    info="Observable Output so far: console lines, uncaught exceptions and unhandled rejections."
+    :count="lines.length"
+    content-class="overflow-auto max-h-72"
+  >
+    <p v-if="lines.length === 0" class="text-muted-foreground py-2 text-center text-xs">
+      No console output at this step.
+    </p>
+    <ul data-testid="console-panel" class="flex flex-col font-mono text-xs">
+      <li
+        v-for="(line, i) in lines"
+        :key="i"
+        :class="
+          cn(
+            'border-b py-1 whitespace-pre-wrap last:border-b-0',
+            line.kind === 'error' && 'text-destructive console-error',
+          )
+        "
+      >
+        {{ line.text }}
+      </li>
+    </ul>
+  </PanelCard>
 </template>
-
-<style scoped>
-.console-empty {
-  color: var(--anatomy-muted);
-  margin: 0;
-}
-.console-error {
-  color: var(--anatomy-error-text);
-}
-</style>

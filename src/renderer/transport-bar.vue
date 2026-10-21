@@ -4,6 +4,14 @@ import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import TimelineScrubber from './timeline-scrubber.vue'
 import { SPEEDS, usePlayback } from './use-playback'
+import {
+  ChevronFirstIcon, ChevronLastIcon, ChevronsLeftIcon, ChevronsRightIcon, PauseIcon, PlayIcon,
+  SkipBackIcon, SkipForwardIcon, StepBackIcon, StepForwardIcon,
+} from '@lucide/vue'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 const props = defineProps<{ player: Player | null; events: readonly TraceEvent[] }>()
 const position = defineModel<number>({ required: true })
@@ -32,9 +40,43 @@ function jumpBy(unit: Unit, direction: 'next' | 'prev') {
 }
 
 
-const nextButton = useTemplateRef<HTMLButtonElement>('nextButton')
+const toolbar = useTemplateRef<HTMLElement>('toolbar')
 /** Lets the app hand keyboard focus to the controls once a Trace exists. */
-defineExpose({ focusStep: () => nextButton.value?.focus() })
+defineExpose({
+  // Next is disabled when the Trace opens at its end; fall back to the first enabled control.
+  focusStep: () =>
+    toolbar.value
+      ?.querySelector<HTMLButtonElement>('[data-control=next]:enabled, [data-control]:enabled')
+      ?.focus(),
+})
+
+interface Control {
+  id: string
+  label: string
+  icon: typeof PlayIcon
+  shortcut: string
+  disabled: () => boolean
+  run: () => void
+}
+
+/** Back controls, then forward controls; Play/Pause sits between them. */
+const BACK: Control[] = [
+  { id: 'start', label: 'Go to start', icon: ChevronFirstIcon, shortcut: 'Home', disabled: () => atStart.value, run: () => jump('first') },
+  { id: 'back-task', label: 'Back one Task', icon: ChevronsLeftIcon, shortcut: 'Alt+←', disabled: () => atStart.value, run: () => jumpBy('Task', 'prev') },
+  { id: 'back-tick', label: 'Back one Tick', icon: SkipBackIcon, shortcut: 'Shift+←', disabled: () => atStart.value, run: () => jumpBy('Tick', 'prev') },
+  { id: 'prev', label: 'Prev', icon: StepBackIcon, shortcut: '←', disabled: () => atStart.value, run: () => step('prev') },
+]
+const FORWARD: Control[] = [
+  { id: 'next', label: 'Next', icon: StepForwardIcon, shortcut: '→', disabled: () => atEnd.value, run: () => step('next') },
+  { id: 'forward-tick', label: 'Forward one Tick', icon: SkipForwardIcon, shortcut: 'Shift+→', disabled: () => atEnd.value, run: () => jumpBy('Tick', 'next') },
+  { id: 'forward-task', label: 'Forward one Task', icon: ChevronsRightIcon, shortcut: 'Alt+→', disabled: () => atEnd.value, run: () => jumpBy('Task', 'next') },
+  { id: 'end', label: 'Go to end', icon: ChevronLastIcon, shortcut: 'End', disabled: () => atEnd.value, run: () => jump('last') },
+]
+
+const speedText = computed({
+  get: () => String(speed.value),
+  set: (value: string) => (speed.value = Number(value) as typeof speed.value),
+})
 
 /** Typing in the editor or a field must never trigger transport shortcuts. */
 function isTyping(target: EventTarget | null): boolean {
@@ -48,8 +90,12 @@ function ownsSpace(target: EventTarget | null): boolean {
   return !!el && !!el.closest('button, a[href], summary, [role=button]')
 }
 
+/** Menus, listboxes, toggle groups and sliders use arrows, Home and End for their own focus. */
+const OWN_KEYS_WIDGETS = '[role=menu], [role=listbox], [role=group], [role=radiogroup], [role=slider], [role=combobox]'
+
 function onKeydown(event: KeyboardEvent) {
-  if (!props.player || isTyping(event.target)) return
+  if (!props.player || event.defaultPrevented || isTyping(event.target)) return
+  if ((event.target as HTMLElement | null)?.closest?.(OWN_KEYS_WIDGETS)) return
   // Ctrl/Cmd belong to the browser and OS; Shift and Alt alone select the jump unit.
   if (event.ctrlKey || event.metaKey || (event.shiftKey && event.altKey)) return
   const modified = event.shiftKey || event.altKey
@@ -80,62 +126,55 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <div role="toolbar" aria-label="Playback" data-testid="transport-bar">
-    <button type="button" :disabled="!player || atStart" @click="jump('first')">Go to start</button>
-    <button type="button" :disabled="!player || atStart" @click="jumpBy('Task', 'prev')">
-      Back one Task
-    </button>
-    <button type="button" :disabled="!player || atStart" @click="jumpBy('Tick', 'prev')">
-      Back one Tick
-    </button>
-    <button type="button" :disabled="!player || atStart" @click="step('prev')">Prev</button>
-    <button type="button" :disabled="!player" :aria-pressed="playing" @click="toggle">
-      {{ playing ? 'Pause' : 'Play' }}
-    </button>
-    <button ref="nextButton" type="button" :disabled="!player || atEnd" @click="step('next')">
-      Next
-    </button>
-    <button type="button" :disabled="!player || atEnd" @click="jumpBy('Tick', 'next')">
-      Forward one Tick
-    </button>
-    <button type="button" :disabled="!player || atEnd" @click="jumpBy('Task', 'next')">
-      Forward one Task
-    </button>
-    <button type="button" :disabled="!player || atEnd" @click="jump('last')">Go to end</button>
-    <label>
-      Speed
-      <select v-model.number="speed" :disabled="!player" aria-label="Speed">
-        <option v-for="s in SPEEDS" :key="s" :value="s">{{ s }}×</option>
-      </select>
-    </label>
+  <div
+    ref="toolbar"
+    role="toolbar"
+    aria-label="Playback"
+    data-testid="transport-bar"
+    class="flex flex-col gap-1"
+  >
+    <div class="flex flex-wrap items-center gap-1">
+      <template v-for="group in [BACK, null, FORWARD]" :key="group ? group[0]!.id : 'play'">
+        <Button
+          v-if="!group"
+          size="sm"
+          class="min-w-20 max-sm:h-11!"
+          :disabled="!player"
+          :aria-pressed="playing"
+          data-control="play"
+          @click="toggle"
+        >
+          <PauseIcon v-if="playing" />
+          <PlayIcon v-else />
+          {{ playing ? 'Pause' : 'Play' }}
+        </Button>
+        <Tooltip v-for="control in group ?? []" v-else :key="control.id">
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              class="max-sm:size-11!"
+              :aria-label="control.label"
+              :data-control="control.id"
+              :disabled="!player || control.disabled()"
+              @click="control.run"
+            >
+              <component :is="control.icon" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{{ control.label }} · {{ control.shortcut }}</TooltipContent>
+        </Tooltip>
+      </template>
+      <Separator orientation="vertical" class="mx-1 !h-5" />
+      <Select v-model="speedText" :disabled="!player">
+        <SelectTrigger size="sm" aria-label="Speed" class="w-20 max-sm:h-11!">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="s in SPEEDS" :key="s" :value="String(s)">{{ s }}×</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
     <TimelineScrubber v-model="position" :player="player" :events="events" @scrub="pause" />
   </div>
 </template>
-
-<style scoped>
-[data-testid='transport-bar'] {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-[data-testid='transport-bar'] :deep(.scrubber) {
-  flex: 1 1 100%;
-}
-@media (max-width: 640px) {
-  [data-testid='transport-bar'] {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  [data-testid='transport-bar'] > :deep(.scrubber),
-  [data-testid='transport-bar'] > label {
-    grid-column: 1 / -1;
-  }
-  [data-testid='transport-bar'] > label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-}
-</style>

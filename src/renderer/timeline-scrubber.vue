@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import { buildScrubberMarkers } from './scrubber-markers'
+import { Slider } from '@/components/ui/slider'
 
 const props = defineProps<{ player: Player | null; events: readonly TraceEvent[] }>()
 const position = defineModel<number>({ required: true })
@@ -27,32 +28,42 @@ function seekIndex(i: number) {
   position.value = target
 }
 
-function onInput(event: Event) {
-  seekIndex(Number((event.target as HTMLInputElement).value))
+/** Family colours, shared with nothing else: the scrubber is the only place they appear. */
+const MARKER_COLOR: Record<string, string> = {
+  task: 'bg-blue-500',
+  job: 'bg-purple-500',
+  timer: 'bg-amber-500',
+  console: 'bg-emerald-500',
+  error: 'bg-red-500',
+}
+
+function onSlide(value: number[] | undefined) {
+  if (value?.[0] !== undefined) seekIndex(value[0])
 }
 </script>
 
 <template>
-  <div class="scrubber" data-testid="scrubber">
-    <input
-      type="range"
-      aria-label="Timeline"
-      min="0"
+  <div class="scrubber w-full" data-testid="scrubber">
+    <Slider
+      class="py-2"
+      thumb-alignment="overflow"
+      :min="0"
       :max="lastIndex"
-      step="1"
-      :value="index"
-      :aria-valuetext="`Step ${index + 1} of ${lastIndex + 1}`"
+      :step="1"
+      :model-value="[index]"
+      thumb-label="Timeline"
+      :thumb-value-text="`Step ${index + 1} of ${lastIndex + 1}`"
       :disabled="!player"
-      @input="onInput"
+      @update:model-value="onSlide"
     />
-    <!-- Inset by half a slider thumb so markers line up with the thumb's travel. -->
-    <div class="markers">
+    <!-- Full track width, like the thumb: with "overflow" alignment its centre travels end to end. -->
+    <div class="relative h-3">
       <button
         v-for="m in markers"
         :key="m.seq"
         type="button"
-        class="marker"
-        :class="`marker-${m.family}`"
+        class="absolute top-0.5 h-2.5 w-1 -translate-x-1/2 cursor-pointer rounded-[1px] p-0 hover:scale-y-125"
+        :class="MARKER_COLOR[m.family]"
         :data-seq="m.seq"
         :data-family="m.family"
         :aria-label="`${m.family} at event ${m.seq}`"
@@ -62,45 +73,3 @@ function onInput(event: Event) {
     </div>
   </div>
 </template>
-
-<style scoped>
-.scrubber {
-  display: block;
-  width: 100%;
-}
-.scrubber input[type='range'] {
-  width: 100%;
-  margin: 0;
-}
-.markers {
-  position: relative;
-  height: 14px;
-  margin: 0 8px; /* half of the default thumb width */
-}
-.marker {
-  position: absolute;
-  top: 2px;
-  width: 4px;
-  height: 10px;
-  padding: 0;
-  border: 0;
-  border-radius: 1px;
-  transform: translateX(-50%);
-  cursor: pointer;
-}
-.marker-task {
-  background: #3b82f6;
-}
-.marker-job {
-  background: #a855f7;
-}
-.marker-timer {
-  background: #f59e0b;
-}
-.marker-console {
-  background: #10b981;
-}
-.marker-error {
-  background: #ef4444;
-}
-</style>

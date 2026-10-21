@@ -4,6 +4,10 @@ import { EVENT_FAMILIES, eventFamily } from '../player/event-family'
 import type { EventFamily } from '../player/event-family'
 import type { TraceEvent } from '../trace/trace-event'
 import { indexOfSeq, visibleWindow } from './virtual-window'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Toggle } from '@/components/ui/toggle'
+import { cn } from '@/lib/utils'
 
 const props = defineProps<{ events: readonly TraceEvent[] }>()
 /** Playhead: the selected event. Clicking a row moves it there. */
@@ -71,26 +75,33 @@ watch([position, () => rows.value.length], async () => {
 </script>
 
 <template>
-  <section aria-label="Events">
-    <div role="group" aria-label="Filter by family" data-testid="family-filters">
-      <button
+  <section aria-label="Events" class="flex min-w-0 flex-col gap-2">
+    <div
+      role="group"
+      aria-label="Filter by family"
+      data-testid="family-filters"
+      class="flex flex-wrap items-center gap-1"
+    >
+      <Toggle
         v-for="family in EVENT_FAMILIES"
         :key="family"
-        type="button"
+        size="sm"
+        variant="outline"
         :data-family="family"
-        :aria-pressed="!hidden.has(family)"
-        @click="toggleFamily(family)"
+        :model-value="!hidden.has(family)"
+        @update:model-value="toggleFamily(family)"
       >
         {{ family }}
-      </button>
-      <label>
-        <input v-model="showAll" type="checkbox" />
-        Show all events
-      </label>
+      </Toggle>
+      <div class="ml-auto flex items-center gap-2">
+        <Checkbox id="show-all-events" v-model="showAll" />
+        <Label for="show-all-events" class="text-xs">Show all events</Label>
+      </div>
     </div>
     <div
       ref="scroller"
       data-testid="event-list-scroller"
+      class="max-h-80 overflow-auto rounded-md border"
       :style="scrollerStyle"
       @scroll="scrollTop = ($event.target as HTMLElement).scrollTop"
     >
@@ -104,7 +115,17 @@ watch([position, () => rows.value.length], async () => {
           :aria-current="event.seq === position"
           :style="rowStyle"
         >
-          <button type="button" @click="position = event.seq">
+          <button
+            type="button"
+            :class="
+              cn(
+                'hover:bg-muted flex h-6 w-full items-center gap-2 px-2 text-left font-mono text-xs',
+                event.seq === position && 'bg-primary/10 text-foreground font-medium',
+                !event.visible && 'text-muted-foreground',
+              )
+            "
+            @click="position = event.seq"
+          >
             {{ event.seq }} {{ event.k }}
           </button>
         </li>

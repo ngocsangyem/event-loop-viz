@@ -20,3 +20,6 @@ peerDependencyRules:
 
 patchedDependencies:
   '@engine262/engine262': patches/@engine262__engine262.patch
+
+# Supply-chain guard: only resolve versions published at least one day ago (minutes).
+minimumReleaseAge: 1440

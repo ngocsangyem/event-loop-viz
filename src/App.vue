@@ -1,37 +1,54 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, useTemplateRef } from 'vue'
-import ScriptEditor from '@/renderer/script-editor.vue'
+import { defineAsyncComponent, nextTick, onMounted, ref, useTemplateRef } from 'vue'
+import { findExample } from '@/examples/example-library'
+import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
+import { useRunSession } from '@/use-run-session'
+import { Card, CardContent } from '@/components/ui/card'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import AppHeader from '@/renderer/app-header.vue'
+import EditorCard from '@/renderer/editor-card.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
 import TransportBar from '@/renderer/transport-bar.vue'
-import ExamplePicker from '@/renderer/example-picker.vue'
-import UnsupportedApiNotice from '@/renderer/unsupported-api-notice.vue'
-import { EXAMPLES, findExample } from '@/examples/example-library'
-import SceneView from '@/renderer/scene/event-loop-scene.vue'
-import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
-import AdvancedSettings from '@/renderer/advanced-settings.vue'
 import HaltBanner from '@/renderer/halt-banner.vue'
 import TimingSensitiveBadge from '@/renderer/timing-sensitive-badge.vue'
-import BottomPanel from '@/renderer/bottom-panel.vue'
 import EventList from '@/renderer/event-list.vue'
 import EventDetail from '@/renderer/event-detail.vue'
 import StepAnnouncer from '@/renderer/step-announcer.vue'
-import { useRunSession } from '@/use-run-session'
+import CallStackPanel from '@/renderer/panels/call-stack-panel.vue'
+import TaskQueuePanel from '@/renderer/panels/task-queue-panel.vue'
+import MicrotaskQueuePanel from '@/renderer/panels/microtask-queue-panel.vue'
+import WebApisPanel from '@/renderer/panels/web-apis-panel.vue'
+import EventLoopPanel from '@/renderer/panels/event-loop-panel.vue'
+import { useColorTheme } from '@/renderer/use-color-theme'
+import { useVisualizerView } from '@/renderer/use-visualizer-view'
+
+// The 3D Scene is opt-in, so its code and styles load only when that view is picked.
+const SceneView = defineAsyncComponent(() => import('@/renderer/scene/event-loop-scene.vue'))
 
 const shared = decodeShareFragment(window.location.hash)
 const shareUrl = ref<string | null>(null)
+/** Whether the last Share put the link on the clipboard; copying can be denied. */
+const shareCopied = ref(false)
+/** A share link runs on load; that Run must not move focus the user never placed. */
+let autoRun = false
 const editor = useTemplateRef('editor')
 const transport = useTemplateRef('transport')
-const runButton = useTemplateRef<HTMLButtonElement>('runButton')
+const { choice: theme } = useColorTheme()
+const view = useVisualizerView()
 
 /**
  * The Run button is disabled mid-Run, which drops keyboard focus to the page. Put it back where
  * the next action is: the playback controls after a Trace, the Run button after a failure.
  */
 async function restoreFocusAfterRun() {
+  if (autoRun) {
+    autoRun = false
+    return
+  }
   await nextTick()
   if (document.activeElement && document.activeElement !== document.body) return
   if (session.trace.value) transport.value?.focusStep()
-  else runButton.value?.focus()
+  else editor.value?.focusRun()
 }
 
 const session = useRunSession({
@@ -66,8 +83,10 @@ async function share() {
   url.hash = encodeShareFragment({ script: script.value, settings: settings.value })
   shareUrl.value = url.href
   history.replaceState(null, '', url)
+  shareCopied.value = false
   try {
     await navigator.clipboard.writeText(url.href)
+    shareCopied.value = true
   } catch {
     // Clipboard may be denied; the URL stays visible and in the address bar.
   }
@@ -75,62 +94,72 @@ async function share() {
 
 // Opening a share link runs it immediately: the link carries inputs, not a Trace.
 onMounted(() => {
-  if (shared) void run()
+  if (!shared) return
+  autoRun = true
+  void run()
 })
 </script>
 
 <template>
-  <main class="app-shell">
-    <h1 class="visually-hidden">Event Loop Visualizer</h1>
-    <StepAnnouncer :events="events" :position="position" />
-    <div class="pane-editor">
-      <ScriptEditor
-      ref="editor"
-      v-model="script"
-      :read-only="replaying"
-      :error-at="syntaxErrorAt"
-      :highlight="sourceHighlight"
-      @run="run"
-    />
-    <ExamplePicker :examples="EXAMPLES" @load="loadExample" />
-    <AdvancedSettings v-model="settings" />
-    <UnsupportedApiNotice :apis="unsupportedApis" />
-    <p v-if="replaying" data-testid="replay-banner">
-      Read-only during replay.
-      <button type="button" @click="editScript">Edit (discards Trace)</button>
-    </p>
-    <button ref="runButton" type="button" :disabled="running" @click="run">Run</button>
-    <template v-if="running">
-      <progress aria-label="Running">Running…</progress>
-      <button type="button" @click="cancel">Cancel</button>
-    </template>
-    <button type="button" @click="share">Share</button>
-    <input
-      v-if="shareUrl"
-      data-testid="share-url"
-      aria-label="Share URL"
-      :value="shareUrl"
-      readonly
-    />
-    <p v-if="syntaxError" role="alert">{{ syntaxError }}</p>
-
-    </div>
-
-    <div class="pane-scene">
+  <TooltipProvider :delay-duration="300">
+    <main class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4">
+      <AppHeader v-model:view="view" v-model:theme="theme" :share-url="shareUrl" :share-copied="shareCopied" @share="share" />
+      <StepAnnouncer :events="events" :position="position" />
       <HaltBanner :halt="halt" />
       <TimingSensitiveBadge :timing-sensitive="trace?.header.timingSensitive ?? false" />
-      <SceneView :state="replayState" :previous="previousReplayState" />
-      <TransportBar ref="transport" v-model="position" :player="player" :events="events" />
-    </div>
 
-    <BottomPanel v-if="trace" class="pane-panels">
-      <template #console>
-        <ConsolePanel :output="consoleOutput" />
-      </template>
-      <template #events>
-        <EventList v-model="position" v-model:show-all="showAll" :events="events" />
-        <EventDetail :events="events" :position="position" @select="position = $event" />
-      </template>
-    </BottomPanel>
-  </main>
+      <!-- Desktop: three columns like the event loop reads, left to right. Phone: one column. -->
+      <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-12">
+        <div class="flex min-w-0 flex-col gap-4 md:col-span-2 xl:col-span-4">
+          <EditorCard
+            ref="editor"
+            v-model:script="script"
+            v-model:settings="settings"
+            :replaying="replaying"
+            :running="running"
+            :syntax-error="syntaxError"
+            :syntax-error-at="syntaxErrorAt"
+            :highlight="sourceHighlight"
+            :unsupported-apis="unsupportedApis"
+            @run="run"
+            @cancel="cancel"
+            @edit="editScript"
+            @load-example="loadExample"
+          />
+          <WebApisPanel v-if="view === 'panels'" :state="replayState" />
+          <ConsolePanel v-else :output="consoleOutput" />
+        </div>
+        <template v-if="view === 'panels'">
+          <div class="flex min-w-0 flex-col gap-4 xl:col-span-4">
+            <CallStackPanel :state="replayState" />
+            <ConsolePanel :output="consoleOutput" />
+          </div>
+          <div class="flex min-w-0 flex-col gap-4 xl:col-span-4">
+            <TaskQueuePanel :state="replayState" />
+            <MicrotaskQueuePanel :state="replayState" />
+            <EventLoopPanel :state="replayState" />
+          </div>
+        </template>
+        <Card v-else size="sm" class="min-w-0 md:col-span-2 xl:col-span-8">
+          <CardContent>
+            <SceneView :state="replayState" :previous="previousReplayState" />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card size="sm" class="bg-card/90 sticky bottom-3 z-10 shadow-lg backdrop-blur">
+        <CardContent>
+          <TransportBar ref="transport" v-model="position" :player="player" :events="events" />
+        </CardContent>
+      </Card>
+
+      <!-- scroll-mb keeps a focused row or button clear of the sticky playback bar above. -->
+      <Card v-if="trace" size="sm" role="region" aria-label="Trace events" class="[&_button]:scroll-mb-40 [&_a]:scroll-mb-40">
+        <CardContent class="grid gap-4 lg:grid-cols-2">
+          <EventList v-model="position" v-model:show-all="showAll" :events="events" />
+          <EventDetail :events="events" :position="position" @select="position = $event" />
+        </CardContent>
+      </Card>
+    </main>
+  </TooltipProvider>
 </template>

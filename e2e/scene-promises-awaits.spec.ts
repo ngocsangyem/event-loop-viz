@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
+import { preferSceneView } from './reveal-panel'
+
+// The 3D Scene is opt-in; these specs exercise it.
+test.beforeEach(({ page }) => preferSceneView(page))
 
 // oracle/fixtures/await-vs-then-chain.js
 const AWAIT_VS_THEN = `async function f() { await Promise.resolve(); console.log('await'); }

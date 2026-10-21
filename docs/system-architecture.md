@@ -16,8 +16,9 @@ renderer -> player -> trace <- host <- engine adapter        runner ties them to
 | `host/` | HTML event loop for one Host Profile (`chrome-155`): task queues, Virtual Clock, timers, Checkpoints, rejection tracker, port-message task source, seeded `Math.random`, Budget meter, timing-sensitivity detection. Emits Trace Events; talks to the engine only through `EngineAdapter`. | trace | Worker |
 | `runner/` | `runScript` and its Worker entry, the main-thread `worker-run-client` (wall-clock watchdog, cancel), and the pre-run Unsupported API scan. | trace, host, engine | both |
 | `player/` | Pure replay logic over a Trace: `stateAt` folds events into a `ReplayState`, snapshots, Visible Event indexing, navigation (event, Tick, Task, start/end, seek), per-event explanations. No Vue, no timers. | trace | anywhere |
-| `renderer/` | Vue app shell: editor (CodeMirror 6), transport bar, scrubber, event list and detail, console panel, banners, run settings. Holds the playhead and playback clock; asks the player for state. | player, trace | main thread |
-| `renderer/scene/` | Isometric SVG Scene (call stack, console, microtask and task queues, timer shelf). A pure function of `ReplayState`; no Trace or store access. | own files, `vue`, player types | main thread |
+| `renderer/` | Vue app shell built with shadcn-vue (Tailwind v4, reka-ui; generated components in `src/components/ui/`): header with the Panels/3D view switch, editor card (CodeMirror 6), transport bar, scrubber, event list and detail, banners, run settings, colour theme. Holds the playhead and playback clock; asks the player for state. | player, trace | main thread |
+| `renderer/panels/` | Default visualization: one labelled card per part of the event loop (Call Stack, Task Queue, Microtask Queue, Web APIs, Event Loop phase), each a pure function of `ReplayState`. Reuses the Scene's model functions. | player types, scene models | main thread |
+| `renderer/scene/` | Isometric SVG Scene, shown when the user picks the 3D view (call stack, console, microtask and task queues, timer shelf). A pure function of `ReplayState`; no Trace or store access. | own files, `vue`, player types | main thread |
 | `share/` | Share-link codec: Script and settings in the URL fragment. | none | main thread |
 | `examples/` | Built-in example Scripts backed by oracle fixtures. | none | main thread |
 
