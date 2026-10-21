@@ -17,8 +17,8 @@ The Script runs in [engine262](https://github.com/engine262/engine262) behind a 
 event-loop host on a Virtual Clock, inside a Web Worker. A Run produces one immutable Trace. The UI
 never drives the engine: it replays the Trace (play/pause, step, jump by Tick or Task, scrubber,
 source highlighting). Callback chips (the code a Task or Job will call) move between the panels as the replay steps. Three views show the same state: labelled Panels (default), an animated
-Diagram, and the isometric 3D Scene. The UI is in English and Vietnamese. "Ask AI" (the chat button
-in the bottom-right corner) lets a learner ask their own OpenRouter model to walk through the
+Diagram, and the isometric 3D Scene. The UI is in English and Vietnamese. "Ask AI" (the ASK AI button
+at the end of the playback dock) lets a learner ask their own OpenRouter model to walk through the
 whole Run as a tour: Next and Previous move the replay to each stop. The browser sends the key
 straight to OpenRouter and the app stores it nowhere unless the learner asks it to remember the key on that
 device. Architecture: [docs/system-architecture.md](docs/system-architecture.md).

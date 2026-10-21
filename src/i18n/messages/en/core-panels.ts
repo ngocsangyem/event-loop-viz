@@ -3,6 +3,13 @@ export default {
   panels: {
     about: 'About {title}',
     running: 'running',
+    /** Focal state of a pane the current step changed, and of an entry that just arrived. */
+    changed: 'Changed',
+    runningState: 'Running',
+    newItem: 'NEW',
+    /** Phone: opens or folds a pane the step left alone. */
+    show: 'Show',
+    hide: 'Hide',
     due: 'due {due}',
     callStack: {
       title: 'Call Stack',

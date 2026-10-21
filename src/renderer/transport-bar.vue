@@ -11,8 +11,9 @@ import type { TraceEvent } from '../trace/trace-event'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { Toggle } from '@/components/ui/toggle'
+import { formatVirtualMs } from './scene/timer-shelf-model'
+import { stepProgressOf } from './step-progress'
 import TimelineScrubber from './timeline-scrubber.vue'
 import TransportControlButton from './transport-control-button.vue'
 import { SPEEDS, usePlayback } from './use-playback'
@@ -27,6 +28,8 @@ const props = defineProps<{
   events: readonly TraceEvent[]
   /** Lets playback pass over steps that change nothing on screen. */
   sameView?: SameView
+  /** Virtual Clock at the playhead, microseconds; printed at the end of the scrubber row. */
+  clockUs: number
 }>()
 const position = defineModel<number>({ required: true })
 /** Start playing as soon as a Run produces a Trace. */
@@ -82,6 +85,11 @@ const FORWARD: Control[] = [
   { id: 'end', label: 'transport.end', word: 'transport.word.end', icon: ChevronLastIcon, shortcut: 'End', keyHint: '⇲', disabled: () => atEnd.value, run: () => nav.jump('last') },
 ]
 
+const progress = computed(() => stepProgressOf(props.events, position.value))
+const clock = computed(() => formatVirtualMs(props.clockUs))
+/** The dock's "what just happened" line: the current Trace Event's tag. */
+const current = computed(() => props.events[position.value])
+
 /** The speed Select works in strings; playback keeps the number. */
 const speedText = computed({
   get: () => String(speed.value),
@@ -90,6 +98,7 @@ const speedText = computed({
 </script>
 
 <template>
+  <!-- Two rows (DESIGN.md · Control dock): where the playhead is, then what moves it. -->
   <div
     ref="toolbar"
     role="toolbar"
@@ -97,6 +106,15 @@ const speedText = computed({
     data-testid="transport-bar"
     class="flex flex-col gap-1"
   >
+    <div class="flex items-center gap-3">
+      <span class="meta-mono shrink-0 uppercase max-sm:hidden" data-testid="dock-step">
+        {{ t('caption.step', progress) }}
+      </span>
+      <TimelineScrubber v-model="position" class="min-w-0 flex-1" :player="player" :events="events" @scrub="pause" />
+      <span class="meta-mono shrink-0 uppercase max-sm:hidden" data-testid="dock-clock">
+        {{ t('dock.clock') }} <span class="text-foreground">{{ clock }}</span>
+      </span>
+    </div>
     <div class="flex flex-wrap items-center gap-1">
       <TransportControlButton
         v-for="control in BACK"
@@ -136,27 +154,34 @@ const speedText = computed({
         :disabled="control.disabled()"
         @press="control.run"
       />
-      <Separator orientation="vertical" class="mx-1 !h-5" />
-      <Select v-model="speedText" :disabled="!player">
-        <SelectTrigger size="sm" :aria-label="t('transport.speed')" class="w-20 max-sm:h-11!">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="s in SPEEDS" :key="s" :value="String(s)">{{ s }}×</SelectItem>
-        </SelectContent>
-      </Select>
-      <Toggle
-        v-model="autoplay"
-        size="sm"
-        variant="outline"
-        class="max-sm:h-11!"
-        data-control="autoplay"
-        :title="t('transport.autostartHint')"
+      <p
+        class="meta-mono mx-2 hidden min-w-0 flex-1 truncate xl:block"
+        :title="t('dock.lastEvent')"
+        data-testid="dock-last-event"
       >
-        <RepeatIcon class="sm:hidden" />
-        {{ t('transport.autostart') }}
-      </Toggle>
+        <template v-if="current"><span class="text-brand-text" aria-hidden="true">▸ </span>#{{ current.seq }} {{ current.k }}</template>
+      </p>
+      <div class="ml-auto flex items-center gap-1">
+        <Select v-model="speedText" :disabled="!player">
+          <SelectTrigger size="sm" :aria-label="t('transport.speed')" class="w-20 max-sm:h-11!">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="s in SPEEDS" :key="s" :value="String(s)">{{ s }}×</SelectItem>
+          </SelectContent>
+        </Select>
+        <Toggle
+          v-model="autoplay"
+          size="sm"
+          variant="outline"
+          class="max-sm:h-11!"
+          data-control="autoplay"
+          :title="t('transport.autostartHint')"
+        >
+          <RepeatIcon class="sm:hidden" />
+          {{ t('transport.autostart') }}
+        </Toggle>
+      </div>
     </div>
-    <TimelineScrubber v-model="position" :player="player" :events="events" @scrub="pause" />
   </div>
 </template>

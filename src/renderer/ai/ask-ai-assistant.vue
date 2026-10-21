@@ -21,9 +21,10 @@ import { useAskAi } from './use-ask-ai'
 import { useOpenRouterModelChoice } from './use-openrouter-model-choice'
 
 /**
- * The Ask AI chat: a floating panel above the launcher, a settings dialog, and the tour. Answers
+ * The Ask AI chat, a settings dialog, and the tour. On a wide screen the panel takes the right
+ * column in place of the Why rail; narrower, it is a bottom sheet above the dock. Answers
  * walk the whole Run; Next / Previous emit `seek` so the replay shows each stop. Minimized, the
- * tour controls stay beside the launcher.
+ * tour controls become a segment of the dock.
  */
 const open = defineModel<boolean>('open', { required: true })
 const props = defineProps<{
@@ -115,11 +116,10 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
 </script>
 
 <template>
+  <!-- A crossfade in; it leaves at once so the Why rail it covered never shows under it. -->
   <Transition
-    enter-from-class="opacity-0 translate-y-2 scale-95"
-    leave-to-class="opacity-0 translate-y-2 scale-95"
-    enter-active-class="transition duration-200 ease-out motion-reduce:transition-none"
-    leave-active-class="transition duration-150 ease-in motion-reduce:transition-none"
+    enter-from-class="opacity-0"
+    enter-active-class="transition-opacity duration-(--motion-base) ease-out motion-reduce:transition-none"
   >
     <section
       v-show="open"
@@ -129,7 +129,7 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
       aria-modal="false"
       aria-labelledby="ask-ai-title"
       aria-describedby="ask-ai-description"
-      class="bg-popover text-popover-foreground fixed right-4 bottom-[calc(var(--ai-dock)+3.75rem)] z-40 flex h-[max(16rem,min(640px,calc(100dvh-var(--ai-dock)-6rem)))] w-[min(420px,calc(100vw-2rem))] origin-bottom-right flex-col overflow-hidden border text-sm"
+      class="bg-background text-popover-foreground fixed inset-x-0 bottom-(--ai-dock) z-40 flex h-[max(16rem,min(640px,calc(100dvh-var(--ai-dock)-4rem)))] w-full flex-col overflow-hidden border-t text-sm xl:static xl:z-auto xl:h-full xl:border-t-0"
       data-testid="ask-ai-panel"
       @keydown.esc.stop="minimize"
     >
@@ -182,15 +182,17 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
     </section>
   </Transition>
 
-  <!-- Minimized mid-tour: the tour keeps going beside the launcher while the visualizer is in full view. -->
-  <AskAiTourControls
-    v-if="!open && tour.index.value >= 0"
-    floating
-    :stops="tour.stops.value"
-    :index="tour.index.value"
-    @next="tour.next()"
-    @prev="tour.prev()"
-  />
+  <!-- Minimized mid-tour: the tour keeps going as a segment of the dock while the visualizer is in full view. -->
+  <Teleport defer to="#dock-tour">
+    <AskAiTourControls
+      v-if="!open && tour.index.value >= 0"
+      floating
+      :stops="tour.stops.value"
+      :index="tour.index.value"
+      @next="tour.next()"
+      @prev="tour.prev()"
+    />
+  </Teleport>
 
   <AskAiSettingsDialog
     v-model:open="settingsOpen"

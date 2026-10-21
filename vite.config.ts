@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
@@ -10,7 +11,8 @@ export default defineConfig({
   plugins: [
     vue(),
     tailwindcss(),
-    vueDevTools(),
+    // The DevTools launcher floats over the pinned dock and takes the e2e suite's clicks.
+    ...(process.env.ELV_E2E ? [] : [vueDevTools()]),
   ],
   // The engine runs in a module Worker chunk. Built-in function names become frame labels in the
   // Trace, so the chunk must keep them.

@@ -190,7 +190,8 @@ test('asking before any Run runs the Script first, so the answer can be a tour',
   await connect(page)
   await expect(page.getByTestId('ask-ai-context')).toContainText('No Run yet')
   await page.getByTestId('ask-ai-suggestion').first().click()
-  await expect(page.getByTestId('event-list')).toBeVisible()
+  // The Run happened: the Trace Events exist, in the Why rail the open panel stands in for.
+  await expect(page.getByTestId('event-list')).toBeAttached()
   await expect(page.getByTestId('ask-ai-tour-start')).toBeVisible()
   expect(mock.requests).toHaveLength(1)
   expect(mock.requests[0]!.body.messages.at(-1)!.content).toContain('Trace of the whole Run')

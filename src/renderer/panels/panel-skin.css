@@ -71,3 +71,44 @@
   border-color: var(--brand) !important;
   background: var(--background);
 }
+
+/*
+ * Focal hierarchy: the pane the step changed takes its hue's soft tint and a 2px top rule;
+ * untouched panes stay on the plain ground. The state label (CHANGED / RUNNING) is in the hue.
+ */
+.panel-card[data-changed] {
+  /* The soft hue is translucent: lay it on the page tone, not on the ruled ground below. */
+  background: linear-gradient(var(--hue-soft), var(--hue-soft)), var(--background);
+  box-shadow: inset 0 2px 0 var(--hue);
+}
+.panel-state {
+  color: var(--hue);
+}
+/* A queue entry that arrived this step: soft fill, full-hue border and a NEW tag. */
+.queue-row[data-new] {
+  background: var(--hue-soft);
+  border-color: var(--hue);
+}
+.queue-row[data-new]::after {
+  content: attr(data-new);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  color: var(--hue);
+}
+
+/* Phone: pane headers are 44px tap rows, and a folded pane is only its header. */
+@media (width < 48rem) {
+  .panel-card-header {
+    height: 44px;
+  }
+  .panel-card[data-folded] {
+    gap: 0;
+    padding-bottom: 0;
+  }
+  .panel-card[data-folded] .panel-card-header {
+    border-bottom-width: 0;
+  }
+}

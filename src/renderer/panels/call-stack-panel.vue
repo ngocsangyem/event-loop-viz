@@ -41,6 +41,7 @@ const items = computed(() => {
     :title="t('panels.callStack.title')"
     :info="t('panels.callStack.info')"
     :count="items.length"
+    :running="items.length > 0"
   >
     <QueueList :items="items" :empty="t('panels.callStack.empty')" testid="panel-call-stack" />
   </PanelCard>

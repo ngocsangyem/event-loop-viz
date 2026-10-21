@@ -4,6 +4,11 @@ export default {
   panels: {
     about: 'Giới thiệu {title}',
     running: 'đang chạy',
+    changed: 'Đã đổi',
+    runningState: 'Đang chạy',
+    newItem: 'MỚI',
+    show: 'Mở',
+    hide: 'Thu gọn',
     due: 'hạn {due}',
     callStack: {
       title: 'Call Stack',
