@@ -1,0 +1,7 @@
+{
+  "projectId": "b8de0915-25c8-4bdf-acf4-9c25b2b966f9",
+  "shape": "custom-elements",
+  "globalName": "ELV",
+  "buildCmd": "pnpm exec vite build --config design-system/vite.config.ts",
+  "tokens": "docs/design/tokens.css"
+}

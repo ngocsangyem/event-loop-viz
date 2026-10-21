@@ -45,3 +45,7 @@ playwright-report/
 
 # Agent worktrees
 .claude/worktrees/
+
+# design-sync build output
+ds-bundle/
+design-system/dist/

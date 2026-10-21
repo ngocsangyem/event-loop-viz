@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ELV elements</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <style>
+      body { margin: 0; padding: 24px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+      .bar { grid-column: 1 / -1; display: flex; gap: 8px; }
+      button { font: 500 12px var(--font-mono); text-transform: uppercase; background: transparent; color: var(--color-ink); border: 1px solid var(--color-line); padding: 6px 10px; cursor: pointer; }
+    </style>
+    <script type="module">
+      import '../docs/design/tokens.css'
+      import './src/index.ts'
+    </script>
+  </head>
+  <body>
+    <!-- Dev-only playground for the custom elements; not part of the bundle. -->
+    <div class="bar">
+      <button id="step">Step</button>
+      <button id="theme">Theme</button>
+    </div>
+    <elv-pane title="Call Stack" concept="stack" count="1" state="running">
+      <elv-queue id="stack" concept="stack" empty="Empty"></elv-queue>
+    </elv-pane>
+    <elv-pane title="Microtask Queue" concept="job" count="2" state="changed">
+      <elv-queue id="jobs" concept="job" empty="No microtasks queued"></elv-queue>
+    </elv-pane>
+    <elv-pane title="Task Queue" concept="task" count="0">
+      <elv-queue concept="task" empty="No tasks queued"></elv-queue>
+    </elv-pane>
+    <script type="module">
+      const stack = document.getElementById('stack')
+      const jobs = document.getElementById('jobs')
+      stack.items = [{ id: 'f1', label: 'Frame', kind: 'script', code: '<script>', state: 'top' }]
+      const frames = [
+        [
+          { id: 'j1', label: 'Job #1', kind: 'Promise reaction', code: "() => console.log('then 1')", line: 3, state: 'default' },
+          { id: 'j2', label: 'Job #2', kind: 'queueMicrotask', code: "() => console.log('microtask')", line: 5, state: 'new' },
+        ],
+        [
+          { id: 'j2', label: 'Job #2', kind: 'queueMicrotask', code: "() => console.log('microtask')", line: 5, state: 'default' },
+          { id: 'j3', label: 'Job #3', kind: 'Promise reaction', code: "() => console.log('then 2')", line: 4, state: 'new' },
+        ],
+      ]
+      let i = 0
+      jobs.items = frames[0]
+      document.getElementById('step').onclick = () => (jobs.items = frames[++i % frames.length])
+      document.getElementById('theme').onclick = () => {
+        const html = document.documentElement
+        html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark'
+      }
+    </script>
+  </body>
+</html>

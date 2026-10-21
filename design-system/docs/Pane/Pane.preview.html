@@ -1,0 +1,15 @@
+    <section data-story="Idle">
+      <elv-pane title="Task Queue" concept="task" count="0">
+        <elv-queue concept="task" empty="No tasks queued"></elv-queue>
+      </elv-pane>
+    </section>
+    <section data-story="Changed">
+      <elv-pane title="Microtask Queue" concept="job" count="1" state="changed">
+        <elv-queue concept="job" items='[{"id":"j3","label":"Job #3","kind":"Promise reaction","code":"() => console.log(&#39;then 2&#39;)","line":4,"state":"new"}]'></elv-queue>
+      </elv-pane>
+    </section>
+    <section data-story="Running">
+      <elv-pane title="Call Stack" concept="stack" count="2" state="running">
+        <elv-queue concept="stack" items='[{"id":"f2","label":"Frame","kind":"timeout callback","code":"() => console.log(&#39;timeout&#39;)","line":2,"state":"top"},{"id":"f1","label":"Frame","kind":"script","code":"<script>"}]'></elv-queue>
+      </elv-pane>
+    </section>
