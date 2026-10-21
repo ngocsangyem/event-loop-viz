@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue'
-import { useElementSize } from '@vueuse/core'
+import { until, useElementSize } from '@vueuse/core'
 import { findExample } from '@/examples/example-library'
 import { decodeShareFragment } from '@/share/share-link-codec'
 import { useRunSession } from '@/use-run-session'
@@ -53,6 +53,11 @@ function toggleAsk() {
 }
 function focusLauncher() {
   ;(launcher.value?.$el as HTMLElement | undefined)?.focus()
+}
+/** Ask AI needs a Trace to point at; a question before any Run runs the Script first. */
+async function ensureRun() {
+  if (session.running.value) await until(session.running).toBe(false)
+  if (!session.trace.value) await session.run()
 }
 /** The AI tour wins over a running replay: playback pauses, then the replay shows the stop. */
 function seekFromTour(seq: number) {
@@ -194,6 +199,7 @@ onMounted(() => {
           :position="position"
           :state="replayState"
           :player="player"
+          :ensure-run="ensureRun"
           @seek="seekFromTour"
           @minimize="focusLauncher"
         />

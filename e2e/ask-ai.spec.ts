@@ -117,6 +117,9 @@ test('the corner launcher opens the chat, and the key goes in through the settin
   const answer = panel.getByTestId('ask-ai-answer')
   await expect(answer).toContainText('It starts on console.log at line 1.')
   await expect(page.getByTestId('ask-ai-tour-stop')).toHaveCount(3)
+  // Event numbers steer the tour but are never shown; neither is the "Summary" label.
+  await expect(answer).not.toContainText('#')
+  await expect(answer).not.toContainText('Summary')
   await expect(page.getByRole('status').filter({ hasText: 'The answer is ready.' })).toBeAttached()
   expect(await seriousViolations(page, '[data-testid="ask-ai-panel"]')).toEqual([])
 
@@ -145,13 +148,15 @@ test('Next and Previous walk the tour, move the replay and win over playback', a
   await page.getByTestId('ask-ai-suggestion').first().click()
   const stops = page.getByTestId('ask-ai-tour-stop')
   await expect(stops).toHaveCount(3)
-  const seqOf = async (i: number) => Number(/#(\d+)/.exec((await stops.nth(i).textContent()) ?? '')![1])
+  const seqOf = async (i: number) => Number(await stops.nth(i).getAttribute('data-seq'))
   const progress = page.getByTestId('ask-ai-tour-progress')
-  await expect(progress).toHaveText('3 stops')
+  await expect(page.getByTestId('ask-ai-answer')).toContainText('A guided tour of 3 stops')
+  await expect(page.getByTestId('ask-ai-tour-start')).toContainText('Start tour')
+  await expect(progress).toHaveCount(0)
 
   await page.locator('[data-control=play]').click()
   await expect(page.locator('[data-control=play]')).toHaveAttribute('aria-pressed', 'true')
-  await page.getByTestId('ask-ai-tour-next').click()
+  await page.getByTestId('ask-ai-tour-start').click()
   await expect(page.locator('[data-control=play]')).toHaveAttribute('aria-pressed', 'false')
   await expect(progress).toHaveText('1 / 3')
   expect(await playhead(page)).toBe(await seqOf(0))
@@ -164,11 +169,31 @@ test('Next and Previous walk the tour, move the replay and win over playback', a
   await expect(progress).toHaveText('1 / 3')
   expect(await playhead(page)).toBe(await seqOf(0))
 
+  // The Start button inside the answer starts the tour over from its first stop.
+  await page.getByTestId('ask-ai-tour-start').click()
+  await expect(progress).toHaveText('1 / 3')
+  await expect(page.getByTestId('ask-ai-tour-start')).toContainText('Start over')
+
   // A stop in the answer is a shortcut to its event.
   await stops.nth(2).getByRole('button').click()
   await expect(progress).toHaveText('3 / 3')
   expect(await playhead(page)).toBe(await seqOf(2))
   await expect(page.getByTestId('ask-ai-tour-next')).toBeDisabled()
+})
+
+test('asking before any Run runs the Script first, so the answer can be a tour', async ({ page }) => {
+  const mock = await mockOpenRouter(page)
+  await page.goto('/')
+  await page.getByText('Examples', { exact: true }).click()
+  await page.getByTestId('example-await-vs-then').click()
+  await expect(page.getByTestId('event-list')).toHaveCount(0)
+  await connect(page)
+  await expect(page.getByTestId('ask-ai-context')).toContainText('No Run yet')
+  await page.getByTestId('ask-ai-suggestion').first().click()
+  await expect(page.getByTestId('event-list')).toBeVisible()
+  await expect(page.getByTestId('ask-ai-tour-start')).toBeVisible()
+  expect(mock.requests).toHaveLength(1)
+  expect(mock.requests[0]!.body.messages.at(-1)!.content).toContain('Trace of the whole Run')
 })
 
 test('minimized, the tour keeps going beside the launcher', async ({ page }) => {
@@ -177,7 +202,7 @@ test('minimized, the tour keeps going beside the launcher', async ({ page }) => 
   await connect(page)
   await page.getByTestId('ask-ai-suggestion').first().click()
   await expect(page.getByTestId('ask-ai-tour-stop')).toHaveCount(3)
-  await page.getByTestId('ask-ai-tour-next').click()
+  await page.getByTestId('ask-ai-tour-start').click()
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('ask-ai-panel')).toBeHidden()
   await expect(page.getByTestId('ask-ai')).toBeFocused()
@@ -216,7 +241,7 @@ test('with the UI in Vietnamese the system prompt asks for Vietnamese', async ({
   await page.getByTestId('ask-ai-done').click()
   await page.getByTestId('ask-ai-suggestion').first().click()
   await expect(page.getByTestId('ask-ai-answer')).toBeVisible()
-  await expect(page.getByTestId('ask-ai-tour-progress')).toHaveText('3 điểm dừng')
+  await expect(page.getByTestId('ask-ai-tour-start')).toContainText('Bắt đầu tour')
   expect(mock.requests[0]!.body.messages[0]!.content).toContain('Answer in Vietnamese')
 })
 

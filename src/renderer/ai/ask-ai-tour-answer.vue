@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { PlayIcon, RotateCcwIcon } from '@lucide/vue'
+import { Button } from '@/components/ui/button'
 import AskAiMarkdown from './ask-ai-markdown.vue'
 import type { TourAnswer } from './tour-answer-parser'
 
 /**
  * One AI answer laid out as a tour: the big picture, then numbered stops (each one a button that
- * moves the replay to its event), then the closing line. `active` is the stop the replay shows.
+ * moves the replay to its event), then the closing line and a Start button for the guided tour.
+ * `active` is the stop the replay shows; `done` is false while the answer is still arriving.
  */
-defineProps<{ answer: TourAnswer; active: number }>()
+defineProps<{ answer: TourAnswer; active: number; done: boolean }>()
 const emit = defineEmits<{ go: [index: number] }>()
 const { t } = useI18n()
 </script>
@@ -25,6 +28,7 @@ const { t } = useI18n()
           i === active ? 'border-primary bg-primary/5' : 'border-transparent',
         ]"
         :data-active="i === active ? 'true' : 'false'"
+        :data-seq="stop.seq"
         data-testid="ask-ai-tour-stop"
       >
         <button
@@ -39,12 +43,20 @@ const { t } = useI18n()
             ]"
           >{{ i + 1 }}<span class="sr-only">.</span></span>
           <span class="min-w-0 flex-1 font-medium">{{ stop.title }}</span>
-          <span class="text-muted-foreground shrink-0 font-mono text-xs" aria-hidden="true">#{{ stop.seq }}</span>
-          <span class="sr-only">{{ t('ai.tour.goTo', { seq: stop.seq }) }}</span>
+          <span class="sr-only">{{ t('ai.tour.goTo') }}</span>
         </button>
         <AskAiMarkdown v-if="stop.body" :text="stop.body" class="pl-7.5" />
       </li>
     </ol>
     <AskAiMarkdown v-if="answer.outro" :text="answer.outro" />
+    <div v-if="done && answer.stops.length > 0" class="bg-muted/50 flex items-center justify-between gap-3 rounded-lg border p-2.5">
+      <span class="text-muted-foreground text-xs">{{ t('ai.tour.ready', { total: answer.stops.length }) }}</span>
+      <!-- One button whose label changes, so keyboard focus stays on it once the tour starts. -->
+      <Button size="sm" :variant="active === -1 ? 'default' : 'outline'" data-testid="ask-ai-tour-start" @click="emit('go', 0)">
+        <PlayIcon v-if="active === -1" />
+        <RotateCcwIcon v-else />
+        {{ active === -1 ? t('ai.tour.start') : t('ai.tour.restart') }}
+      </Button>
+    </div>
   </div>
 </template>

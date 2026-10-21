@@ -58,6 +58,7 @@ watch(
           v-if="message.content && answers.get(message.id)"
           :answer="answers.get(message.id)!"
           :active="tour.messageId === message.id ? tour.index : -1"
+          :done="!(streaming && i === messages.length - 1)"
           @go="emit('go', message.id, $event)"
         />
         <span v-else class="text-muted-foreground">{{ t('ai.thinking') }}</span>

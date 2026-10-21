@@ -22,7 +22,7 @@ describe('parseTourAnswer', () => {
         { seq: 3, title: 'The Script starts', body: 'Line 1 runs.' },
         { seq: 9, title: 'The promise Job runs', body: 'The microtask queue drains.' },
       ],
-      outro: '**Summary**\nJobs run before the next Task.',
+      outro: 'Jobs run before the next Task.',
     })
   })
 
@@ -31,6 +31,35 @@ describe('parseTourAnswer', () => {
     expect(parseTourAnswer(text, identity).stops.map((s) => [s.seq, s.title])).toEqual([
       [4, 'Colon'], [5, 'Bold'], [6, 'Dot'], [7, 'Dash'],
     ])
+  })
+
+  it('also reads the stop lines models write when they drift from the format', () => {
+    const text = [
+      '### Step #4: Labelled',
+      '## Bước #5 — Vietnamese label',
+      '**#6 — Bold line**',
+      '1. **#7** Numbered bold',
+      '- **#8**: Bullet bold',
+    ].join('\n')
+    expect(parseTourAnswer(text, identity).stops.map((s) => [s.seq, s.title])).toEqual([
+      [4, 'Labelled'], [5, 'Vietnamese label'], [6, 'Bold line'], [7, 'Numbered bold'], [8, 'Bullet bold'],
+    ])
+  })
+
+  it('drops parenthesized event numbers from prose but not from code', () => {
+    const out = parseTourAnswer('It resolves (#20, #21) at once (#7).\n## #3 Title (#3)\nSee `x(#1)` here (#4 và #5).', identity)
+    expect(out.intro).toBe('It resolves at once.')
+    expect(out.stops).toEqual([{ seq: 3, title: 'Title', body: 'See `x(#1)` here.' }])
+  })
+
+  it('keeps a non-summary heading after the stops as a bold line', () => {
+    expect(parseTourAnswer('## #3 A\na\n## Tóm lại\nend', identity).outro).toBe('end')
+    expect(parseTourAnswer('## #3 A\na\n## Why it matters\nend', identity).outro).toBe('**Why it matters**\nend')
+  })
+
+  it('keeps a sentence that merely starts with an event number as text', () => {
+    const out = parseTourAnswer('#3 runs before #4.\n- #5 is a Job.', identity)
+    expect(out.stops).toEqual([])
   })
 
   it('moves a stop to the step the replay can show, and keeps text without a Trace', () => {
