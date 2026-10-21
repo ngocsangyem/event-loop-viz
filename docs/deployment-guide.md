@@ -41,7 +41,9 @@ pnpm exec vite preview                # serves dist/ on http://localhost:4173
    `vercel link` once with the CLI).
 2. Leave the settings from `vercel.json` as they are (framework Vite, output `dist`). In Project
    Settings set the Node.js version to 24.x (the repo requires `^22.18.0 || >=24.12.0`). Vercel
-   detects pnpm from `pnpm-lock.yaml`.
+   detects pnpm from `pnpm-lock.yaml`; that pnpm then switches itself to the version pinned in
+   `packageManager` (12.14.0). Setting `ENABLE_EXPERIMENTAL_COREPACK=1` in Project Settings makes
+   Vercel use the pinned version directly.
 3. Production branch: `main`. Every pull request gets a preview deployment automatically once the
    Git integration is connected (the "preview deploys for PRs" requirement). Keep integration
    branches as preview branches.

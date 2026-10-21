@@ -43,8 +43,9 @@ candidate for v1.1 (see the roadmap).
 ## Prerequisites
 
 - Node.js `^22.18.0 || >=24.12.0` (CI uses 24)
-- pnpm 10.17.1 only. Do not use npm or yarn: the lockfile, the engine262 pin and the engine262
-  patch (ADR-0009, reapplied automatically on install) are managed by pnpm.
+- pnpm 12.14.0, pinned by `packageManager` in `package.json` (an older global pnpm switches to it
+  by itself; `corepack pnpm` also works). Do not use npm or yarn: the lockfile, the engine262 pin
+  and the engine262 patch (ADR-0009, reapplied automatically on install) are managed by pnpm.
 - `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440`: pnpm only resolves package versions that
   have been published for at least a day, and the lockfile must not contain newer ones.
 
