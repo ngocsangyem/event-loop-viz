@@ -10,7 +10,7 @@ import AskAiModelPicker from './ask-ai-model-picker.vue'
 import type { ApiKeyStore } from './api-key-store'
 import type { ModelInfo } from './openrouter-models'
 
-/** API key, where it is kept, and the model. Shown in place of the chat until a key exists. */
+/** API key, where it is kept, and the model: the body of the settings dialog. */
 const props = defineProps<{
   store: ApiKeyStore
   models: readonly ModelInfo[]
@@ -24,7 +24,7 @@ const reveal = shallowRef(false)
 </script>
 
 <template>
-  <section class="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-2" data-testid="ask-ai-settings">
+  <section class="flex flex-col gap-4" data-testid="ask-ai-settings">
     <p v-if="!store.key.value" class="text-sm">{{ t('ai.key.needed') }}</p>
 
     <div class="flex flex-col gap-1.5">
@@ -79,14 +79,14 @@ const reveal = shallowRef(false)
       </div>
     </div>
 
-    <p class="bg-muted text-muted-foreground rounded-lg p-2.5 text-xs">{{ t('ai.key.privacy') }}</p>
+    <p class="bg-muted text-foreground rounded-lg p-2.5 text-xs">{{ t('ai.key.privacy') }}</p>
 
     <div class="flex flex-col gap-1.5">
       <Label>{{ t('ai.models.label') }}</Label>
       <AskAiModelPicker v-model="model" :models="props.models" :status="modelStatus" @retry="emit('retryModels')" />
     </div>
 
-    <div class="mt-auto flex items-center justify-between gap-2 pb-2">
+    <div class="flex items-center justify-between gap-2 pt-1">
       <Button variant="outline" size="sm" :disabled="!store.key.value" data-testid="ask-ai-forget" @click="store.forget()">
         {{ t('ai.key.forget') }}
       </Button>

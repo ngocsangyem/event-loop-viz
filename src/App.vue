@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue'
+import { useElementSize } from '@vueuse/core'
 import { findExample } from '@/examples/example-library'
 import { decodeShareFragment } from '@/share/share-link-codec'
 import { useRunSession } from '@/use-run-session'
@@ -7,6 +8,7 @@ import { useShareLink } from '@/use-share-link'
 import { Card, CardContent } from '@/components/ui/card'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import AppHeader from '@/renderer/app-header.vue'
+import AskAiLauncher from '@/renderer/ai/ask-ai-launcher.vue'
 import EditorCard from '@/renderer/editor-card.vue'
 import ConsolePanel from '@/renderer/console-panel.vue'
 import TransportBar from '@/renderer/transport-bar.vue'
@@ -31,7 +33,7 @@ import type { SameView } from '@/renderer/use-playback'
 const SceneView = defineAsyncComponent(() => import('@/renderer/scene/event-loop-scene.vue'))
 const EventLoopDiagram = defineAsyncComponent(() => import('@/renderer/diagram/event-loop-diagram.vue'))
 // Ask AI is opened on demand, so its code loads only then.
-const AskAiSheet = defineAsyncComponent(() => import('@/renderer/ai/ask-ai-sheet.vue'))
+const AskAiAssistant = defineAsyncComponent(() => import('@/renderer/ai/ask-ai-assistant.vue'))
 
 const shared = decodeShareFragment(window.location.hash)
 /** A share link runs on load; that Run must not move focus the user never placed. */
@@ -42,12 +44,26 @@ const { choice: theme } = useColorTheme()
 const view = useVisualizerView()
 const locale = useLocale()
 const askOpen = shallowRef(false)
-/** Mounted on first open and kept, so a conversation survives closing the sheet. */
+/** Mounted on first open and kept, so a conversation survives minimizing the panel. */
 const askMounted = shallowRef(false)
-function openAsk() {
+const launcher = useTemplateRef('launcher')
+function toggleAsk() {
   askMounted.value = true
-  askOpen.value = true
+  askOpen.value = !askOpen.value
 }
+function focusLauncher() {
+  ;(launcher.value?.$el as HTMLElement | undefined)?.focus()
+}
+/** The AI tour wins over a running replay: playback pauses, then the replay shows the stop. */
+function seekFromTour(seq: number) {
+  transport.value?.pause()
+  position.value = seq
+}
+/** The launcher floats just above the sticky playback bar, which sits 0.75rem off the bottom. */
+const transportCard = useTemplateRef('transportCard')
+const { height: transportHeight } = useElementSize(transportCard, undefined, { box: 'border-box' })
+// Before the first measurement, assume the bar's usual desktop height so nothing overlaps it.
+const dockStyle = computed(() => ({ '--ai-dock': `${Math.round(transportHeight.value || 96) + 24}px` }))
 const autoplay = useAutoplayPreference()
 
 /**
@@ -111,9 +127,8 @@ onMounted(() => {
 
 <template>
   <TooltipProvider :delay-duration="300">
-    <main class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4">
-      <AppHeader v-model:view="view" v-model:theme="theme" v-model:locale="locale" :share-url="shareUrl" :share-copied="shareCopied" @share="share" @ask="openAsk" />
-      <AskAiSheet v-if="askMounted" v-model:open="askOpen" :script="script" :events="events" :position="position" :state="replayState" />
+    <main class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4" :style="dockStyle">
+      <AppHeader v-model:view="view" v-model:theme="theme" v-model:locale="locale" :share-url="shareUrl" :share-copied="shareCopied" @share="share" />
       <StepAnnouncer :events="events" :position="position" />
       <HaltBanner :halt="halt" />
       <TimingSensitiveBadge :timing-sensitive="trace?.header.timingSensitive ?? false" />
@@ -162,12 +177,28 @@ onMounted(() => {
         </Card>
       </div>
 
-      <Card size="sm" class="bg-card/90 sticky bottom-3 z-10 shadow-lg backdrop-blur">
+      <Card ref="transportCard" size="sm" class="bg-card/90 sticky bottom-3 z-10 shadow-lg backdrop-blur">
         <CardContent>
           <TransportBar ref="transport" v-model="position" v-model:autoplay="autoplay"
             :same-view="sameView" :player="player" :events="events" />
         </CardContent>
       </Card>
+
+      <!-- The chat assistant: launcher in the bottom-right corner, the tour beside it when minimized. -->
+      <div class="fixed right-4 bottom-(--ai-dock) z-40 flex items-end gap-2">
+        <AskAiAssistant
+          v-if="askMounted"
+          v-model:open="askOpen"
+          :script="script"
+          :events="events"
+          :position="position"
+          :state="replayState"
+          :player="player"
+          @seek="seekFromTour"
+          @minimize="focusLauncher"
+        />
+        <AskAiLauncher ref="launcher" :open="askOpen" @toggle="toggleAsk" />
+      </div>
 
       <!-- scroll-mb keeps a focused row or button clear of the sticky playback bar above. -->
       <Card v-if="trace" size="sm" role="region" aria-label="Trace events" class="[&_button]:scroll-mb-40 [&_a]:scroll-mb-40">

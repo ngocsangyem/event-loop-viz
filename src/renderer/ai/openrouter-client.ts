@@ -3,7 +3,7 @@ import { createSseParser } from './sse-parser'
 
 const API = 'https://openrouter.ai/api/v1'
 /** Caps the cost of one answer; explanations are short. */
-const MAX_OUTPUT_TOKENS = 1200
+const MAX_OUTPUT_TOKENS = 2400
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'

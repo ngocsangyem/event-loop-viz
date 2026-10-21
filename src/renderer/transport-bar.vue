@@ -44,6 +44,7 @@ const toolbar = useTemplateRef<HTMLElement>('toolbar')
 /** Lets the app start playback and hand keyboard focus to the controls once a Trace exists. */
 defineExpose({
   play,
+  pause,
   // Next is disabled when the Trace opens at its end; fall back to the first enabled control.
   focusStep: () =>
     toolbar.value

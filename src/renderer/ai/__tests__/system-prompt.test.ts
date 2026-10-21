@@ -28,6 +28,13 @@ describe('buildSystemPrompt', () => {
     }
   })
 
+  it('asks for a tour of the whole Run with stops that name Trace events', () => {
+    const prompt = buildSystemPrompt('vi')
+    expect(prompt).toContain('Explain how the whole Script runs from start to end')
+    expect(prompt).toContain('"## #<event number> <short title>"')
+    expect(prompt).toContain('Use only event numbers listed in the Trace')
+  })
+
   it('stays compact', () => {
     expect(buildSystemPrompt('vi').length).toBeLessThan(4500)
   })

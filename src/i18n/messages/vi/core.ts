@@ -28,6 +28,5 @@ export default {
     themeLight: 'Sáng',
     themeDark: 'Tối',
     language: 'Ngôn ngữ',
-    askAi: 'Hỏi AI',
   },
 } satisfies typeof en

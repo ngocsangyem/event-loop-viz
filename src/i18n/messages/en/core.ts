@@ -28,6 +28,5 @@ export default {
     themeLight: 'Light',
     themeDark: 'Dark',
     language: 'Language',
-    askAi: 'Ask AI',
   },
 }

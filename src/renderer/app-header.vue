@@ -3,7 +3,7 @@ import { shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   BoxIcon, LanguagesIcon, LayoutGridIcon, MonitorIcon, MoonIcon, RefreshCwIcon, Share2Icon,
-  SparklesIcon, SunIcon, WorkflowIcon,
+  SunIcon, WorkflowIcon,
 } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,12 +15,12 @@ import type { Locale } from '@/i18n/locales'
 import type { ThemeChoice } from './use-color-theme'
 import type { VisualizerView } from './use-visualizer-view'
 
-/** Title, the Panels/Diagram/3D view switch, Ask AI, Share, language and colour theme. */
+/** Title, the Panels/Diagram/3D view switch, Share, language and colour theme. */
 defineProps<{ shareUrl: string | null; shareCopied: boolean }>()
 const view = defineModel<VisualizerView>('view', { required: true })
 const theme = defineModel<ThemeChoice>('theme', { required: true })
 const locale = defineModel<Locale>('locale', { required: true })
-const emit = defineEmits<{ share: []; ask: [] }>()
+const emit = defineEmits<{ share: [] }>()
 
 const { t } = useI18n()
 const shareOpen = shallowRef(false)
@@ -71,10 +71,6 @@ const THEMES = [
         {{ t(option.label) }}
       </ToggleGroupItem>
     </ToggleGroup>
-    <Button size="sm" data-testid="ask-ai" @click="emit('ask')">
-      <SparklesIcon />
-      {{ t('header.askAi') }}
-    </Button>
     <Popover v-model:open="shareOpen">
       <PopoverTrigger as-child>
         <Button variant="outline" size="sm" @click="emit('share')">

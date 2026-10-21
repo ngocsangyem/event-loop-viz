@@ -5,15 +5,20 @@ import type { TraceEvent } from '@/trace/trace-event'
 export const MAX_SCRIPT_CHARS = 6000
 export const MAX_CONSOLE_LINES = 20
 export const MAX_CONSOLE_LINE_CHARS = 120
-export const PREVIOUS_EVENT_COUNT = 5
+/** Visible events listed for the whole Run; a longer Trace keeps its start and says how much is cut. */
+export const MAX_TRACE_EVENTS = 240
 const MAX_QUEUE_ITEMS = 12
-const MAX_EXPLANATION_CHARS = 260
+const MAX_EXPLANATION_CHARS = 180
 
-export interface StepContextInput {
+export interface RunContextInput {
   script: string
   events: readonly TraceEvent[]
+  /** The learner's playhead. */
   position: number
+  /** Replay state at the playhead. */
   state: ReplayState
+  /** Replay state after the last event: the Run's whole console output. */
+  finalState: ReplayState
 }
 
 /** What the context chip shows: the step the AI will see, or null before any Run. */
@@ -57,7 +62,7 @@ function list<T>(items: readonly T[], show: (item: T) => string): string {
 }
 
 function consoleLines(state: ReplayState): string {
-  if (state.console.length === 0) return 'nothing printed yet'
+  if (state.console.length === 0) return 'nothing printed'
   const tail = state.console.slice(-MAX_CONSOLE_LINES)
   const lines = tail.map((entry) => {
     switch (entry.kind) {
@@ -103,26 +108,32 @@ function summarizeState(state: ReplayState): string {
     .join('\n')
 }
 
+function traceListing(events: readonly TraceEvent[]): string {
+  const visible = events.filter((e) => e.visible)
+  const shown = visible.slice(0, MAX_TRACE_EVENTS).map((e) => describeEvent(e, events))
+  if (visible.length > MAX_TRACE_EVENTS) {
+    shown.push(`(Trace truncated: ${visible.length - MAX_TRACE_EVENTS} more visible events not shown)`)
+  }
+  return shown.join('\n')
+}
+
 /**
- * The text the AI reads with each question, rebuilt at the current playhead: the Script, the
- * current event with the built-in explanation, the replay state and the last few visible events.
- * Pure, so it can be unit tested and never touches the DOM.
+ * The text the AI reads with each question: the Script, every visible event of the Run with its
+ * built-in explanation, the Run's output, and where the learner's playhead is. The whole Run is
+ * there so an answer can walk through it stop by stop. Pure, so it can be unit tested.
  */
-export function buildStepContext({ script, events, position, state }: StepContextInput): string {
+export function buildRunContext({ script, events, position, state, finalState }: RunContextInput): string {
   const parts = [`Script (line numbers added):\n${numberedScript(script)}`]
   const event = events[position]
   if (!event) {
-    parts.push('No Run yet: there is no Trace, so no step to explain. Answer from the Script alone and say so.')
+    parts.push('No Run yet: there is no Trace, so no steps to point at. Answer from the Script alone and say so.')
     return parts.join('\n\n')
   }
-  parts.push(`Current step:\n${describeEvent(event, events)}`)
-  const previous = events
-    .slice(0, position)
-    .filter((e) => e.visible)
-    .slice(-PREVIOUS_EVENT_COUNT)
-  if (previous.length > 0) {
-    parts.push(`Previous visible events (oldest first):\n${previous.map((e) => describeEvent(e, events)).join('\n')}`)
-  }
-  parts.push(`Replay state at this step:\n${summarizeState(state)}`)
+  const visibleCount = events.filter((e) => e.visible).length
+  parts.push(`Trace of the whole Run (${visibleCount} visible events, oldest first):\n${traceListing(events)}`)
+  parts.push(`Console output of the whole Run:\n${consoleLines(finalState)}`)
+  if (finalState.halted) parts.push(`The Run halted: ${finalState.halted.reason}`)
+  parts.push(`The learner's playhead is at:\n${describeEvent(event, events)}`)
+  parts.push(`Replay state at the playhead:\n${summarizeState(state)}`)
   return parts.join('\n\n')
 }
