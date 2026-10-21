@@ -1,0 +1,212 @@
+/*
+ * The event-loop diagram. Quiet by default: monochrome cards and connectors on shadcn tokens.
+ * Colour appears only for what happens on a flow: the signal (amber), a card the signal has
+ * reached (green) and a refusal (red). Every line and border keeps 3:1 against the diagram
+ * background in both themes. The lit look is plain CSS keyed off data attributes, so a still
+ * diagram (reduced motion, seeking) carries the same meaning as an animated one.
+ */
+.diagram-root {
+  --diagram-bg: color-mix(in oklab, var(--muted) 35%, var(--card));
+  --diagram-line: var(--muted-foreground);
+  --diagram-card-line: color-mix(in oklab, var(--muted-foreground) 88%, var(--card));
+  --diagram-signal: #b45309;
+  --diagram-on-signal: #ffffff;
+  --diagram-pass: #15803d;
+  --diagram-refuse: #b91c1c;
+  background: var(--diagram-bg);
+  border-radius: var(--radius-lg, 0.75rem);
+}
+.dark .diagram-root {
+  --diagram-signal: #fbbf24;
+  --diagram-on-signal: #1c1917;
+  --diagram-pass: #4ade80;
+  --diagram-refuse: #f87171;
+}
+
+.diagram-root svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Text */
+.diagram-title {
+  fill: var(--foreground);
+  font-weight: 600;
+}
+.diagram-strong {
+  fill: var(--foreground);
+}
+.diagram-muted {
+  fill: var(--muted-foreground);
+}
+.diagram-mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+.diagram-row-text {
+  fill: var(--foreground);
+}
+.diagram-row[data-tone='warn'] .diagram-row-text {
+  fill: var(--diagram-signal);
+}
+.diagram-row[data-tone='error'] .diagram-row-text {
+  fill: var(--diagram-refuse);
+}
+
+/* Cards */
+.diagram-card {
+  fill: var(--card);
+  stroke: var(--diagram-card-line);
+  stroke-width: 1.25;
+}
+.diagram-badge {
+  fill: var(--muted);
+}
+.diagram-icon {
+  fill: none;
+  stroke: var(--foreground);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.diagram-row-box {
+  fill: var(--muted);
+}
+.diagram-row[data-active='true'] .diagram-row-box {
+  fill: color-mix(in oklab, var(--primary) 12%, var(--card));
+  stroke: var(--primary);
+  stroke-width: 1.25;
+}
+
+/* The border drawn in where the arrow meets a card; two halves growing apart from that point. */
+.diagram-draw {
+  fill: none;
+  stroke: var(--diagram-pass);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-dasharray: var(--outline);
+  stroke-dashoffset: var(--outline);
+  opacity: 0;
+}
+.diagram-node[data-lit='true'] .diagram-draw {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+.diagram-node[data-refused='true'] .diagram-draw {
+  stroke: var(--diagram-refuse);
+}
+
+/* Connectors */
+.diagram-line {
+  fill: none;
+  stroke: var(--diagram-line);
+  stroke-width: 1.5;
+}
+.diagram-head {
+  fill: var(--diagram-line);
+}
+.diagram-edge-label {
+  fill: var(--muted-foreground);
+  paint-order: stroke;
+  stroke: var(--diagram-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.diagram-line-hot {
+  fill: none;
+  stroke: var(--diagram-signal);
+  stroke-width: 2.25;
+}
+.diagram-head-hot {
+  fill: var(--diagram-signal);
+}
+.diagram-pill-disc {
+  fill: var(--diagram-signal);
+}
+.diagram-pill-text {
+  fill: var(--diagram-on-signal);
+  font-weight: 700;
+}
+.diagram-pill-cross {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.diagram-edge[data-refused='true'] .diagram-line-hot {
+  stroke: var(--diagram-refuse);
+}
+.diagram-edge[data-refused='true'] .diagram-head-hot,
+.diagram-edge[data-refused='true'] .diagram-pill-disc {
+  fill: var(--diagram-refuse);
+}
+.diagram-line-hot,
+.diagram-head-hot,
+.diagram-pill {
+  opacity: 0;
+}
+.diagram-edge[data-active='true'] .diagram-line-hot,
+.diagram-edge[data-active='true'] .diagram-head-hot,
+.diagram-edge[data-active='true'] .diagram-pill {
+  opacity: 1;
+}
+
+/* The travelling signal: only ever visible while a Web Animation moves it. */
+.diagram-signal {
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--diagram-signal));
+}
+.diagram-signal circle {
+  fill: var(--diagram-signal);
+}
+.diagram-root[data-refused='true'] .diagram-signal {
+  filter: drop-shadow(0 0 4px var(--diagram-refuse));
+}
+.diagram-root[data-refused='true'] .diagram-signal circle {
+  fill: var(--diagram-refuse);
+}
+
+/* Event Loop ring */
+.diagram-ring-arc {
+  fill: none;
+  stroke: color-mix(in oklab, var(--muted-foreground) 35%, var(--card));
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.diagram-ring-arc[data-on='true'] {
+  stroke: var(--primary);
+}
+.diagram-ring-dot {
+  fill: var(--card);
+  stroke: var(--primary);
+  stroke-width: 2.5;
+}
+.diagram-ring-hub {
+  fill: color-mix(in oklab, var(--muted-foreground) 45%, var(--card));
+}
+.diagram-ring-hub[data-on='true'] {
+  fill: var(--primary);
+}
+
+/* Motion: fades only, and none under reduced motion, where the diagram is a still image. */
+@media (prefers-reduced-motion: no-preference) {
+  .diagram-item-enter-active,
+  .diagram-item-leave-active {
+    transition: opacity 200ms ease;
+  }
+  .diagram-item-enter-from,
+  .diagram-item-leave-to {
+    opacity: 0;
+  }
+  .diagram-line-hot,
+  .diagram-head-hot,
+  .diagram-pill,
+  .diagram-draw {
+    transition: opacity 160ms ease;
+  }
+  .diagram-pointer {
+    transition: transform 600ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}

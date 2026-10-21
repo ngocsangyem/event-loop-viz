@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { TimerIcon } from '@lucide/vue'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 defineProps<{ timingSensitive: boolean }>()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -10,11 +12,11 @@ defineProps<{ timingSensitive: boolean }>()
     v-if="timingSensitive"
     role="status"
     data-testid="timing-badge"
-    title="A timer was due within 2 ms of a compute stretch ending, so Chrome's real timing could order this Run differently."
+    :title="t('timing.hint')"
   >
     <TimerIcon />
     <AlertDescription>
-      Timing-sensitive: ordering depends on compute time and may differ in your browser.
+      {{ t('timing.badge') }}
     </AlertDescription>
   </Alert>
 </template>

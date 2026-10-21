@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Component } from 'vue'
 import {
   ChevronFirstIcon, ChevronLastIcon, ChevronsLeftIcon, ChevronsRightIcon, PauseIcon, PlayIcon,
@@ -17,6 +18,8 @@ import { SPEEDS, usePlayback } from './use-playback'
 import type { SameView, Speed } from './use-playback'
 import { useTraceNavigation } from './use-trace-navigation'
 import { useTransportShortcuts } from './use-transport-shortcuts'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   player: Player | null
@@ -50,6 +53,7 @@ defineExpose({
 
 interface Control {
   id: string
+  /** Message key of the control's name. */
   label: string
   icon: Component
   shortcut: string
@@ -59,16 +63,16 @@ interface Control {
 
 /** Back controls sit before Play/Pause, forward controls after it. */
 const BACK: Control[] = [
-  { id: 'start', label: 'Go to start', icon: ChevronFirstIcon, shortcut: 'Home', disabled: () => atStart.value, run: () => nav.jump('first') },
-  { id: 'back-task', label: 'Back one Task', icon: ChevronsLeftIcon, shortcut: 'Alt+←', disabled: () => atStart.value, run: () => nav.jumpBy('Task', 'prev') },
-  { id: 'back-tick', label: 'Back one Tick', icon: SkipBackIcon, shortcut: 'Shift+←', disabled: () => atStart.value, run: () => nav.jumpBy('Tick', 'prev') },
-  { id: 'prev', label: 'Prev', icon: StepBackIcon, shortcut: '←', disabled: () => atStart.value, run: () => nav.step('prev') },
+  { id: 'start', label: 'transport.start', icon: ChevronFirstIcon, shortcut: 'Home', disabled: () => atStart.value, run: () => nav.jump('first') },
+  { id: 'back-task', label: 'transport.backTask', icon: ChevronsLeftIcon, shortcut: 'Alt+←', disabled: () => atStart.value, run: () => nav.jumpBy('Task', 'prev') },
+  { id: 'back-tick', label: 'transport.backTick', icon: SkipBackIcon, shortcut: 'Shift+←', disabled: () => atStart.value, run: () => nav.jumpBy('Tick', 'prev') },
+  { id: 'prev', label: 'transport.prev', icon: StepBackIcon, shortcut: '←', disabled: () => atStart.value, run: () => nav.step('prev') },
 ]
 const FORWARD: Control[] = [
-  { id: 'next', label: 'Next', icon: StepForwardIcon, shortcut: '→', disabled: () => atEnd.value, run: () => nav.step('next') },
-  { id: 'forward-tick', label: 'Forward one Tick', icon: SkipForwardIcon, shortcut: 'Shift+→', disabled: () => atEnd.value, run: () => nav.jumpBy('Tick', 'next') },
-  { id: 'forward-task', label: 'Forward one Task', icon: ChevronsRightIcon, shortcut: 'Alt+→', disabled: () => atEnd.value, run: () => nav.jumpBy('Task', 'next') },
-  { id: 'end', label: 'Go to end', icon: ChevronLastIcon, shortcut: 'End', disabled: () => atEnd.value, run: () => nav.jump('last') },
+  { id: 'next', label: 'transport.next', icon: StepForwardIcon, shortcut: '→', disabled: () => atEnd.value, run: () => nav.step('next') },
+  { id: 'forward-tick', label: 'transport.forwardTick', icon: SkipForwardIcon, shortcut: 'Shift+→', disabled: () => atEnd.value, run: () => nav.jumpBy('Tick', 'next') },
+  { id: 'forward-task', label: 'transport.forwardTask', icon: ChevronsRightIcon, shortcut: 'Alt+→', disabled: () => atEnd.value, run: () => nav.jumpBy('Task', 'next') },
+  { id: 'end', label: 'transport.end', icon: ChevronLastIcon, shortcut: 'End', disabled: () => atEnd.value, run: () => nav.jump('last') },
 ]
 
 /** The speed Select works in strings; playback keeps the number. */
@@ -82,7 +86,7 @@ const speedText = computed({
   <div
     ref="toolbar"
     role="toolbar"
-    aria-label="Playback"
+    :aria-label="t('transport.region')"
     data-testid="transport-bar"
     class="flex flex-col gap-1"
   >
@@ -91,7 +95,7 @@ const speedText = computed({
         v-for="control in BACK"
         :key="control.id"
         :id="control.id"
-        :label="control.label"
+        :label="t(control.label)"
         :icon="control.icon"
         :shortcut="control.shortcut"
         :disabled="control.disabled()"
@@ -107,13 +111,13 @@ const speedText = computed({
       >
         <PauseIcon v-if="playing" />
         <PlayIcon v-else />
-        {{ playing ? 'Pause' : 'Play' }}
+        {{ playing ? t('transport.pause') : t('transport.play') }}
       </Button>
       <TransportControlButton
         v-for="control in FORWARD"
         :key="control.id"
         :id="control.id"
-        :label="control.label"
+        :label="t(control.label)"
         :icon="control.icon"
         :shortcut="control.shortcut"
         :disabled="control.disabled()"
@@ -121,7 +125,7 @@ const speedText = computed({
       />
       <Separator orientation="vertical" class="mx-1 !h-5" />
       <Select v-model="speedText" :disabled="!player">
-        <SelectTrigger size="sm" aria-label="Speed" class="w-20 max-sm:h-11!">
+        <SelectTrigger size="sm" :aria-label="t('transport.speed')" class="w-20 max-sm:h-11!">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -134,10 +138,10 @@ const speedText = computed({
         variant="outline"
         class="max-sm:h-11!"
         data-control="autoplay"
-        title="Start playing as soon as a Run finishes"
+        :title="t('transport.autostartHint')"
       >
         <RepeatIcon />
-        Autostart
+        {{ t('transport.autostart') }}
       </Toggle>
     </div>
     <TimelineScrubber v-model="position" :player="player" :events="events" @scrub="pause" />

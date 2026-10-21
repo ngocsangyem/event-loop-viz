@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, useTemplateRef } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue'
 import { findExample } from '@/examples/example-library'
 import { decodeShareFragment } from '@/share/share-link-codec'
 import { useRunSession } from '@/use-run-session'
@@ -22,12 +22,16 @@ import WebApisPanel from '@/renderer/panels/web-apis-panel.vue'
 import EventLoopPanel from '@/renderer/panels/event-loop-panel.vue'
 import { useColorTheme } from '@/renderer/use-color-theme'
 import { useVisualizerView } from '@/renderer/use-visualizer-view'
+import { useLocale } from '@/renderer/use-locale'
 import { useAutoplayPreference } from '@/renderer/use-autoplay-preference'
 import { panelSignature } from '@/renderer/panels/panel-view-model'
 import type { SameView } from '@/renderer/use-playback'
 
-// The 3D Scene is opt-in, so its code and styles load only when that view is picked.
+// The 3D Scene and the Diagram are opt-in, so their code and styles load only when picked.
 const SceneView = defineAsyncComponent(() => import('@/renderer/scene/event-loop-scene.vue'))
+const EventLoopDiagram = defineAsyncComponent(() => import('@/renderer/diagram/event-loop-diagram.vue'))
+// Ask AI is opened on demand, so its code loads only then.
+const AskAiSheet = defineAsyncComponent(() => import('@/renderer/ai/ask-ai-sheet.vue'))
 
 const shared = decodeShareFragment(window.location.hash)
 /** A share link runs on load; that Run must not move focus the user never placed. */
@@ -36,6 +40,14 @@ const editor = useTemplateRef('editor')
 const transport = useTemplateRef('transport')
 const { choice: theme } = useColorTheme()
 const view = useVisualizerView()
+const locale = useLocale()
+const askOpen = shallowRef(false)
+/** Mounted on first open and kept, so a conversation survives closing the sheet. */
+const askMounted = shallowRef(false)
+function openAsk() {
+  askMounted.value = true
+  askOpen.value = true
+}
 const autoplay = useAutoplayPreference()
 
 /**
@@ -100,7 +112,8 @@ onMounted(() => {
 <template>
   <TooltipProvider :delay-duration="300">
     <main class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4">
-      <AppHeader v-model:view="view" v-model:theme="theme" :share-url="shareUrl" :share-copied="shareCopied" @share="share" />
+      <AppHeader v-model:view="view" v-model:theme="theme" v-model:locale="locale" :share-url="shareUrl" :share-copied="shareCopied" @share="share" @ask="openAsk" />
+      <AskAiSheet v-if="askMounted" v-model:open="askOpen" :script="script" :events="events" :position="position" :state="replayState" />
       <StepAnnouncer :events="events" :position="position" />
       <HaltBanner :halt="halt" />
       <TimingSensitiveBadge :timing-sensitive="trace?.header.timingSensitive ?? false" />
@@ -137,6 +150,11 @@ onMounted(() => {
             <EventLoopPanel :state="replayState" />
           </div>
         </template>
+        <Card v-else-if="view === 'diagram'" size="sm" class="min-w-0 md:col-span-2 xl:col-span-8">
+          <CardContent>
+            <EventLoopDiagram :state="replayState" :event="events[position]" />
+          </CardContent>
+        </Card>
         <Card v-else size="sm" class="min-w-0 md:col-span-2 xl:col-span-8">
           <CardContent>
             <SceneView :state="replayState" :previous="previousReplayState" />

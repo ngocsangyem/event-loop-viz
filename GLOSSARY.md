@@ -74,7 +74,11 @@ _Avoid_: reference, ground truth (alone)
 
 **Scene**:
 The anatomy illustration of the event loop at one position in the Trace, fully determined by that position.
-_Avoid_: diagram, canvas, animation
+_Avoid_: canvas, animation
+
+**Diagram**:
+The architecture-style view of the event loop: cards joined by connectors, where a signal travels the connectors the current Trace Event uses. Its cards are fully determined by the position; only the signal depends on the step that led there.
+_Avoid_: Scene, flowchart
 
 **Timing-sensitive Run**:
 A Run whose ordering depends on how long code takes to execute, so it may diverge from the Oracle.

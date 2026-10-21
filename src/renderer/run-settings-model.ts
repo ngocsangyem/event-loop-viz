@@ -31,17 +31,21 @@ export function updateSetting(
   return Object.keys(nextBudgets).length > 0 ? { ...rest, budgets: nextBudgets } : rest
 }
 
-const BUDGET_NAMES: Record<Exclude<HaltReason, 'natural'>, { name: string; unit: string }> = {
-  nodes: { name: 'node', unit: 'nodes' },
-  tasks: { name: 'Task', unit: 'Tasks' },
-  'virtual-time': { name: 'virtual time', unit: 'ms' },
-  events: { name: 'event', unit: 'events' },
-}
+/** The slice of vue-i18n's `t` the Halt message needs, so the model stays free of Vue. */
+type Translate = (key: string, named?: Record<string, unknown>) => string
 
-/** The sentence for the Halt banner; null when the Run ended on its own. */
-export function haltMessage(reason: HaltReason, limit?: number): string | null {
+/**
+ * The sentence for the Halt banner in the given language; null when the Run ended on its own.
+ * The limit is grouped the way that language writes numbers.
+ */
+export function haltMessage(
+  reason: HaltReason,
+  limit: number | undefined,
+  t: Translate,
+  locale: string,
+): string | null {
   if (reason === 'natural') return null
-  const { name, unit } = BUDGET_NAMES[reason]
-  const amount = limit === undefined ? '' : ` (${limit.toLocaleString('en-US')} ${unit})`
-  return `Halted: the ${name} Budget${amount} was exceeded.`
+  const name = t(`halt.name.${reason}`)
+  if (limit === undefined) return t('halt.noLimit', { name })
+  return t('halt.withLimit', { name, limit: limit.toLocaleString(locale), unit: t(`halt.unit.${reason}`) })
 }

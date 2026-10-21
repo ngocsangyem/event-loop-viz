@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ChevronDownIcon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,6 +9,13 @@ import {
 
 defineProps<{ examples: readonly { id: string; title: string; description: string }[] }>()
 const emit = defineEmits<{ load: [id: string] }>()
+const { t, te } = useI18n()
+
+/** Example ids are kebab-case; message keys are camelCase. Falls back to the library's English. */
+function text(id: string, field: 'title' | 'description', fallback: string): string {
+  const key = `examples.items.${id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase())}.${field}`
+  return te(key) ? t(key) : fallback
+}
 </script>
 
 <template>
@@ -15,12 +23,12 @@ const emit = defineEmits<{ load: [id: string] }>()
   <DropdownMenu :modal="false">
     <DropdownMenuTrigger as-child>
       <Button variant="outline" size="sm" data-testid="example-library">
-        Examples
+        {{ t('examples.button') }}
         <ChevronDownIcon class="text-muted-foreground" />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start" class="w-80">
-      <DropdownMenuLabel>Load an example Script</DropdownMenuLabel>
+      <DropdownMenuLabel>{{ t('examples.menuLabel') }}</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem
         v-for="example in examples"
@@ -29,8 +37,8 @@ const emit = defineEmits<{ load: [id: string] }>()
         class="flex-col items-start gap-0.5"
         @select="emit('load', example.id)"
       >
-        <span class="font-medium">{{ example.title }}</span>
-        <span class="text-muted-foreground text-xs">{{ example.description }}</span>
+        <span class="font-medium">{{ text(example.id, 'title', example.title) }}</span>
+        <span class="text-muted-foreground text-xs">{{ text(example.id, 'description', example.description) }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

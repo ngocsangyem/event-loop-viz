@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { EVENT_FAMILIES, eventFamily } from '../player/event-family'
 import type { EventFamily } from '../player/event-family'
 import type { TraceEvent } from '../trace/trace-event'
@@ -10,6 +11,7 @@ import { Toggle } from '@/components/ui/toggle'
 import { cn } from '@/lib/utils'
 
 const props = defineProps<{ events: readonly TraceEvent[] }>()
+const { t } = useI18n()
 /** Playhead: the selected event. Clicking a row moves it there. */
 const position = defineModel<number>({ required: true })
 /** Reveals Bookkeeping Events in the list and makes them steppable (the parent follows this). */
@@ -75,10 +77,10 @@ watch([position, () => rows.value.length], async () => {
 </script>
 
 <template>
-  <section aria-label="Events" class="flex min-w-0 flex-col gap-2">
+  <section :aria-label="t('eventList.region')" class="flex min-w-0 flex-col gap-2">
     <div
       role="group"
-      aria-label="Filter by family"
+      :aria-label="t('eventList.filter')"
       data-testid="family-filters"
       class="flex flex-wrap items-center gap-1"
     >
@@ -95,7 +97,7 @@ watch([position, () => rows.value.length], async () => {
       </Toggle>
       <div class="ml-auto flex items-center gap-2">
         <Checkbox id="show-all-events" v-model="showAll" />
-        <Label for="show-all-events" class="text-xs">Show all events</Label>
+        <Label for="show-all-events" class="text-xs">{{ t('eventList.showAll') }}</Label>
       </div>
     </div>
     <div

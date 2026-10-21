@@ -2,12 +2,14 @@ import { test as base } from '@playwright/test'
 
 /**
  * The app auto-plays a Trace after Run. Specs step through Traces by hand, so they start with
- * auto-play off; a spec that covers auto-play turns it back on itself.
+ * auto-play off; a spec that covers auto-play turns it back on itself. Specs read English text,
+ * so the UI starts in English whatever the browser's language; a spec may switch it.
  */
 export const test = base.extend({
   page: async ({ page }, use) => {
     await page.addInitScript(() => {
       if (localStorage.getItem('elv-autoplay') === null) localStorage.setItem('elv-autoplay', 'off')
+      if (localStorage.getItem('elv-locale') === null) localStorage.setItem('elv-locale', 'en')
     })
     await use(page)
   },

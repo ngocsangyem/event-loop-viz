@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ReplayState } from '../../player/replay-state'
 import { timerShelfOf } from '../scene/timer-shelf-model'
 import PanelCard from './panel-card.vue'
@@ -7,6 +8,7 @@ import QueueList from './queue-list.vue'
 import type { QueueItem } from './queue-list.vue'
 
 const props = defineProps<{ state: ReplayState }>()
+const { t } = useI18n()
 
 /** Pending timers, soonest due first. */
 const items = computed(() =>
@@ -14,7 +16,7 @@ const items = computed(() =>
     (timer): QueueItem => ({
       id: timer.tid,
       label: `${timer.repeat ? 'setInterval' : 'setTimeout'} ${timer.tid}`,
-      detail: `due ${timer.due}`,
+      detail: t('panels.due', { due: timer.due }),
     }),
   ),
 )
@@ -22,10 +24,10 @@ const items = computed(() =>
 
 <template>
   <PanelCard
-    title="Web APIs"
-    info="Timers the host is holding. When a timer is due on the Virtual Clock, its callback joins the Task Queue."
+    :title="t('panels.webApis.title')"
+    :info="t('panels.webApis.info')"
     :count="items.length"
   >
-    <QueueList :items="items" empty="No pending timers" testid="panel-web-apis" />
+    <QueueList :items="items" :empty="t('panels.webApis.empty')" testid="panel-web-apis" />
   </PanelCard>
 </template>

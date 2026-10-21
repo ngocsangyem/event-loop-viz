@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { explainEvent } from '../player/explain-event'
+import { useI18n } from 'vue-i18n'
+import { explainEvent, phrasesFor } from '../player/explain-event'
+import type { ExplainLocale } from '../player/explain-event'
 import type { TraceEvent } from '../trace/trace-event'
 
 const props = defineProps<{ events: readonly TraceEvent[]; position: number }>()
 
+const { locale } = useI18n()
+
 const text = computed(() => {
   const event = props.events[props.position]
-  return event ? explainEvent(event, props.events).text : ''
+  return event
+    ? explainEvent(event, props.events, phrasesFor(locale.value as ExplainLocale)).text
+    : ''
 })
 </script>
 

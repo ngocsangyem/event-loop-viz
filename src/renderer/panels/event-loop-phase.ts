@@ -10,9 +10,10 @@ export function loopPhaseOf(state: ReplayState): LoopPhase {
   return 'idle'
 }
 
-export const LOOP_PHASE_TEXT: Record<LoopPhase, string> = {
-  idle: 'Waiting for the next Task',
-  task: 'Running a Task',
-  microtasks: 'Draining microtasks',
-  halted: 'Run finished',
+/** Message key of the sentence that names each phase. */
+export const LOOP_PHASE_KEY: Record<LoopPhase, string> = {
+  idle: 'panels.eventLoop.idle',
+  task: 'panels.eventLoop.running',
+  microtasks: 'panels.eventLoop.draining',
+  halted: 'panels.eventLoop.halted',
 }

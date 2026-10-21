@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ReplayState } from '../../player/replay-state'
 import type { StackPlateModel } from '../scene/call-stack-model'
 import { visibleFrames } from './panel-view-model'
@@ -8,6 +9,7 @@ import QueueList from './queue-list.vue'
 import type { QueueItem } from './queue-list.vue'
 
 const props = defineProps<{ state: ReplayState }>()
+const { t } = useI18n()
 
 const CONSOLE_METHODS = new Set(['log', 'info', 'warn', 'error'])
 
@@ -26,10 +28,10 @@ const items = computed(() => {
 
 <template>
   <PanelCard
-    title="Call Stack"
-    info="Frames of the code running now, top first. The event loop picks the next Task only when the stack is empty. Built-ins called by other built-ins are hidden."
+    :title="t('panels.callStack.title')"
+    :info="t('panels.callStack.info')"
     :count="items.length"
   >
-    <QueueList :items="items" empty="Empty" testid="panel-call-stack" />
+    <QueueList :items="items" :empty="t('panels.callStack.empty')" testid="panel-call-stack" />
   </PanelCard>
 </template>

@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ReplayState } from '../../player/replay-state'
 import { formatVirtualMs } from '../scene/timer-shelf-model'
 import { cn } from '@/lib/utils'
-import { LOOP_PHASE_TEXT, loopPhaseOf } from './event-loop-phase'
+import { LOOP_PHASE_KEY, loopPhaseOf } from './event-loop-phase'
 import type { LoopPhase } from './event-loop-phase'
 import PanelCard from './panel-card.vue'
 
 const props = defineProps<{ state: ReplayState }>()
+const { t } = useI18n()
 
 const phase = computed(() => loopPhaseOf(props.state))
 const clock = computed(() => formatVirtualMs(props.state.clockUs))
@@ -28,15 +30,15 @@ watch(phase, (next) => {
   pointerAngle.value += (PHASE_ANGLE[next] - current + 360) % 360
 })
 const ARCS = [
-  { id: 'task', label: 'Task', d: `M 60 ${60 - R} A ${R} ${R} 0 0 1 60 ${60 + R}` },
-  { id: 'microtasks', label: 'Microtasks', d: `M 60 ${60 + R} A ${R} ${R} 0 0 1 60 ${60 - R}` },
+  { id: 'task', label: 'panels.eventLoop.task', d: `M 60 ${60 - R} A ${R} ${R} 0 0 1 60 ${60 + R}` },
+  { id: 'microtasks', label: 'panels.eventLoop.microtasks', d: `M 60 ${60 + R} A ${R} ${R} 0 0 1 60 ${60 - R}` },
 ] as const
 </script>
 
 <template>
   <PanelCard
-    title="Event Loop"
-    info="Each turn runs the oldest Task to completion, then drains the microtask queue, then waits for the next Task."
+    :title="t('panels.eventLoop.title')"
+    :info="t('panels.eventLoop.info')"
   >
     <div class="flex items-center gap-4" data-testid="panel-event-loop" :data-phase="phase">
       <svg viewBox="0 0 120 120" class="size-28 shrink-0" aria-hidden="true">
@@ -55,18 +57,18 @@ const ARCS = [
         <circle cx="60" cy="60" r="4" :class="phase === 'idle' ? 'fill-primary' : 'fill-muted-foreground/40'" />
       </svg>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-        <dt class="text-muted-foreground">Phase</dt>
-        <dd class="text-foreground font-medium" data-testid="loop-phase">{{ LOOP_PHASE_TEXT[phase] }}</dd>
-        <dt class="text-muted-foreground">Clock</dt>
+        <dt class="text-muted-foreground">{{ t('panels.eventLoop.phase') }}</dt>
+        <dd class="text-foreground font-medium" data-testid="loop-phase">{{ t(LOOP_PHASE_KEY[phase]) }}</dd>
+        <dt class="text-muted-foreground">{{ t('panels.eventLoop.clock') }}</dt>
         <dd class="font-mono tabular-nums" data-testid="loop-clock">{{ clock }}</dd>
-        <dt class="text-muted-foreground">Tick</dt>
+        <dt class="text-muted-foreground">{{ t('panels.eventLoop.tick') }}</dt>
         <dd class="font-mono tabular-nums">{{ state.tick ?? '—' }}</dd>
       </dl>
     </div>
     <div class="text-muted-foreground mt-2 flex gap-3 text-[11px]" aria-hidden="true">
       <span v-for="arc in ARCS" :key="arc.id" class="flex items-center gap-1">
         <span :class="cn('size-2 rounded-full', phase === arc.id ? 'bg-primary' : 'bg-muted')" />
-        {{ arc.label }}
+        {{ t(arc.label) }}
       </span>
     </div>
   </PanelCard>

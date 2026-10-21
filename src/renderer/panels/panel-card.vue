@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { InfoIcon } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,6 +19,7 @@ const props = defineProps<{
   class?: HTMLAttributes['class']
   contentClass?: HTMLAttributes['class']
 }>()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -39,7 +41,7 @@ const props = defineProps<{
             <button
               type="button"
               class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-md p-1 outline-none focus-visible:ring-3"
-              :aria-label="`About ${title}`"
+              :aria-label="t('panels.about', { title })"
             >
               <InfoIcon class="size-4" />
             </button>

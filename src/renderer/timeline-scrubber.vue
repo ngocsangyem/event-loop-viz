@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import { buildScrubberMarkers } from './scrubber-markers'
 import { Slider } from '@/components/ui/slider'
 
 const props = defineProps<{ player: Player | null; events: readonly TraceEvent[] }>()
+const { t } = useI18n()
 const position = defineModel<number>({ required: true })
 /** Fired when the user moves the scrubber, so autoplay can hand over to them. */
 const emit = defineEmits<{ scrub: [] }>()
@@ -51,8 +53,8 @@ function onSlide(value: number[] | undefined) {
       :max="lastIndex"
       :step="1"
       :model-value="[index]"
-      thumb-label="Timeline"
-      :thumb-value-text="`Step ${index + 1} of ${lastIndex + 1}`"
+      :thumb-label="t('scrubber.timeline')"
+      :thumb-value-text="t('scrubber.step', { step: index + 1, total: lastIndex + 1 })"
       :disabled="!player"
       @update:model-value="onSlide"
     />
@@ -66,7 +68,7 @@ function onSlide(value: number[] | undefined) {
         :class="MARKER_COLOR[m.family]"
         :data-seq="m.seq"
         :data-family="m.family"
-        :aria-label="`${m.family} at event ${m.seq}`"
+        :aria-label="t('scrubber.marker', { family: m.family, seq: m.seq })"
         :style="{ left: `${percent(m.index)}%` }"
         @click="seekIndex(m.index)"
       />

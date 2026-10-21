@@ -1,0 +1,40 @@
+/** Transport bar, timeline scrubber, event list and the event detail pane. */
+export default {
+  transport: {
+    region: 'Playback',
+    start: 'Go to start',
+    backTask: 'Back one Task',
+    backTick: 'Back one Tick',
+    prev: 'Prev',
+    next: 'Next',
+    forwardTick: 'Forward one Tick',
+    forwardTask: 'Forward one Task',
+    end: 'Go to end',
+    play: 'Play',
+    pause: 'Pause',
+    speed: 'Speed',
+    autostart: 'Autostart',
+    autostartHint: 'Start playing as soon as a Run finishes',
+  },
+  scrubber: {
+    timeline: 'Timeline',
+    step: 'Step {step} of {total}',
+    marker: '{family} at event {seq}',
+  },
+  eventList: {
+    region: 'Events',
+    filter: 'Filter by family',
+    showAll: 'Show all events',
+  },
+  detail: {
+    region: 'Event detail',
+    bookkeeping: '(bookkeeping)',
+    specStep: 'Spec step',
+    payload: 'Payload',
+    source: 'Source',
+    cause: 'Cause',
+    sourceLine: 'line {line}, column {column}',
+    noSource: 'no source location',
+    noCause: 'none (started by the host)',
+  },
+}

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { EditorState, Compartment } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
@@ -20,11 +21,15 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ run: [] }>()
 
+const { t, locale } = useI18n()
 const host = useTemplateRef<HTMLElement>('host')
 let view: EditorView | null = null
 // Read-only is a facet, not contenteditable=false, so the editor stays focusable and selectable.
 const readOnlyCompartment = new Compartment()
 const errorCompartment = new Compartment()
+// The accessible name follows the UI language, so it lives in a compartment too.
+const labelCompartment = new Compartment()
+const scriptLabel = () => EditorView.contentAttributes.of({ 'aria-label': t('editor.script') })
 
 onMounted(() => {
   view = new EditorView({
@@ -53,7 +58,7 @@ onMounted(() => {
         readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
         errorCompartment.of([]),
         sourceHighlight(),
-        EditorView.contentAttributes.of({ 'aria-label': 'Script' }),
+        labelCompartment.of(scriptLabel()),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) script.value = update.state.doc.toString()
         }),
@@ -67,6 +72,8 @@ watch(
   (readOnly) =>
     view?.dispatch({ effects: readOnlyCompartment.reconfigure(EditorState.readOnly.of(readOnly)) }),
 )
+
+watch(locale, () => view?.dispatch({ effects: labelCompartment.reconfigure(scriptLabel()) }))
 
 watch(
   () => props.errorAt,

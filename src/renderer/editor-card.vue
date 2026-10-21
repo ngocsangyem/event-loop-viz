@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { LoaderCircleIcon, PencilIcon, PlayIcon, SquareIcon } from '@lucide/vue'
 import type { SharedSettings } from '@/share/share-link-codec'
 import { EXAMPLES } from '@/examples/example-library'
@@ -28,6 +29,7 @@ const script = defineModel<string>('script', { required: true })
 const settings = defineModel<SharedSettings>('settings', { required: true })
 const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string] }>()
 
+const { t } = useI18n()
 const editor = useTemplateRef('editor')
 const runButton = useTemplateRef<InstanceType<typeof Button>>('runButton')
 defineExpose({
@@ -37,33 +39,33 @@ defineExpose({
 </script>
 
 <template>
-  <Card size="sm" class="min-w-0 gap-3" role="region" aria-label="Code editor">
+  <Card size="sm" class="min-w-0 gap-3" role="region" :aria-label="t('editor.region')">
     <CardHeader>
-      <CardTitle>Code</CardTitle>
+      <CardTitle>{{ t('editor.code') }}</CardTitle>
       <CardAction class="flex items-center gap-1.5">
         <Button v-if="running" variant="outline" size="sm" @click="emit('cancel')">
           <SquareIcon />
-          Cancel
+          {{ t('editor.cancel') }}
         </Button>
         <Button ref="runButton" size="sm" :disabled="running" @click="emit('run')">
           <LoaderCircleIcon v-if="running" class="animate-spin" />
           <PlayIcon v-else />
-          Run
+          {{ t('editor.run') }}
           <Kbd aria-hidden="true" class="bg-primary-foreground/15 text-primary-foreground ml-0.5 hidden sm:inline-flex">⌘↵</Kbd>
         </Button>
       </CardAction>
     </CardHeader>
     <CardContent class="flex flex-col gap-2">
       <Alert v-if="replaying" data-testid="replay-banner" class="py-2">
-        <AlertDescription>Read-only during replay.</AlertDescription>
+        <AlertDescription>{{ t('editor.readOnly') }}</AlertDescription>
         <AlertAction>
           <Button variant="outline" size="xs" @click="emit('edit')">
             <PencilIcon />
-            Edit (discards Trace)
+            {{ t('editor.edit') }}
           </Button>
         </AlertAction>
       </Alert>
-      <progress v-if="running" class="sr-only" aria-label="Running">Running…</progress>
+      <progress v-if="running" class="sr-only" :aria-label="t('editor.running')">{{ t('editor.runningText') }}</progress>
       <ScriptEditor
         ref="editor"
         v-model="script"

@@ -1,0 +1,35 @@
+import type en from '../en/diagram'
+
+export default {
+  label: 'Sơ đồ event loop',
+  idle: 'Sơ đồ event loop. Chưa có bước nào được làm nổi bật.',
+  summary: 'Sơ đồ event loop. {step}',
+  contents: '{name}: {items}',
+  nothing: 'trống',
+  edge: {
+    register: 'đăng ký',
+    'timer-fires': 'hết giờ',
+    'next-task': 'Task kế tiếp',
+    'run-task': 'chạy Task',
+    'queue-job': 'xếp Job',
+    'run-job': 'chạy Job',
+    log: 'in ra',
+  },
+  step: {
+    register: 'Call Stack → Web APIs: đăng ký một timer',
+    timerCallback: 'Call Stack: callback của timer bắt đầu chạy',
+    message: 'Web APIs → Task Queue: một message được xếp hàng thành Task',
+    runTask: 'Task Queue → Event Loop → Call Stack: đang chạy một Task',
+    runTimerTask: 'Web APIs → Task Queue → Event Loop → Call Stack: timer đến hạn, Task của nó bắt đầu chạy',
+    queueJob: 'Call Stack → Microtask Queue: xếp một Job vào hàng',
+    runJob: 'Microtask Queue → Call Stack: đang chạy một Job',
+    log: 'Call Stack → Console: in ra một dòng',
+    uncaught: 'Call Stack → Console: báo một exception chưa được bắt',
+    unhandledRejection: 'Call Stack → Console: báo một rejection chưa được xử lý',
+    push: 'Call Stack: vào {label}',
+    pop: 'Call Stack: thoát {label}',
+    checkpointBegin: 'Event Loop: bắt đầu microtask checkpoint',
+    checkpointEnd: 'Event Loop: kết thúc microtask checkpoint',
+    halted: 'Event Loop: Run đã kết thúc',
+  },
+} satisfies typeof en
