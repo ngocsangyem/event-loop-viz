@@ -65,9 +65,11 @@ test('the call stack hides built-ins called by other built-ins', async ({ page }
   await page.getByLabel('Script').fill(`Promise.resolve(1)`)
   await page.getByRole('button', { name: 'Run' }).click()
   const stack = page.getByTestId('panel-call-stack')
-  // ArrowRight steps one event and stops quietly at the end of the Trace.
-  await page.locator('body').click()
-  for (let i = 0; i < 30; i++) {
+  // ArrowRight steps one event and stops quietly at the end of the Trace. Focus leaves the Run
+  // button first so no widget claims the arrow keys.
+  await expect(page.getByTestId('replay-banner')).toBeVisible()
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+  for (let i = 0; i < 60; i++) {
     await page.keyboard.press('ArrowRight')
     await expect(stack.getByText('executorClosure')).toHaveCount(0)
   }

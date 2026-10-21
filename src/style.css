@@ -122,3 +122,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/*
+ * Reduced motion: shadcn-vue controls animate colour and opacity with transition-all. Turn every
+ * transition and animation off so state changes are instant for these viewers. (Shortening the
+ * duration instead would start a transition on every element, since the default property is all.)
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

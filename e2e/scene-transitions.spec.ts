@@ -89,10 +89,11 @@ test('the same position gives an identical Scene whether played, stepped, scrubb
   const played = await sceneDom(page)
   expect(played).toContain('data-testid="scene-job"')
 
-  // Stepped one event at a time.
+  // Stepped one event at a time, with the → shortcut: the same step as the Next button, without
+  // a hover tooltip per press (its open delay runs on the frozen test clock).
   await goToStart(page)
   for (let i = 0; i < 400 && (await currentSeq(page)) < target; i++) {
-    await page.getByRole('button', { name: 'Next' }).click()
+    await page.keyboard.press('ArrowRight')
   }
   expect(await currentSeq(page)).toBe(target)
   expect(await sceneDom(page)).toBe(played)
