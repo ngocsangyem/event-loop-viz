@@ -14,7 +14,8 @@ const { t } = useI18n()
 
 <template>
   <Button
-    class="h-12 shrink-0 rounded-full px-4 shadow-lg max-sm:w-12 max-sm:px-0"
+    variant="outline"
+    class="bg-background h-12 shrink-0 gap-1.5 px-4 max-sm:w-12 max-sm:px-0"
     :aria-label="open ? t('ai.launcher.close') : t('ai.launcher.open')"
     :aria-expanded="open"
     aria-controls="ask-ai-panel"
@@ -22,7 +23,7 @@ const { t } = useI18n()
     @click="emit('toggle')"
   >
     <ChevronDownIcon v-if="open" class="size-5" />
-    <SparklesIcon v-else class="size-5" />
+    <SparklesIcon v-else class="text-brand size-5" />
     <span class="max-sm:sr-only" aria-hidden="true">{{ t('ai.launcher.open') }}</span>
   </Button>
 </template>

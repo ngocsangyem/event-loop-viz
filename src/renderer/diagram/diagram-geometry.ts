@@ -12,9 +12,13 @@ export interface Rect {
   h: number
 }
 
-/** Corner radius of cards and connector bends. */
-export const CARD_RADIUS = 12
-export const BEND_RADIUS = 10
+/**
+ * Corner radius of cards and connector bends. Zero: the warm terminal system draws square,
+ * ruled shapes. The outline and sampling code still accept a radius, so the arcs collapse to
+ * points and every animation keeps its path.
+ */
+export const CARD_RADIUS = 0
+export const BEND_RADIUS = 0
 
 const dist = (a: Point, b: Point) => Math.hypot(b.x - a.x, b.y - a.y)
 const f = (n: number) => Math.round(n * 100) / 100

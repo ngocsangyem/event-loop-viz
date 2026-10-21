@@ -111,46 +111,61 @@ defineExpose({ focus: () => view?.focus() })
 </template>
 
 <style scoped>
+/* Ruled, not boxed: one 1px line, square corners, the page tone behind the code. */
 .script-editor {
   border: 1px solid var(--border);
-  border-radius: calc(var(--radius) - 2px);
   overflow: hidden;
 }
 .script-editor :deep(.cm-syntax-error-line) {
-  background: color-mix(in oklab, var(--destructive) 15%, transparent);
+  background: var(--error-soft);
+  box-shadow: inset 2px 0 0 var(--error);
 }
 .script-editor :deep(.cm-syntax-error-mark) {
-  text-decoration: underline wavy var(--destructive);
+  text-decoration: underline wavy var(--error);
+  background: var(--error-soft);
 }
+/*
+ * Orange means now: the range running at the playhead is underlined, and its line carries the
+ * 2px accent rule. Neither gets a fill: any tint under the code drops some syntax colours below
+ * 4.5:1.
+ */
 .script-editor :deep(.cm-source-highlight) {
-  /* Light enough that syntax-coloured tokens (numbers) under it keep 4.5:1 contrast in the dark theme. */
-  background: #ffd54f40;
-  outline: 1px solid #f9a825;
+  box-shadow: inset 0 -2px 0 var(--brand);
 }
+.script-editor :deep(.cm-line:has(.cm-source-highlight)) {
+  box-shadow: inset 2px 0 0 var(--brand);
+}
+/* The range that scheduled the current Task or Job, in task blue. */
 .script-editor :deep(.cm-cause-highlight) {
-  background: #4fc3f733;
-  outline: 1px dashed #0288d1;
+  background: var(--task-soft);
+  outline: 1px dashed var(--task);
 }
 .script-editor :deep(.cm-editor) {
   min-height: 14em;
-  font-size: 13px;
+  font-size: var(--text-code);
+  line-height: 22px;
   background: var(--background);
   color: var(--foreground);
 }
 .script-editor :deep(.cm-scroller) {
   font-family: var(--font-mono);
+  font-variant-ligatures: none;
 }
 .script-editor :deep(.cm-gutters) {
   background: var(--background);
-  color: var(--muted-foreground);
-  border-right: 1px solid var(--border);
+  color: var(--syn-gutter);
+  border-right: 1px solid var(--border-soft);
 }
 .script-editor :deep(.cm-activeLine),
 .script-editor :deep(.cm-activeLineGutter) {
-  background: color-mix(in oklab, var(--muted) 60%, transparent);
+  background: var(--color-hover-row);
 }
 .script-editor :deep(.cm-cursor) {
-  border-left-color: var(--foreground);
+  border-left-color: var(--brand);
+}
+.script-editor :deep(.cm-selectionBackground),
+.script-editor :deep(.cm-focused .cm-selectionBackground) {
+  background: color-mix(in srgb, var(--brand) 22%, transparent) !important;
 }
 .script-editor :deep(.cm-focused) {
   outline: 2px solid var(--ring);

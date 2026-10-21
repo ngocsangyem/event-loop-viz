@@ -58,7 +58,7 @@ const reveal = shallowRef(false)
         href="https://openrouter.ai/keys"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-primary inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline"
+        class="text-brand-text inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline"
       >
         {{ t('ai.key.get') }}
         <ExternalLinkIcon class="size-3" aria-hidden="true" />
@@ -79,7 +79,7 @@ const reveal = shallowRef(false)
       </div>
     </div>
 
-    <p class="bg-muted text-foreground rounded-lg p-2.5 text-xs">{{ t('ai.key.privacy') }}</p>
+    <p class="bg-raised text-foreground-2 border-l-task border-l-2 p-2.5 text-xs">{{ t('ai.key.privacy') }}</p>
 
     <div class="flex flex-col gap-1.5">
       <Label>{{ t('ai.models.label') }}</Label>

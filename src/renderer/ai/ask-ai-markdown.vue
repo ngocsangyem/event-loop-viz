@@ -20,7 +20,7 @@ const blocks = computed(() => parseMarkdown(props.text))
           <template v-else>{{ part.text }}</template>
         </template>
       </p>
-      <pre v-else-if="block.kind === 'code'" tabindex="0" class="bg-muted overflow-x-auto rounded-md p-2 font-mono text-xs"><code>{{ block.text }}</code></pre>
+      <pre v-else-if="block.kind === 'code'" tabindex="0" class="bg-raised border-border-soft overflow-x-auto border p-2 font-mono text-xs"><code>{{ block.text }}</code></pre>
       <component :is="block.ordered ? 'ol' : 'ul'" v-else :class="['ml-5 flex flex-col gap-1', block.ordered ? 'list-decimal' : 'list-disc']">
         <li v-for="(item, k) in block.items" :key="k">
           <template v-for="(part, j) in item" :key="j">

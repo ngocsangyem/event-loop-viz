@@ -31,7 +31,7 @@ function makeGhost(chip: Element, to: ChipRect): HTMLElement {
   for (const attr of ['id', 'data-testid', 'data-chip-id', 'role', 'aria-label', 'title']) {
     ghost.removeAttribute(attr)
   }
-  ghost.classList.add('chip-ghost', 'shadow-md')
+  ghost.classList.add('chip-ghost')
   Object.assign(ghost.style, {
     position: 'fixed',
     left: '0',
@@ -89,7 +89,7 @@ export function flyChip(
 /** A brief ring around a chip that arrived without a flight, so the eye still finds it. */
 export function pulseChip(chip: HTMLElement): Flight {
   const ring = (alpha: number, size: number): Keyframe => ({
-    boxShadow: `0 0 0 ${size}px color-mix(in oklab, var(--primary) ${alpha}%, transparent)`,
+    boxShadow: `0 0 0 ${size}px color-mix(in oklab, var(--brand) ${alpha}%, transparent)`,
   })
   const pulse = chip.animate([ring(55, 0), ring(0, 6)], { duration: 450, easing: 'ease-out' })
   return { settled: Promise.allSettled([pulse.finished]), end: () => pulse.cancel() }

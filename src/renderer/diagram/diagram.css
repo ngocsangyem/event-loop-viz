@@ -1,27 +1,37 @@
 /*
- * The event-loop diagram. Quiet by default: monochrome cards and connectors on shadcn tokens.
- * Colour appears only for what happens on a flow: the signal (amber), a card the signal has
- * reached (green) and a refusal (red). Every line and border keeps 3:1 against the diagram
- * background in both themes. The lit look is plain CSS keyed off data attributes, so a still
- * diagram (reduced motion, seeking) carries the same meaning as an animated one.
+ * The event-loop diagram, in the warm terminal system. Quiet by default: flat cards and 1px ink-3
+ * connectors (ink-3 keeps 3:1 against the diagram ground in both themes). Colour appears only for
+ * what happens on a flow: the live edge and the card it reaches take their concept hue (Task blue,
+ * Job magenta, timer cyan, stack yellow, console green), the travelling signal is the accent
+ * (orange means now), and a refusal is red. The lit look is plain CSS keyed off data attributes,
+ * so a still diagram (reduced motion, seeking) carries the same meaning as an animated one.
  */
 .diagram-root {
-  --diagram-bg: color-mix(in oklab, var(--muted) 35%, var(--card));
-  --diagram-line: var(--muted-foreground);
-  --diagram-card-line: color-mix(in oklab, var(--muted-foreground) 88%, var(--card));
-  --diagram-signal: #b45309;
-  --diagram-on-signal: #ffffff;
-  --diagram-pass: #15803d;
-  --diagram-refuse: #b91c1c;
+  --diagram-bg: var(--color-bg-raised);
+  --diagram-line: var(--color-ink-3);
+  --diagram-card-line: var(--color-ink-3);
+  --diagram-signal: var(--brand);
+  --diagram-on-signal: var(--on-concept);
+  --diagram-pass: var(--console);
+  --diagram-refuse: var(--error);
   background: var(--diagram-bg);
-  border-radius: var(--radius-lg, 0.75rem);
+  border-radius: 0;
 }
-.dark .diagram-root {
-  --diagram-signal: #fbbf24;
-  --diagram-on-signal: #1c1917;
-  --diagram-pass: #4ade80;
-  --diagram-refuse: #f87171;
-}
+
+/* Concept hues per card and per connector. */
+.diagram-node[data-node='stack'] { --node-hue: var(--stack); --node-soft: var(--stack-soft); }
+.diagram-node[data-node='webapis'] { --node-hue: var(--webapi); --node-soft: var(--webapi-soft); }
+.diagram-node[data-node='taskq'] { --node-hue: var(--task); --node-soft: var(--task-soft); }
+.diagram-node[data-node='microq'] { --node-hue: var(--job); --node-soft: var(--job-soft); }
+.diagram-node[data-node='console'] { --node-hue: var(--console); --node-soft: var(--console-soft); }
+.diagram-node[data-node='loop'] { --node-hue: var(--brand); --node-soft: var(--color-hover-row); }
+.diagram-edge[data-edge='register'],
+.diagram-edge[data-edge='timer-fires'] { --edge-hue: var(--webapi); }
+.diagram-edge[data-edge='next-task'],
+.diagram-edge[data-edge='run-task'] { --edge-hue: var(--task); }
+.diagram-edge[data-edge='queue-job'],
+.diagram-edge[data-edge='run-job'] { --edge-hue: var(--job); }
+.diagram-edge[data-edge='log'] { --edge-hue: var(--console); }
 
 .diagram-root svg {
   display: block;
@@ -33,7 +43,10 @@
 /* Text */
 .diagram-title {
   fill: var(--foreground);
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 .diagram-strong {
   fill: var(--foreground);
@@ -42,7 +55,7 @@
   fill: var(--muted-foreground);
 }
 .diagram-mono {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .diagram-row-text {
   fill: var(--foreground);
@@ -56,35 +69,35 @@
 
 /* Cards */
 .diagram-card {
-  fill: var(--card);
+  fill: var(--color-bg);
   stroke: var(--diagram-card-line);
-  stroke-width: 1.25;
+  stroke-width: 1;
 }
 .diagram-badge {
-  fill: var(--muted);
+  fill: var(--node-soft, var(--color-bg-raised));
 }
 .diagram-icon {
   fill: none;
-  stroke: var(--foreground);
+  stroke: var(--node-hue, var(--foreground));
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .diagram-row-box {
-  fill: var(--muted);
+  fill: var(--color-bg-raised);
 }
 .diagram-row[data-active='true'] .diagram-row-box {
-  fill: color-mix(in oklab, var(--primary) 12%, var(--card));
-  stroke: var(--primary);
-  stroke-width: 1.25;
+  fill: var(--node-soft, var(--color-hover-row));
+  stroke: var(--node-hue, var(--foreground));
+  stroke-width: 1;
 }
 
 /* The border drawn in where the arrow meets a card; two halves growing apart from that point. */
 .diagram-draw {
   fill: none;
-  stroke: var(--diagram-pass);
-  stroke-width: 2.25;
-  stroke-linecap: round;
+  stroke: var(--node-hue, var(--diagram-pass));
+  stroke-width: 2;
+  stroke-linecap: butt;
   stroke-dasharray: var(--outline);
   stroke-dashoffset: var(--outline);
   opacity: 0;
@@ -101,7 +114,7 @@
 .diagram-line {
   fill: none;
   stroke: var(--diagram-line);
-  stroke-width: 1.5;
+  stroke-width: 1;
 }
 .diagram-head {
   fill: var(--diagram-line);
@@ -115,22 +128,23 @@
 }
 .diagram-line-hot {
   fill: none;
-  stroke: var(--diagram-signal);
-  stroke-width: 2.25;
+  stroke: var(--edge-hue, var(--diagram-signal));
+  stroke-width: 2;
 }
 .diagram-head-hot {
-  fill: var(--diagram-signal);
+  fill: var(--edge-hue, var(--diagram-signal));
 }
 .diagram-pill-disc {
-  fill: var(--diagram-signal);
+  fill: var(--edge-hue, var(--diagram-signal));
 }
 .diagram-pill-text {
   fill: var(--diagram-on-signal);
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-weight: 500;
 }
 .diagram-pill-cross {
   fill: none;
-  stroke: #ffffff;
+  stroke: var(--on-concept);
   stroke-width: 2;
   stroke-linecap: round;
 }
@@ -156,13 +170,9 @@
 .diagram-signal {
   opacity: 0;
   pointer-events: none;
-  filter: drop-shadow(0 0 4px var(--diagram-signal));
 }
 .diagram-signal circle {
   fill: var(--diagram-signal);
-}
-.diagram-root[data-refused='true'] .diagram-signal {
-  filter: drop-shadow(0 0 4px var(--diagram-refuse));
 }
 .diagram-root[data-refused='true'] .diagram-signal circle {
   fill: var(--diagram-refuse);
@@ -171,30 +181,37 @@
 /* Event Loop ring */
 .diagram-ring-arc {
   fill: none;
-  stroke: color-mix(in oklab, var(--muted-foreground) 35%, var(--card));
+  stroke: var(--color-line);
   stroke-width: 7;
-  stroke-linecap: round;
+  stroke-linecap: butt;
 }
 .diagram-ring-arc[data-on='true'] {
-  stroke: var(--primary);
+  stroke: var(--brand);
+}
+/* Like the panels' ring: the half the loop is in takes its concept hue. */
+.diagram-ring-arc[data-on='true'][data-arc='task'] {
+  stroke: var(--task);
+}
+.diagram-ring-arc[data-on='true'][data-arc='microtasks'] {
+  stroke: var(--job);
 }
 .diagram-ring-dot {
-  fill: var(--card);
-  stroke: var(--primary);
+  fill: var(--color-bg);
+  stroke: var(--brand);
   stroke-width: 2.5;
 }
 .diagram-ring-hub {
-  fill: color-mix(in oklab, var(--muted-foreground) 45%, var(--card));
+  fill: var(--color-ink-4);
 }
 .diagram-ring-hub[data-on='true'] {
-  fill: var(--primary);
+  fill: var(--brand);
 }
 
 /* Motion: fades only, and none under reduced motion, where the diagram is a still image. */
 @media (prefers-reduced-motion: no-preference) {
   .diagram-item-enter-active,
   .diagram-item-leave-active {
-    transition: opacity 200ms ease;
+    transition: opacity var(--motion-base) var(--ease-out);
   }
   .diagram-item-enter-from,
   .diagram-item-leave-to {
@@ -204,9 +221,9 @@
   .diagram-head-hot,
   .diagram-pill,
   .diagram-draw {
-    transition: opacity 160ms ease;
+    transition: opacity var(--motion-base) var(--ease-out);
   }
   .diagram-pointer {
-    transition: transform 600ms cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform var(--motion-slow) var(--ease-swift);
   }
 }

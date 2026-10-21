@@ -29,7 +29,7 @@ const transitionName = computed(() => (travel?.snapping.value ? 'queue-snap' : '
 
 <template>
   <div class="relative">
-    <p v-if="items.length === 0" class="text-muted-foreground py-2 text-center text-xs">{{ empty }}</p>
+    <p v-if="items.length === 0" class="meta-mono py-2 text-center">{{ empty }}</p>
     <TransitionGroup tag="ol" :name="transitionName" :data-testid="testid" class="relative flex flex-col gap-1.5">
       <li
         v-for="item in items"
@@ -38,16 +38,16 @@ const transitionName = computed(() => (travel?.snapping.value ? 'queue-snap' : '
         :aria-current="item.active ? 'step' : undefined"
         :class="
           cn(
-            'bg-muted/60 flex w-full items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 font-mono text-xs transition-colors duration-300',
-            item.active && 'queue-item-active border-primary/60 bg-primary/10 text-foreground',
+            'queue-row flex w-full items-center justify-between gap-2 px-2.5 py-1.5 font-mono text-[12.5px] leading-[18px]',
+            item.active && 'queue-item-active text-foreground',
             travel?.arriving.value.has(item.id) && 'chip-arriving',
           )
         "
       >
         <CallbackChip v-if="item.chip" :chip="item.chip" />
         <span v-else class="truncate">{{ item.label }}</span>
-        <!-- The running row is tinted, where muted text would fall under the contrast minimum. -->
-        <span v-if="item.detail" :class="cn('shrink-0', item.active ? 'text-foreground/80' : 'text-muted-foreground')">{{ item.detail }}</span>
+        <!-- The running row's tag is drawn in the pane's hue, which keeps 4.5:1 on its soft fill. -->
+        <span v-if="item.detail" :class="cn('label-mono shrink-0 text-[11px]', item.active ? 'queue-row-tag' : 'text-muted-foreground')">{{ item.detail }}</span>
       </li>
     </TransitionGroup>
   </div>

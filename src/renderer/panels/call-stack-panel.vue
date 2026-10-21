@@ -37,6 +37,7 @@ const items = computed(() => {
 
 <template>
   <PanelCard
+    concept="stack"
     :title="t('panels.callStack.title')"
     :info="t('panels.callStack.info')"
     :count="items.length"

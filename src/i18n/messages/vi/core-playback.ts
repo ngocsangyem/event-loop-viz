@@ -16,6 +16,14 @@ export default {
     speed: 'Tốc độ',
     autostart: 'Tự phát',
     autostartHint: 'Tự phát ngay khi Run xong',
+    word: {
+      start: 'Đầu',
+      task: 'Task',
+      tick: 'Tick',
+      prev: 'Trước',
+      next: 'Sau',
+      end: 'Cuối',
+    },
   },
   scrubber: {
     timeline: 'Dòng thời gian',

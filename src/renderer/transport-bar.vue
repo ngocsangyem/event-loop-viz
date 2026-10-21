@@ -9,6 +9,7 @@ import {
 import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import { Button } from '@/components/ui/button'
+import { Kbd } from '@/components/ui/kbd'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Toggle } from '@/components/ui/toggle'
@@ -58,24 +59,27 @@ interface Control {
   id: string
   /** Message key of the control's name. */
   label: string
+  /** Message key of the word printed on the control. */
+  word: string
   icon: Component
   shortcut: string
+  keyHint: string
   disabled: () => boolean
   run: () => void
 }
 
 /** Back controls sit before Play/Pause, forward controls after it. */
 const BACK: Control[] = [
-  { id: 'start', label: 'transport.start', icon: ChevronFirstIcon, shortcut: 'Home', disabled: () => atStart.value, run: () => nav.jump('first') },
-  { id: 'back-task', label: 'transport.backTask', icon: ChevronsLeftIcon, shortcut: 'Alt+←', disabled: () => atStart.value, run: () => nav.jumpBy('Task', 'prev') },
-  { id: 'back-tick', label: 'transport.backTick', icon: SkipBackIcon, shortcut: 'Shift+←', disabled: () => atStart.value, run: () => nav.jumpBy('Tick', 'prev') },
-  { id: 'prev', label: 'transport.prev', icon: StepBackIcon, shortcut: '←', disabled: () => atStart.value, run: () => nav.step('prev') },
+  { id: 'start', label: 'transport.start', word: 'transport.word.start', icon: ChevronFirstIcon, shortcut: 'Home', keyHint: '⇱', disabled: () => atStart.value, run: () => nav.jump('first') },
+  { id: 'back-task', label: 'transport.backTask', word: 'transport.word.task', icon: ChevronsLeftIcon, shortcut: 'Alt+←', keyHint: '⌥←', disabled: () => atStart.value, run: () => nav.jumpBy('Task', 'prev') },
+  { id: 'back-tick', label: 'transport.backTick', word: 'transport.word.tick', icon: SkipBackIcon, shortcut: 'Shift+←', keyHint: '⇧←', disabled: () => atStart.value, run: () => nav.jumpBy('Tick', 'prev') },
+  { id: 'prev', label: 'transport.prev', word: 'transport.word.prev', icon: StepBackIcon, shortcut: '←', keyHint: '←', disabled: () => atStart.value, run: () => nav.step('prev') },
 ]
 const FORWARD: Control[] = [
-  { id: 'next', label: 'transport.next', icon: StepForwardIcon, shortcut: '→', disabled: () => atEnd.value, run: () => nav.step('next') },
-  { id: 'forward-tick', label: 'transport.forwardTick', icon: SkipForwardIcon, shortcut: 'Shift+→', disabled: () => atEnd.value, run: () => nav.jumpBy('Tick', 'next') },
-  { id: 'forward-task', label: 'transport.forwardTask', icon: ChevronsRightIcon, shortcut: 'Alt+→', disabled: () => atEnd.value, run: () => nav.jumpBy('Task', 'next') },
-  { id: 'end', label: 'transport.end', icon: ChevronLastIcon, shortcut: 'End', disabled: () => atEnd.value, run: () => nav.jump('last') },
+  { id: 'next', label: 'transport.next', word: 'transport.word.next', icon: StepForwardIcon, shortcut: '→', keyHint: '→', disabled: () => atEnd.value, run: () => nav.step('next') },
+  { id: 'forward-tick', label: 'transport.forwardTick', word: 'transport.word.tick', icon: SkipForwardIcon, shortcut: 'Shift+→', keyHint: '⇧→', disabled: () => atEnd.value, run: () => nav.jumpBy('Tick', 'next') },
+  { id: 'forward-task', label: 'transport.forwardTask', word: 'transport.word.task', icon: ChevronsRightIcon, shortcut: 'Alt+→', keyHint: '⌥→', disabled: () => atEnd.value, run: () => nav.jumpBy('Task', 'next') },
+  { id: 'end', label: 'transport.end', word: 'transport.word.end', icon: ChevronLastIcon, shortcut: 'End', keyHint: '⇲', disabled: () => atEnd.value, run: () => nav.jump('last') },
 ]
 
 /** The speed Select works in strings; playback keeps the number. */
@@ -99,21 +103,25 @@ const speedText = computed({
         :key="control.id"
         :id="control.id"
         :label="t(control.label)"
+        :word="t(control.word)"
         :icon="control.icon"
         :shortcut="control.shortcut"
+        :key-hint="control.keyHint"
         :disabled="control.disabled()"
         @press="control.run"
       />
+      <!-- The only filled control: playing is the primary action of a replay. -->
       <Button
         size="sm"
-        class="min-w-20 max-sm:h-11!"
+        class="min-w-24 gap-1.5 max-sm:h-11!"
         :disabled="!player"
         :aria-pressed="playing"
         data-control="play"
         @click="toggle"
       >
-        <PauseIcon v-if="playing" />
-        <PlayIcon v-else />
+        <Kbd aria-hidden="true" class="text-primary-foreground/70 max-sm:hidden">␣</Kbd>
+        <PauseIcon v-if="playing" class="sm:hidden" />
+        <PlayIcon v-else class="sm:hidden" />
         {{ playing ? t('transport.pause') : t('transport.play') }}
       </Button>
       <TransportControlButton
@@ -121,8 +129,10 @@ const speedText = computed({
         :key="control.id"
         :id="control.id"
         :label="t(control.label)"
+        :word="t(control.word)"
         :icon="control.icon"
         :shortcut="control.shortcut"
+        :key-hint="control.keyHint"
         :disabled="control.disabled()"
         @press="control.run"
       />
@@ -143,7 +153,7 @@ const speedText = computed({
         data-control="autoplay"
         :title="t('transport.autostartHint')"
       >
-        <RepeatIcon />
+        <RepeatIcon class="sm:hidden" />
         {{ t('transport.autostart') }}
       </Toggle>
     </div>

@@ -167,7 +167,7 @@ Set `--radius: 0` and remove all `shadow-*` utilities from the shadcn-vue defaul
 - Pane labels use 12px mono (the base system uses 13px); the app is denser than a blog.
 - Lane-to-lane item travel (≤280ms) is allowed because it is replayed state, not decoration. Reduced motion turns it off.
 - Unsupported API and SyntaxError use ANSI red, not yellow, because yellow is the Call Stack hue and both states block a Run.
-- Syntax: vitesse-light/dark, except light string `#9a5a4a` (vitesse missed AA); punctuation uses ink-3.
+- Syntax: vitesse-light/dark, except light string `#9a5a4a` and light number `#2a6f7f` (vitesse missed AA, the number on the active-line fill); punctuation uses ink-3.
 - `--card` = `bg`: panes are ruled, not boxed.
 
 ## Notes

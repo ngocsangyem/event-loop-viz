@@ -50,7 +50,7 @@ const moreY = computed(() => props.rect.y + HEADER_HEIGHT + 8 + props.list.rows.
       :data-tone="row.tone"
       class="diagram-row"
     >
-      <rect :x="rect.x + PAD" :y="row.y" :width="rowWidth" :height="ROW_BODY" rx="6" class="diagram-row-box" />
+      <rect :x="rect.x + PAD" :y="row.y" :width="rowWidth" :height="ROW_BODY" class="diagram-row-box" />
       <text :x="rect.x + PAD + 8" :y="row.y + 16" class="diagram-mono diagram-row-text" font-size="12">
         {{ row.text }}
       </text>

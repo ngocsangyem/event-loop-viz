@@ -48,7 +48,7 @@ watch(
   >
     <template v-for="(message, i) in messages" :key="message.id">
       <div v-if="message.role === 'user'" class="flex justify-end" data-testid="ask-ai-user-message">
-        <p class="bg-primary text-primary-foreground max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 break-words whitespace-pre-wrap">
+        <p class="bg-raised text-foreground border-border-soft max-w-[85%] border px-3 py-2 font-mono text-[13px] break-words whitespace-pre-wrap before:text-brand-text before:content-['❯_']">
           <span class="sr-only">{{ t('ai.you') }}: </span>{{ message.content }}
         </p>
       </div>

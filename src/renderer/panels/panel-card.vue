@@ -2,18 +2,21 @@
 import type { HTMLAttributes } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { InfoIcon } from '@lucide/vue'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
+/** The event-loop concept a pane shows; it picks the pane's hue (panel-skin.css). */
+export type PanelConcept = 'stack' | 'job' | 'task' | 'webapi' | 'console' | 'loop'
+
 /**
- * One labelled region of the visualizer: a title, an info tooltip that says what the region
- * models, an optional item count and the region's content. Every panel uses it so the grid
- * reads as one system.
+ * One labelled region of the visualizer: a hue square, a mono title, an optional item count,
+ * an info tooltip that says what the region models, and the region's content. Every panel uses
+ * it so the grid reads as one system.
  */
 const props = defineProps<{
   title: string
+  concept?: PanelConcept
   info: string
   count?: number
   class?: HTMLAttributes['class']
@@ -27,12 +30,14 @@ const { t } = useI18n()
     size="sm"
     role="region"
     :aria-label="title"
-    :class="cn('min-w-0 gap-2', props.class)"
+    :data-concept="concept"
+    :class="cn('panel-card min-w-0 gap-2 pt-0!', props.class)"
   >
-    <CardHeader>
+    <CardHeader class="panel-card-header border-border-soft h-[38px] items-center! border-b">
       <CardTitle class="flex items-center gap-2">
+        <span class="panel-hue size-2 shrink-0" aria-hidden="true" />
         {{ title }}
-        <Badge v-if="count !== undefined" variant="secondary" class="tabular-nums">{{ count }}</Badge>
+        <span v-if="count !== undefined" class="meta-mono font-normal">{{ count }}</span>
       </CardTitle>
       <CardAction class="flex items-center gap-1">
         <slot name="actions" />
@@ -40,7 +45,7 @@ const { t } = useI18n()
           <TooltipTrigger as-child>
             <button
               type="button"
-              class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-md p-1 outline-none focus-visible:ring-3"
+              class="text-muted-foreground hover:text-foreground hover:bg-accent p-1 outline-none"
               :aria-label="t('panels.about', { title })"
             >
               <InfoIcon class="size-4" />

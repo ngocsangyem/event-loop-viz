@@ -45,6 +45,7 @@ const pointerStyle = computed(() => ({
       :key="arc.id"
       :d="arc.d"
       :data-on="loop.phase === arc.id ? 'true' : 'false'"
+      :data-arc="arc.id"
       class="diagram-ring-arc"
     />
     <g class="diagram-pointer" :style="pointerStyle">

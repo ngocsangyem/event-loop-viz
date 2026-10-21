@@ -29,14 +29,16 @@ watch(phase, (next) => {
   const current = ((pointerAngle.value % 360) + 360) % 360
   pointerAngle.value += (PHASE_ANGLE[next] - current + 360) % 360
 })
+/** Each half is drawn in its concept hue while the loop is in it: Task blue, Job magenta. */
 const ARCS = [
-  { id: 'task', label: 'panels.eventLoop.task', d: `M 60 ${60 - R} A ${R} ${R} 0 0 1 60 ${60 + R}` },
-  { id: 'microtasks', label: 'panels.eventLoop.microtasks', d: `M 60 ${60 + R} A ${R} ${R} 0 0 1 60 ${60 - R}` },
+  { id: 'task', label: 'panels.eventLoop.task', d: `M 60 ${60 - R} A ${R} ${R} 0 0 1 60 ${60 + R}`, on: 'stroke-task', dot: 'bg-task' },
+  { id: 'microtasks', label: 'panels.eventLoop.microtasks', d: `M 60 ${60 + R} A ${R} ${R} 0 0 1 60 ${60 - R}`, on: 'stroke-job', dot: 'bg-job' },
 ] as const
 </script>
 
 <template>
   <PanelCard
+    concept="loop"
     :title="t('panels.eventLoop.title')"
     :info="t('panels.eventLoop.info')"
   >
@@ -47,27 +49,27 @@ const ARCS = [
           :key="arc.id"
           :d="arc.d"
           fill="none"
-          stroke-width="10"
-          stroke-linecap="round"
-          :class="cn('transition-colors', phase === arc.id ? 'stroke-primary' : 'stroke-muted')"
+          stroke-width="8"
+          :class="cn('transition-colors duration-(--motion-fast)', phase === arc.id ? arc.on : 'stroke-border')"
         />
+        <!-- The pointer is the playhead of the loop, so it carries the accent: orange means now. -->
         <g class="loop-pointer" :style="{ transform: `rotate(${pointerAngle}deg)` }">
-          <circle cx="60" :cy="60 - R" r="7" class="fill-background stroke-primary" stroke-width="3" />
+          <rect x="54" :y="60 - R - 6" width="12" height="12" class="fill-background stroke-brand" stroke-width="3" />
         </g>
-        <circle cx="60" cy="60" r="4" :class="phase === 'idle' ? 'fill-primary' : 'fill-muted-foreground/40'" />
+        <rect x="56" y="56" width="8" height="8" :class="phase === 'idle' ? 'fill-brand' : 'fill-muted-foreground/40'" />
       </svg>
-      <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-        <dt class="text-muted-foreground">{{ t('panels.eventLoop.phase') }}</dt>
+      <dl class="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-sm">
+        <dt class="label-mono text-muted-foreground text-[11px]">{{ t('panels.eventLoop.phase') }}</dt>
         <dd class="text-foreground font-medium" data-testid="loop-phase">{{ t(LOOP_PHASE_KEY[phase]) }}</dd>
-        <dt class="text-muted-foreground">{{ t('panels.eventLoop.clock') }}</dt>
+        <dt class="label-mono text-muted-foreground text-[11px]">{{ t('panels.eventLoop.clock') }}</dt>
         <dd class="font-mono tabular-nums" data-testid="loop-clock">{{ clock }}</dd>
-        <dt class="text-muted-foreground">{{ t('panels.eventLoop.tick') }}</dt>
+        <dt class="label-mono text-muted-foreground text-[11px]">{{ t('panels.eventLoop.tick') }}</dt>
         <dd class="font-mono tabular-nums">{{ state.tick ?? '—' }}</dd>
       </dl>
     </div>
-    <div class="text-muted-foreground mt-2 flex gap-3 text-[11px]" aria-hidden="true">
-      <span v-for="arc in ARCS" :key="arc.id" class="flex items-center gap-1">
-        <span :class="cn('size-2 rounded-full', phase === arc.id ? 'bg-primary' : 'bg-muted')" />
+    <div class="label-mono text-muted-foreground mt-2 flex gap-3 text-[11px]" aria-hidden="true">
+      <span v-for="arc in ARCS" :key="arc.id" class="flex items-center gap-1.5">
+        <span :class="cn('size-2', phase === arc.id ? arc.dot : 'bg-border')" />
         {{ t(arc.label) }}
       </span>
     </div>

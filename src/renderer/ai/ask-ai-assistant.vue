@@ -129,7 +129,7 @@ watch(settingsOpen, (isOpen) => !isOpen && open.value && void focusPanel())
       aria-modal="false"
       aria-labelledby="ask-ai-title"
       aria-describedby="ask-ai-description"
-      class="bg-popover text-popover-foreground fixed right-4 bottom-[calc(var(--ai-dock)+3.75rem)] z-40 flex h-[max(16rem,min(640px,calc(100dvh-var(--ai-dock)-6rem)))] w-[min(420px,calc(100vw-2rem))] origin-bottom-right flex-col overflow-hidden rounded-2xl border text-sm shadow-2xl"
+      class="bg-popover text-popover-foreground fixed right-4 bottom-[calc(var(--ai-dock)+3.75rem)] z-40 flex h-[max(16rem,min(640px,calc(100dvh-var(--ai-dock)-6rem)))] w-[min(420px,calc(100vw-2rem))] origin-bottom-right flex-col overflow-hidden border text-sm"
       data-testid="ask-ai-panel"
       @keydown.esc.stop="minimize"
     >

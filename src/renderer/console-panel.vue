@@ -13,22 +13,23 @@ const lines = computed(() => formatConsoleLines(props.output))
 
 <template>
   <PanelCard
+    concept="console"
     :title="t('console.title')"
     :info="t('console.info')"
     :count="lines.length"
     content-class="overflow-auto max-h-72"
   >
-    <p v-if="lines.length === 0" class="text-muted-foreground py-2 text-center text-xs">
+    <p v-if="lines.length === 0" class="meta-mono py-2 text-center">
       {{ t('console.empty') }}
     </p>
-    <TransitionGroup tag="ul" name="queue-item" data-testid="console-panel" class="relative flex flex-col font-mono text-xs">
+    <TransitionGroup tag="ul" name="queue-item" data-testid="console-panel" class="relative flex flex-col font-mono text-[12.5px] leading-[22px]">
       <li
         v-for="(line, i) in lines"
         :key="i"
         :class="
           cn(
-            'border-b py-1 whitespace-pre-wrap last:border-b-0',
-            line.kind === 'error' && 'text-destructive console-error',
+            'border-border-soft text-foreground-2 border-b px-2 whitespace-pre-wrap last:border-b-0',
+            line.kind === 'error' && 'text-destructive console-error bg-error-soft shadow-[inset_2px_0_0_var(--error)]',
           )
         "
       >

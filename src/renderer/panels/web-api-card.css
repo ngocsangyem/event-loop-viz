@@ -55,13 +55,12 @@
 .web-api-progress {
   height: 0.25rem;
   overflow: hidden;
-  border-radius: 9999px;
-  background: var(--border);
+  background: var(--color-line-soft);
 }
 
 .web-api-progress > span {
   display: block;
   height: 100%;
-  background: var(--primary);
-  transition: width 300ms ease-out;
+  background: var(--hue, var(--webapi));
+  transition: width 300ms var(--ease-out);
 }

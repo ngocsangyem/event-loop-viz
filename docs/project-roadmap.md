@@ -15,6 +15,7 @@ Spec: GitHub issue #1. Status reflects the `integration/v1` branch at the time o
 | M6.1 UI refresh | shadcn-vue + Tailwind v4 for every control; labelled panel grid (Call Stack, queues, Web APIs, Event Loop, Console) as the default view; isometric Scene moved behind a 3D view switch; light/dark/system theme | Done |
 | M6.2 Learning aids | English/Vietnamese UI and event explanations; Ask AI with the learner's own OpenRouter key and model; animated Diagram view | Done |
 | M6.3 Callback chips (Panels) | Timer Tasks queued when due; callback descriptors in the Trace (schema v2); Callback chips in every panel; Web APIs timer cards; chips fly between panels on single steps | Done |
+| M6.4 Warm terminal theme | `DESIGN.md` tokens (`docs/design/tokens.css`) drive every surface: cream/near-black palette, Inter + JetBrains Mono, radius 0, no shadows, one orange accent for "now", concept hues per pane, scrubber tick, Diagram edge and Scene item; word controls with printed hotkeys; motion on the design's tokens. Layout (Why rail, 92px dock, mobile tabs) not yet restructured | Done |
 | M7 Ship | CI, production build gate, README and project docs (done); manual Vercel deploy (pending, see deployment guide) | In progress |
 
 Deploy is manual: follow `docs/deployment-guide.md`, then add the URL to the README.
