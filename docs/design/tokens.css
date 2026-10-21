@@ -1,0 +1,189 @@
+/* Event Loop Visualizer — warm terminal tokens (shadcn-vue · Tailwind v4)
+   Base values: claude.dev warm terminal, measured 2026-10-10. Dark is the default.
+   Concept -soft / -border are hex-alpha suffixes on the concept hue. */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* raw roles */
+  --color-bg: #141413;
+  --color-bg-raised: #1a1a18;
+  --color-bg-panel: #1e1d1b;
+  --color-ink: #faf9f5;
+  --color-ink-2: #b0aea5;
+  --color-ink-3: #87867f;
+  --color-ink-4: #5e5d59;            /* aria-hidden glyphs only */
+  --color-line: #faf9f529;
+  --color-line-soft: #faf9f517;
+  --color-hover-row: #faf9f50b;
+  --color-accent: #d97757;
+  --color-accent-text: #d97757;
+  --color-ansi-blue: #82aaff;
+  --color-ansi-cyan: #89ddff;
+  --color-ansi-green: #c3e88d;
+  --color-ansi-magenta: #c792ea;
+  --color-ansi-yellow: #e5c07b;
+  --color-ansi-red: #e08f8f;
+
+  /* shadcn-vue names */
+  --background: var(--color-bg);
+  --foreground: var(--color-ink);
+  --foreground-2: var(--color-ink-2);
+  --card: var(--color-bg);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-bg-panel);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-ink);
+  --primary-foreground: var(--color-bg);
+  --secondary: var(--color-bg-raised);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-bg-raised);
+  --muted-foreground: var(--color-ink-3);
+  --accent: var(--color-hover-row);
+  --accent-foreground: var(--color-ink);
+  --destructive: var(--color-ansi-red);
+  --border: var(--color-line);
+  --border-soft: var(--color-line-soft);
+  --input: var(--color-line);
+  --ring: var(--color-accent);
+  --brand: var(--color-accent);
+  --brand-text: var(--color-accent-text);
+  --chart-1: var(--color-ansi-yellow);
+  --chart-2: var(--color-ansi-magenta);
+  --chart-3: var(--color-ansi-blue);
+  --chart-4: var(--color-ansi-cyan);
+  --chart-5: var(--color-ansi-green);
+  --radius: 0;
+
+  /* event-loop concepts */
+  --stack: var(--color-ansi-yellow);   --stack-soft: #e5c07b1c;   --stack-border: #e5c07b5c;
+  --job: var(--color-ansi-magenta);    --job-soft: #c792ea1c;     --job-border: #c792ea5c;
+  --task: var(--color-ansi-blue);      --task-soft: #82aaff1c;    --task-border: #82aaff5c;
+  --webapi: var(--color-ansi-cyan);    --webapi-soft: #89ddff1c;  --webapi-border: #89ddff5c;
+  --console: var(--color-ansi-green);  --console-soft: #c3e88d1c; --console-border: #c3e88d5c;
+  --error: var(--color-ansi-red);      --error-soft: #e08f8f1c;   --error-border: #e08f8f5c;
+  --warn: var(--color-ansi-yellow);    --warn-soft: #e5c07b1c;    --warn-border: #e5c07b5c;
+  --on-concept: #141413;
+
+  /* editor syntax (vitesse-dark + concept hues) */
+  --syn-keyword: #4d9375;
+  --syn-string: #c98a7d;
+  --syn-number: #4c9a91;
+  --syn-ident: #dbd7ca;
+  --syn-punct: var(--color-ink-3);
+  --syn-gutter: var(--color-ink-3);
+  --syn-line-active: var(--color-hover-row);
+  --syn-line-rule: var(--color-accent);
+
+  /* 3D scene */
+  --scene-bg: #141413;
+  --scene-floor: #1a1a18;
+  --scene-grid: #faf9f517;
+  --scene-tray: #2a2926;
+  --scene-shade: #000000;      /* side faces: color-mix(in srgb, <fill> 66% / 48%, shade) */
+
+  --scrim: #141413b3;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: #faf9f5;
+  --color-bg-raised: #f1efe8;
+  --color-bg-panel: #ece9e0;
+  --color-ink: #141413;
+  --color-ink-2: #4c4b45;
+  --color-ink-3: #65645e;
+  --color-ink-4: #a8a69d;
+  --color-line: #14141338;
+  --color-line-soft: #1414131c;
+  --color-hover-row: #1414130d;
+  --color-accent: #c15f3c;            /* non-text, large marks */
+  --color-accent-text: #a94e2f;       /* text, links */
+  --color-ansi-blue: #2a60d6;
+  --color-ansi-cyan: #156f93;
+  --color-ansi-green: #537126;
+  --color-ansi-magenta: #8c46bb;
+  --color-ansi-yellow: #7a5d00;
+  --color-ansi-red: #a04545;
+
+  --stack-soft: #7a5d0014;   --stack-border: #7a5d0059;
+  --job-soft: #8c46bb14;     --job-border: #8c46bb59;
+  --task-soft: #2a60d614;    --task-border: #2a60d659;
+  --webapi-soft: #156f9314;  --webapi-border: #156f9359;
+  --console-soft: #53712614; --console-border: #53712659;
+  --error-soft: #a0454514;   --error-border: #a0454559;
+  --warn-soft: #7a5d0014;    --warn-border: #7a5d0059;
+  --on-concept: #faf9f5;
+
+  --syn-keyword: #1e754f;
+  --syn-string: #9a5a4a;              /* vitesse #b56959 re-solved for AA */
+  --syn-number: #2f798a;
+  --syn-ident: #393a34;
+
+  --scene-bg: #f1efe8;
+  --scene-floor: #faf9f5;
+  --scene-grid: #1414131c;
+  --scene-tray: #e3e0d5;
+  --scene-shade: #141413;
+
+  --scrim: #14141359;
+}
+
+:root {
+  /* type */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --text-display: 1.5rem;     /* 24/30 · 500 · lowercase */
+  --text-caption: 1.25rem;    /* 20/28 · 500 · step caption */
+  --text-heading: 1.0625rem;  /* 17/24 · 500 */
+  --text-body: 0.875rem;      /* 14/22 · 400 · ink-2 */
+  --text-row: 0.8125rem;      /* 13 · trace rows */
+  --text-label: 0.75rem;      /* 12 · mono 500 · uppercase */
+  --tracking-label: 0.02em;
+  --text-meta: 0.71875rem;    /* 11.5 · mono 400 · ink-3 */
+  --text-code: 0.8125rem;     /* 13/22 */
+  --text-item: 0.78125rem;    /* 12.5/18 · queue items, console */
+
+  /* motion */
+  --motion-instant: 0ms;
+  --motion-tick: 20ms;
+  --motion-line: 90ms;
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;       /* lane travel (app exception) */
+  --spinner-frame: 110ms;
+  --ease-out: cubic-bezier(.19, 1, .22, 1);
+  --ease-swift: cubic-bezier(.55, 0, .1, 1);
+  --ease-term: steps(1, end);
+
+  /* layout */
+  --header-h: 48px;
+  --dock-h: 92px;
+  --col-source: 320px;
+  --col-editor: 600px;
+  --col-rail: 380px;
+  --col-ai: 400px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-line: 0ms;
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-variant-ligatures: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

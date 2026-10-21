@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "/opt/homebrew/bin/pnpm",
-      "runtimeArgs": ["dev"],
+      "runtimeExecutable": "/bin/zsh",
+      "runtimeArgs": ["-c", "export PATH=\"/opt/homebrew/bin:$PATH\" && exec \"$HOME/Library/Application Support/Herd/config/nvm/versions/node/v20.20.2/bin/pnpm\" dev"],
       "port": 5173
     }
   ]
