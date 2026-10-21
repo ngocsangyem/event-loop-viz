@@ -160,7 +160,8 @@ onMounted(() => {
         </Card>
       </div>
 
-      <Card ref="transportCard" size="sm" class="bg-card/90 sticky bottom-3 z-10 shadow-lg backdrop-blur">
+      <!-- The pinned dock: an opaque raised band, no blur or shadow; depth is the tone step. -->
+      <Card ref="transportCard" size="sm" class="bg-raised sticky bottom-0 z-10">
         <CardContent>
           <TransportBar ref="transport" v-model="position" v-model:autoplay="autoplay"
             :same-view="sameView" :player="player" :events="events" />

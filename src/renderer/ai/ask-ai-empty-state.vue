@@ -15,12 +15,12 @@ const SUGGESTIONS = ['walkThrough', 'whyOrder', 'microtasks', 'explainStep'] as 
 
 <template>
   <div class="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-    <span class="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full" aria-hidden="true">
+    <span class="bg-raised text-brand flex size-10 items-center justify-center border" aria-hidden="true">
       <SparklesIcon v-if="hasKey" class="size-5" />
       <KeyRoundIcon v-else class="size-5" />
     </span>
     <div class="flex flex-col gap-1">
-      <h3 class="text-sm font-medium">{{ hasKey ? t('ai.empty.title') : t('ai.empty.noKeyTitle') }}</h3>
+      <h3 class="text-sm font-medium lowercase">{{ hasKey ? t('ai.empty.title') : t('ai.empty.noKeyTitle') }}</h3>
       <p class="text-muted-foreground text-xs">{{ hasKey ? t('ai.empty.hint') : t('ai.empty.noKeyHint') }}</p>
     </div>
     <Button v-if="!hasKey" size="sm" data-autofocus data-testid="ask-ai-connect" @click="emit('connect')">

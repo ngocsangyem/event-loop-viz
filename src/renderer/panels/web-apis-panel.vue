@@ -20,11 +20,12 @@ const chips = computed(() => chipsOf(props.state, props.source, chipLabelsOf(t))
 
 <template>
   <PanelCard
+    concept="webapi"
     :title="t('panels.webApis.title')"
     :info="t('panels.webApis.info')"
     :count="state.timers.length"
   >
-    <p v-if="model.cards.length === 0" class="text-muted-foreground py-2 text-center text-xs">
+    <p v-if="model.cards.length === 0" class="meta-mono py-2 text-center">
       {{ t('panels.webApis.empty') }}
     </p>
     <TransitionGroup tag="ol" :name="transitionName" data-testid="panel-web-apis" class="relative flex flex-col gap-1.5">
@@ -35,7 +36,7 @@ const chips = computed(() => chipsOf(props.state, props.source, chipLabelsOf(t))
         :chip="chipOf(chips, card.key, 'webapis').chip"
       />
     </TransitionGroup>
-    <p v-if="model.hidden > 0" class="text-muted-foreground pt-1.5 text-center text-xs">
+    <p v-if="model.hidden > 0" class="meta-mono pt-1.5 text-center">
       {{ t('panels.webApis.more', { count: model.hidden }) }}
     </p>
   </PanelCard>

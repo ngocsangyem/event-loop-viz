@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { SlidersHorizontalIcon } from '@lucide/vue'
 import { DEFAULT_BUDGETS, DEFAULT_NODE_COST_US } from '../trace/default-budgets'
 import { updateSetting } from './run-settings-model'
 import type { EditableRunSettings, SettingField } from './run-settings-model'
@@ -34,7 +33,6 @@ function onInput(field: SettingField, value: string | number) {
   <Popover>
     <PopoverTrigger as-child>
       <Button variant="ghost" size="sm">
-        <SlidersHorizontalIcon />
         {{ t('settings.button') }}
       </Button>
     </PopoverTrigger>

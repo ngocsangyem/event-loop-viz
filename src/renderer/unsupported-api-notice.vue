@@ -8,12 +8,12 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <Alert v-if="apis.length" role="status" data-testid="unsupported-api-notice">
+  <Alert v-if="apis.length" role="status" variant="destructive" data-testid="unsupported-api-notice">
     <TriangleAlertIcon />
     <AlertTitle>{{ t('unsupported.title') }}</AlertTitle>
     <AlertDescription>
       <p>
-        <code v-for="api in apis" :key="api" class="bg-muted mr-1 rounded px-1 font-mono">{{ api }}</code>
+        <code v-for="api in apis" :key="api" class="bg-error-soft text-destructive mr-1 px-1 font-mono">{{ api }}</code>
         {{ t('unsupported.touching') }}
       </p>
     </AlertDescription>

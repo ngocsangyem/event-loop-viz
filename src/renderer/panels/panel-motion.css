@@ -1,18 +1,22 @@
 /*
- * Motion for the panels view: entries slide in when queued or pushed, fade out sideways when
- * they leave, and glide when their neighbours change. Reduced motion keeps only the end state.
+ * Motion for the panels view (DESIGN.md · Motion): entries reveal with an opacity + 4px rise when
+ * queued or pushed, pop out with a fade and 4px lift when they leave, and glide (FLIP) when their
+ * neighbours change. Only opacity and transform animate, and nothing loops. Reduced motion keeps
+ * only the end state; the hue rule and the RUNNING tag still say what changed.
  */
 @media (prefers-reduced-motion: no-preference) {
   .queue-item-enter-active,
-  .queue-item-leave-active,
-  .queue-item-move {
+  .queue-item-leave-active {
     transition:
-      transform 320ms cubic-bezier(0.32, 0.72, 0, 1),
-      opacity 320ms cubic-bezier(0.32, 0.72, 0, 1);
+      transform var(--motion-base) var(--ease-out),
+      opacity var(--motion-base) var(--ease-out);
+  }
+  .queue-item-move {
+    transition: transform var(--motion-slow) var(--ease-swift);
   }
   .queue-item-enter-from {
     opacity: 0;
-    transform: translateY(-10px) scale(0.96);
+    transform: translateY(4px);
   }
   /* A row whose chip is flying in is already in place: the flight is its entrance. */
   .queue-item-enter-from.chip-arriving {
@@ -21,20 +25,12 @@
   }
   .queue-item-leave-to {
     opacity: 0;
-    transform: translateX(24px);
+    transform: translateY(-4px);
   }
   /* Leaving entries stop taking space so the rest can glide into place. */
   .queue-item-leave-active {
     position: absolute;
     inset-inline: 0;
-  }
-  .queue-item-active {
-    animation: queue-item-pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes queue-item-pulse {
-    50% {
-      box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
-    }
   }
 }
 
@@ -45,6 +41,6 @@
 }
 @media (prefers-reduced-motion: no-preference) {
   .loop-pointer {
-    transition: transform 600ms cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform var(--motion-slow) var(--ease-swift);
   }
 }

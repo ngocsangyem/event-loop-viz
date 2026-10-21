@@ -39,6 +39,7 @@ const items = computed(() => {
 
 <template>
   <PanelCard
+    concept="job"
     :title="t('panels.microtaskQueue.title')"
     :info="t('panels.microtaskQueue.info')"
     :count="state.jobs.length"

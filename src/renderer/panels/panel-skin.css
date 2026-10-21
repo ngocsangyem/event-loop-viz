@@ -1,0 +1,73 @@
+/*
+ * Concept hues for the panels view (DESIGN.md · Components). A pane sets its concept on
+ * [data-concept]; everything inside reads --hue / --hue-soft / --hue-border, so a queue row,
+ * its tag and the pane's square always agree. Orange (--brand) stays reserved for "now".
+ */
+.panel-card {
+  --hue: var(--color-ink-3);
+  --hue-soft: var(--color-hover-row);
+  --hue-border: var(--color-line);
+}
+.panel-card[data-concept='stack'] {
+  --hue: var(--stack);
+  --hue-soft: var(--stack-soft);
+  --hue-border: var(--stack-border);
+}
+.panel-card[data-concept='job'] {
+  --hue: var(--job);
+  --hue-soft: var(--job-soft);
+  --hue-border: var(--job-border);
+}
+.panel-card[data-concept='task'] {
+  --hue: var(--task);
+  --hue-soft: var(--task-soft);
+  --hue-border: var(--task-border);
+}
+.panel-card[data-concept='webapi'] {
+  --hue: var(--webapi);
+  --hue-soft: var(--webapi-soft);
+  --hue-border: var(--webapi-border);
+}
+.panel-card[data-concept='console'] {
+  --hue: var(--console);
+  --hue-soft: var(--console-soft);
+  --hue-border: var(--console-border);
+}
+.panel-card[data-concept='loop'] {
+  --hue: var(--brand);
+  --hue-soft: color-mix(in srgb, var(--brand) 11%, transparent);
+  --hue-border: color-mix(in srgb, var(--brand) 36%, transparent);
+}
+
+/* Pane header: 8px hue square before the mono title. */
+.panel-hue {
+  background: var(--hue);
+}
+
+/* Queue item / stack frame: raised fill, 1px soft line, 2px left rule in the concept hue. */
+.queue-row {
+  background: var(--color-bg-raised);
+  border: 1px solid var(--color-line-soft);
+  box-shadow: inset 2px 0 0 var(--hue);
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+/* The running entry (TOP of the stack, the Task or Job being run): soft fill, hue border. */
+.queue-row.queue-item-active {
+  background: var(--hue-soft);
+  border-color: var(--hue-border);
+}
+.queue-row-tag {
+  color: var(--hue);
+}
+/* A chip on a running row picks up the row's hue instead of the plain line. */
+.queue-item-active .callback-chip {
+  border-color: var(--hue-border);
+}
+
+/* A chip in flight between panes is the thing happening now: it carries the accent. */
+.chip-ghost {
+  border-color: var(--brand) !important;
+  background: var(--background);
+}

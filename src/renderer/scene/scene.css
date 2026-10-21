@@ -377,3 +377,51 @@
   max-width: 760px;
   margin-inline: auto;
 }
+
+/*
+ * Concept hues on the moving parts (DESIGN.md · 3D Scene): each item's top takes a tint of its
+ * concept hue and its outline the full hue; the running item's top is a stronger tint. The
+ * machine itself stays in the neutral warm tones, so colour always means an event-loop item.
+ */
+.iso-figure [data-testid='scene-frame'] {
+  --scene-hue: var(--stack);
+}
+.iso-figure [data-testid='scene-task'],
+.iso-figure [data-testid='scene-running-task'] {
+  --scene-hue: var(--task);
+}
+.iso-figure [data-testid='scene-job'],
+.iso-figure [data-testid='scene-running-job'] {
+  --scene-hue: var(--job);
+}
+.iso-figure [data-testid='scene-timer'] {
+  --scene-hue: var(--webapi);
+}
+.iso-figure [data-testid='scene-frame'] .iso-top,
+.iso-figure [data-testid='scene-task'] .iso-top,
+.iso-figure [data-testid='scene-running-task'] .iso-top,
+.iso-figure [data-testid='scene-job'] .iso-top,
+.iso-figure [data-testid='scene-running-job'] .iso-top,
+.iso-figure [data-testid='scene-timer'] .iso-top {
+  fill: color-mix(in srgb, var(--scene-hue) 22%, var(--anatomy-top));
+}
+.iso-figure [data-testid='scene-frame'] .iso-solid[data-lit] > .iso-top,
+.iso-figure [data-testid='scene-running-task'] .iso-solid[data-lit] > .iso-top,
+.iso-figure [data-testid='scene-running-job'] .iso-solid[data-lit] > .iso-top {
+  fill: color-mix(in srgb, var(--scene-hue) 48%, var(--anatomy-lit-top));
+}
+.iso-figure [data-testid='scene-frame'] .iso-edge,
+.iso-figure [data-testid='scene-task'] .iso-edge,
+.iso-figure [data-testid='scene-running-task'] .iso-edge,
+.iso-figure [data-testid='scene-job'] .iso-edge,
+.iso-figure [data-testid='scene-running-job'] .iso-edge,
+.iso-figure [data-testid='scene-timer'] .iso-edge {
+  stroke: var(--scene-hue);
+}
+/* The plate is ruled like a pane: one hairline, square corners, the accent marks "now". */
+.iso-plate {
+  box-shadow: 0 0 0 1px var(--color-line);
+}
+.scene-caret {
+  fill: var(--brand);
+}

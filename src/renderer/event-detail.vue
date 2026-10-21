@@ -47,26 +47,26 @@ const sourceLine = computed(() => {
     <h2 class="font-mono text-sm font-medium">
       #{{ event.seq }} {{ event.k }}{{ event.visible ? '' : ` ${t('detail.bookkeeping')}` }}
     </h2>
-    <p data-testid="event-explanation" class="text-muted-foreground">{{ explanation.text }}</p>
+    <p data-testid="event-explanation" class="text-foreground-2 leading-[22px]">{{ explanation.text }}</p>
     <dl class="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-2 text-xs">
-      <dt class="text-muted-foreground">{{ t('detail.specStep') }}</dt>
+      <dt class="label-mono text-muted-foreground text-[11px]">{{ t('detail.specStep') }}</dt>
       <dd>
         <a
           data-testid="event-spec-link"
-          class="text-primary underline underline-offset-4"
+          class="text-brand-text underline underline-offset-4 after:content-['_↗']"
           :href="explanation.spec.url"
           target="_blank"
           rel="noopener noreferrer"
           >{{ explanation.spec.label }}</a
         >
       </dd>
-      <dt class="text-muted-foreground">{{ t('detail.payload') }}</dt>
+      <dt class="label-mono text-muted-foreground text-[11px]">{{ t('detail.payload') }}</dt>
       <dd class="min-w-0">
-        <pre data-testid="event-payload" tabindex="0" class="bg-muted max-h-48 overflow-auto rounded-md p-2 font-mono">{{ payload }}</pre>
+        <pre data-testid="event-payload" tabindex="0" class="bg-raised border-border-soft max-h-48 overflow-auto border p-2 font-mono">{{ payload }}</pre>
       </dd>
-      <dt class="text-muted-foreground">{{ t('detail.source') }}</dt>
+      <dt class="label-mono text-muted-foreground text-[11px]">{{ t('detail.source') }}</dt>
       <dd data-testid="event-source">{{ sourceLine ?? t('detail.noSource') }}</dd>
-      <dt class="text-muted-foreground">{{ t('detail.cause') }}</dt>
+      <dt class="label-mono text-muted-foreground text-[11px]">{{ t('detail.cause') }}</dt>
       <dd data-testid="event-cause">
         <Button v-if="cause" variant="outline" size="xs" class="font-mono" @click="emit('select', cause.seq)">
           #{{ cause.seq }} {{ cause.k }}

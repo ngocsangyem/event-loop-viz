@@ -20,6 +20,7 @@ const style = HighlightStyle.define([
     color: 'var(--editor-name)',
   },
   { tag: [tags.typeName, tags.className, tags.propertyName], color: 'var(--editor-name)' },
+  { tag: [tags.punctuation, tags.bracket, tags.separator], color: 'var(--editor-punct)' },
   { tag: [tags.invalid], color: 'var(--anatomy-red)' },
 ])
 

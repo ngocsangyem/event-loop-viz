@@ -38,7 +38,7 @@ function text(id: string, field: 'title' | 'description', fallback: string): str
         @select="emit('load', example.id)"
       >
         <span class="font-medium">{{ text(example.id, 'title', example.title) }}</span>
-        <span class="text-muted-foreground text-xs">{{ text(example.id, 'description', example.description) }}</span>
+        <span class="text-foreground-2 text-xs">{{ text(example.id, 'description', example.description) }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

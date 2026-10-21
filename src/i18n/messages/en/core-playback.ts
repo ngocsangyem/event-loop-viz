@@ -15,6 +15,15 @@ export default {
     speed: 'Speed',
     autostart: 'Autostart',
     autostartHint: 'Start playing as soon as a Run finishes',
+    /** Printed on the controls; each word is part of the control's full name above. */
+    word: {
+      start: 'Start',
+      task: 'Task',
+      tick: 'Tick',
+      prev: 'Prev',
+      next: 'Next',
+      end: 'End',
+    },
   },
   scrubber: {
     timeline: 'Timeline',

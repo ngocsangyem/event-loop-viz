@@ -30,13 +30,13 @@ function seekIndex(i: number) {
   position.value = target
 }
 
-/** Family colours, shared with nothing else: the scrubber is the only place they appear. */
+/** Concept hues, the same as the panes: Task blue, Job magenta, timer cyan, console green, error red. */
 const MARKER_COLOR: Record<string, string> = {
-  task: 'bg-blue-500',
-  job: 'bg-purple-500',
-  timer: 'bg-amber-500',
-  console: 'bg-emerald-500',
-  error: 'bg-red-500',
+  task: 'bg-task',
+  job: 'bg-job',
+  timer: 'bg-webapi',
+  console: 'bg-console',
+  error: 'bg-error',
 }
 
 function onSlide(value: number[] | undefined) {
@@ -64,7 +64,7 @@ function onSlide(value: number[] | undefined) {
         v-for="m in markers"
         :key="m.seq"
         type="button"
-        class="absolute top-0.5 h-2.5 w-1 -translate-x-1/2 cursor-pointer rounded-[1px] p-0 hover:scale-y-125"
+        class="absolute top-0.5 h-2.5 w-0.5 -translate-x-1/2 cursor-pointer p-0 transition-transform duration-(--motion-fast) hover:scale-y-125"
         :class="MARKER_COLOR[m.family]"
         :data-seq="m.seq"
         :data-family="m.family"

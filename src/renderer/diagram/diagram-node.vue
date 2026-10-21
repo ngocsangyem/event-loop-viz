@@ -38,7 +38,7 @@ const drawStyle = computed(() => ({ '--outline': `${length.value}px` }))
     <rect :x="rect.x" :y="rect.y" :width="rect.w" :height="rect.h" :rx="CARD_RADIUS" class="diagram-card" />
     <path :d="clockwise" :style="drawStyle" data-part="draw-cw" class="diagram-draw" />
     <path :d="counter" :style="drawStyle" data-part="draw-ccw" class="diagram-draw" />
-    <rect :x="rect.x + 12" :y="rect.y + 8" width="22" height="22" rx="6" class="diagram-badge" />
+    <rect :x="rect.x + 12" :y="rect.y + 8" width="22" height="22" class="diagram-badge" />
     <path
       :d="NODE_ICON[id]"
       :transform="`translate(${rect.x + 15.5} ${rect.y + 11.5}) scale(0.62)`"

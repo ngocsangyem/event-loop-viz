@@ -25,7 +25,7 @@ const { t } = useI18n()
         :aria-current="i === active ? 'step' : undefined"
         :class="[
           'flex flex-col gap-1 rounded-lg border p-2 transition-colors motion-reduce:transition-none',
-          i === active ? 'border-primary bg-primary/5' : 'border-transparent',
+          i === active ? 'border-transparent bg-accent shadow-[inset_2px_0_0_var(--brand)]' : 'border-transparent',
         ]"
         :data-active="i === active ? 'true' : 'false'"
         :data-seq="stop.seq"
@@ -38,8 +38,8 @@ const { t } = useI18n()
         >
           <span
             :class="[
-              'flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium tabular-nums',
-              i === active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+              'flex h-5 min-w-5 shrink-0 items-center justify-center font-mono text-[11px] font-medium tabular-nums',
+              i === active ? 'text-brand-text' : 'text-muted-foreground',
             ]"
           >{{ i + 1 }}<span class="sr-only">.</span></span>
           <span class="min-w-0 flex-1 font-medium">{{ stop.title }}</span>
@@ -49,8 +49,8 @@ const { t } = useI18n()
       </li>
     </ol>
     <!-- The recap: the rule in one line and what to say about it in an interview. -->
-    <AskAiMarkdown v-if="answer.outro" :text="answer.outro" class="border-primary/40 bg-primary/5 rounded-lg border-l-2 p-2.5" data-testid="ask-ai-recap" />
-    <div v-if="done && answer.stops.length > 0" class="bg-muted/50 flex items-center justify-between gap-3 rounded-lg border p-2.5">
+    <AskAiMarkdown v-if="answer.outro" :text="answer.outro" class="bg-raised border-l-console border-l-2 p-2.5" data-testid="ask-ai-recap" />
+    <div v-if="done && answer.stops.length > 0" class="bg-raised flex items-center justify-between gap-3 border p-2.5">
       <span class="text-muted-foreground text-xs">{{ t('ai.tour.ready', { total: answer.stops.length }) }}</span>
       <!-- One button whose label changes, so keyboard focus stays on it once the tour starts. -->
       <Button size="sm" :variant="active === -1 ? 'default' : 'outline'" data-testid="ask-ai-tour-start" @click="emit('go', 0)">

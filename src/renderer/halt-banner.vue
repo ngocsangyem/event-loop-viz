@@ -14,7 +14,7 @@ const message = computed(() =>
 </script>
 
 <template>
-  <Alert v-if="message" role="status" variant="destructive" data-testid="halt-banner">
+  <Alert v-if="message" role="status" data-testid="halt-banner" class="border-l-brand text-brand-text">
     <OctagonXIcon />
     <AlertDescription>{{ message }}</AlertDescription>
   </Alert>

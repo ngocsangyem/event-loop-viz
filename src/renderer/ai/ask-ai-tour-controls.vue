@@ -23,18 +23,18 @@ const percent = computed(() => ((props.index + 1) / props.stops.length) * 100)
     :aria-label="t('ai.tour.region')"
     :class="[
       'bg-popover text-popover-foreground flex min-w-0 flex-col gap-2',
-      floating ? 'w-72 max-w-[calc(100vw-6rem)] rounded-xl border p-2.5 shadow-lg' : 'border-t px-3 pt-2.5 pb-1',
+      floating ? 'bg-raised w-72 max-w-[calc(100vw-6rem)] border p-2.5' : 'border-t px-3 pt-2.5 pb-1',
     ]"
     data-testid="ask-ai-tour"
   >
     <div class="flex min-w-0 items-center gap-2 text-xs">
-      <span class="text-primary shrink-0 font-mono font-medium tabular-nums" data-testid="ask-ai-tour-progress">
+      <span class="label-mono text-brand-text shrink-0 tabular-nums" data-testid="ask-ai-tour-progress">
         {{ t('ai.tour.progress', { current: index + 1, total: stops.length }) }}
       </span>
       <span class="truncate font-medium" :title="title">{{ title }}</span>
     </div>
-    <div class="bg-muted h-1 overflow-hidden rounded-full" aria-hidden="true">
-      <div class="bg-primary h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none" :style="{ width: `${percent}%` }" />
+    <div class="bg-border-soft h-1 overflow-hidden" aria-hidden="true">
+      <div class="bg-brand h-full transition-[width] duration-300 motion-reduce:transition-none" :style="{ width: `${percent}%` }" />
     </div>
     <div class="flex items-center justify-between gap-2">
       <Button size="sm" variant="ghost" :disabled="index === 0" data-testid="ask-ai-tour-prev" @click="emit('prev')">

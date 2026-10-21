@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  BoxIcon, LanguagesIcon, LayoutGridIcon, MonitorIcon, MoonIcon, RefreshCwIcon, Share2Icon,
-  SunIcon, WorkflowIcon,
-} from '@lucide/vue'
+import { MonitorIcon, MoonIcon, SunIcon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -15,7 +12,10 @@ import type { Locale } from '@/i18n/locales'
 import type { ThemeChoice } from './use-color-theme'
 import type { VisualizerView } from './use-visualizer-view'
 
-/** Title, the Panels/Diagram/3D view switch, Share, language and colour theme. */
+/**
+ * Title, the Panels/Diagram/3D view switch, Share, language and colour theme. Set as a 48px
+ * terminal bar: lowercase title, mono meta, nav words; the active view has a 2px ink underline.
+ */
 defineProps<{ shareUrl: string | null; shareCopied: boolean }>()
 const view = defineModel<VisualizerView>('view', { required: true })
 const theme = defineModel<ThemeChoice>('theme', { required: true })
@@ -31,9 +31,9 @@ function onView(value: unknown) {
 }
 
 const VIEWS = [
-  { value: 'panels', label: 'header.panels', aria: 'header.panelsView', icon: LayoutGridIcon },
-  { value: 'diagram', label: 'header.diagram', aria: 'header.diagramView', icon: WorkflowIcon },
-  { value: '3d', label: 'header.threeD', aria: 'header.threeDView', icon: BoxIcon },
+  { value: 'panels', label: 'header.panels', aria: 'header.panelsView' },
+  { value: 'diagram', label: 'header.diagram', aria: 'header.diagramView' },
+  { value: '3d', label: 'header.threeD', aria: 'header.threeDView' },
 ] as const
 
 const THEMES = [
@@ -44,18 +44,19 @@ const THEMES = [
 </script>
 
 <template>
-  <header class="flex flex-wrap items-center gap-3">
-    <div class="bg-primary text-primary-foreground grid size-9 place-items-center rounded-lg" aria-hidden="true">
-      <RefreshCwIcon class="size-5" />
-    </div>
-    <div class="mr-auto min-w-0">
-      <h1 class="text-base leading-tight font-semibold">{{ t('app.title') }}</h1>
-      <p class="text-muted-foreground text-xs">{{ t('app.tagline') }}</p>
+  <header class="border-border flex min-h-12 flex-wrap items-center gap-x-4 gap-y-2 border-b pb-2">
+    <div class="mr-auto flex min-w-0 flex-wrap items-baseline gap-x-3">
+      <!-- Titles are lowercase; the brand square is the one accent mark in the bar. -->
+      <h1 class="flex items-center gap-2 text-base leading-tight font-semibold lowercase">
+        <span class="bg-brand size-2.5 shrink-0" aria-hidden="true" />
+        {{ t('app.title') }}
+      </h1>
+      <p class="label-mono text-muted-foreground text-[11px]">{{ t('app.tagline') }}</p>
     </div>
     <ToggleGroup
       type="single"
-      variant="outline"
       size="sm"
+      :spacing="0"
       :aria-label="t('header.visualization')"
       :model-value="view"
       @update:model-value="onView"
@@ -66,15 +67,14 @@ const THEMES = [
         :value="option.value"
         :aria-label="t(option.aria)"
         :data-testid="`view-${option.value}`"
+        class="gap-1 data-[state=on]:bg-transparent data-[state=on]:shadow-[inset_0_-2px_0_var(--foreground)]"
       >
-        <component :is="option.icon" />
         {{ t(option.label) }}
       </ToggleGroupItem>
     </ToggleGroup>
     <Popover v-model:open="shareOpen">
       <PopoverTrigger as-child>
-        <Button variant="outline" size="sm" @click="emit('share')">
-          <Share2Icon />
+        <Button variant="ghost" size="sm" @click="emit('share')">
           {{ t('header.share') }}
         </Button>
       </PopoverTrigger>
@@ -87,7 +87,6 @@ const THEMES = [
     </Popover>
     <Select v-model="locale">
       <SelectTrigger size="sm" :aria-label="t('header.language')" data-testid="locale" class="w-32">
-        <LanguagesIcon />
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

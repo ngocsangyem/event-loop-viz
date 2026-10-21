@@ -97,13 +97,13 @@ watch([position, () => rows.value.length], async () => {
       </Toggle>
       <div class="ml-auto flex items-center gap-2">
         <Checkbox id="show-all-events" v-model="showAll" />
-        <Label for="show-all-events" class="text-xs">{{ t('eventList.showAll') }}</Label>
+        <Label for="show-all-events" class="label-mono">{{ t('eventList.showAll') }}</Label>
       </div>
     </div>
     <div
       ref="scroller"
       data-testid="event-list-scroller"
-      class="max-h-80 overflow-auto rounded-md border"
+      class="max-h-80 overflow-auto border"
       :style="scrollerStyle"
       @scroll="scrollTop = ($event.target as HTMLElement).scrollTop"
     >
@@ -121,8 +121,8 @@ watch([position, () => rows.value.length], async () => {
             type="button"
             :class="
               cn(
-                'hover:bg-muted flex h-6 w-full items-center gap-2 px-2 text-left font-mono text-xs',
-                event.seq === position && 'bg-primary/10 text-foreground font-medium',
+                'hover:bg-accent text-foreground-2 flex h-6 w-full items-center gap-2 px-2 text-left font-mono text-[13px] transition-colors duration-(--motion-line)',
+                event.seq === position && 'bg-accent text-foreground font-medium shadow-[inset_2px_0_0_var(--brand)]',
                 !event.visible && 'text-muted-foreground',
               )
             "

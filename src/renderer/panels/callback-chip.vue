@@ -20,6 +20,6 @@ const label = computed(() =>
     :title="label"
     role="note"
     :aria-label="label"
-    class="bg-background text-foreground border-border block min-w-0 truncate rounded border px-1.5 py-0.5 font-mono text-xs"
+    class="callback-chip bg-background text-foreground border-border-soft block min-w-0 truncate border px-1.5 py-0.5 font-mono text-[12.5px] leading-[18px]"
   >{{ chip.text }}</span>
 </template>

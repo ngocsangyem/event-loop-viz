@@ -1,21 +1,19 @@
-
 @import "tailwindcss";
 @import "tw-animate-css";
+/* The warm terminal tokens (DESIGN.md): raw roles, shadcn-vue names, concept hues, motion. */
+@import "../docs/design/tokens.css";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Tailwind names for the tokens. Keys never reuse a raw token name (`--color-bg`, `--color-ink-2`…),
+ * because `inline` would then make a variable that points at itself.
+ */
 @theme inline {
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
+
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -24,6 +22,7 @@
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
@@ -38,89 +37,120 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --color-foreground: var(--foreground);
+  --color-foreground-2: var(--foreground-2);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-raised: var(--color-bg-raised);
+  --color-panel: var(--color-bg-panel);
+  --color-brand: var(--brand);
+  --color-brand-text: var(--brand-text);
+  --color-on-concept: var(--on-concept);
+
+  /* Event-loop concepts: full hue, -soft fill, -border at the TOP/NEW alpha. */
+  --color-stack: var(--stack);
+  --color-stack-soft: var(--stack-soft);
+  --color-stack-border: var(--stack-border);
+  --color-job: var(--job);
+  --color-job-soft: var(--job-soft);
+  --color-job-border: var(--job-border);
+  --color-task: var(--task);
+  --color-task-soft: var(--task-soft);
+  --color-task-border: var(--task-border);
+  --color-webapi: var(--webapi);
+  --color-webapi-soft: var(--webapi-soft);
+  --color-webapi-border: var(--webapi-border);
+  --color-console: var(--console);
+  --color-console-soft: var(--console-soft);
+  --color-console-border: var(--console-border);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --color-error-border: var(--error-border);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+
+  /* Radius 0 and no shadows: depth is tone steps and 1px lines. */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 0 #0000;
+  --shadow-xl: 0 0 #0000;
+  --shadow-2xl: 0 0 #0000;
+
+  --ease-term: steps(1, end);
+  --ease-swift: cubic-bezier(0.55, 0, 0.1, 1);
 }
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+/* The mono label every pane, tag, nav item and hotkey uses: 12px, 500, uppercase. */
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  line-height: 1rem;
+  text-transform: uppercase;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* Secondary mono meta text: ids, counts, clocks. */
+@utility meta-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+
+/* A printed hotkey: `[⌘↵]` in mono, no box. */
+@utility kbd-bracket {
+  &::before {
+    content: '[';
+  }
+  &::after {
+    content: ']';
+  }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+  /* The page tone sits on html (tokens.css); body stays transparent over it. */
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-variant-ligatures: none;
+  }
+}
+
+/*
+ * Rounded utilities that do not read the radius scale (rounded-full, rounded-[…]) and
+ * third-party widgets still get square corners. SVG geometry uses rx attributes and is unaffected.
+ */
+*,
+::before,
+::after {
+  border-radius: 0 !important;
+}
+
+/*
+ * One focus style everywhere: a 2px accent outline, 2px off the control, shown at once. The
+ * shadcn-vue focus rings are box-shadows; they are cleared so a control never shows two.
+ */
+:focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 2px;
+  --tw-ring-shadow: 0 0 #0000 !important;
 }
 
 /*

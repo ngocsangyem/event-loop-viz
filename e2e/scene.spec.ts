@@ -97,7 +97,8 @@ test.describe('theme', () => {
       const paper = await scene.evaluate((node) =>
         getComputedStyle(node).getPropertyValue('--anatomy-paper').trim(),
       )
-      expect(paper).toBe(scheme === 'light' ? '#fbfbfa' : '#131313')
+      // --scene-bg in docs/design/tokens.css.
+      expect(paper).toBe(scheme === 'light' ? '#f1efe8' : '#141413')
       // Pixels differ per OS font stack, so baselines live under a per-platform folder and are
       // compared only where one was recorded. Elsewhere the token check above is the assertion.
       const name = `scene-${scheme}.png`

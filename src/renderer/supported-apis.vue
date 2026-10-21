@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { BookOpenIcon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
@@ -14,7 +13,6 @@ const SUPPORTED = ['promises', 'timers', 'microtask', 'messageChannel', 'console
   <Popover>
     <PopoverTrigger as-child>
       <Button variant="ghost" size="sm">
-        <BookOpenIcon />
         {{ t('supportedApis.button') }}
       </Button>
     </PopoverTrigger>

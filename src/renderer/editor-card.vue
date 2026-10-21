@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { LoaderCircleIcon, PencilIcon, PlayIcon, SquareIcon } from '@lucide/vue'
+import { LoaderCircleIcon } from '@lucide/vue'
 import type { SharedSettings } from '@/share/share-link-codec'
 import { EXAMPLES } from '@/examples/example-library'
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert'
@@ -43,24 +43,22 @@ defineExpose({
     <CardHeader>
       <CardTitle>{{ t('editor.code') }}</CardTitle>
       <CardAction class="flex items-center gap-1.5">
-        <Button v-if="running" variant="outline" size="sm" @click="emit('cancel')">
-          <SquareIcon />
+        <Button v-if="running" variant="destructive" size="sm" @click="emit('cancel')">
           {{ t('editor.cancel') }}
         </Button>
         <Button ref="runButton" size="sm" :disabled="running" @click="emit('run')">
           <LoaderCircleIcon v-if="running" class="animate-spin" />
-          <PlayIcon v-else />
+          <Kbd v-else aria-hidden="true" class="text-primary-foreground/70 hidden sm:inline-flex">⌘↵</Kbd>
           {{ t('editor.run') }}
-          <Kbd aria-hidden="true" class="bg-primary-foreground/15 text-primary-foreground ml-0.5 hidden sm:inline-flex">⌘↵</Kbd>
         </Button>
       </CardAction>
     </CardHeader>
     <CardContent class="flex flex-col gap-2">
-      <Alert v-if="replaying" data-testid="replay-banner" class="py-2">
+      <!-- The action flows after the text and wraps under it, so a long label never covers it. -->
+      <Alert v-if="replaying" data-testid="replay-banner" class="flex! flex-wrap items-center justify-between gap-2 py-2 pr-3!">
         <AlertDescription>{{ t('editor.readOnly') }}</AlertDescription>
-        <AlertAction>
+        <AlertAction class="static">
           <Button variant="outline" size="xs" @click="emit('edit')">
-            <PencilIcon />
             {{ t('editor.edit') }}
           </Button>
         </AlertAction>

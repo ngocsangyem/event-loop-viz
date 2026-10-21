@@ -14,8 +14,8 @@ const { t } = useI18n()
 <template>
   <header class="flex flex-col gap-1.5 border-b px-3 pt-3 pb-2.5">
     <div class="flex items-center gap-1">
-      <SparklesIcon class="text-primary mr-1 size-4" aria-hidden="true" />
-      <h2 id="ask-ai-title" class="mr-auto text-sm font-semibold">{{ t('ai.title') }}</h2>
+      <SparklesIcon class="text-brand mr-1 size-4" aria-hidden="true" />
+      <h2 id="ask-ai-title" class="label-mono mr-auto">{{ t('ai.title') }}</h2>
       <Tooltip v-if="canClear">
         <TooltipTrigger as-child>
           <Button variant="ghost" size="icon-sm" :aria-label="t('ai.clear')" data-testid="ask-ai-clear" @click="emit('clear')">
