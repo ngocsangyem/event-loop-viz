@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
 /**
@@ -22,7 +22,7 @@ export const dropIn = (height = 14): Glide => ({ dx: 0, dy: -height, fade: true 
 /** A new item that stays where it is and only fades up. */
 export const fadeIn: Glide = { dx: 0, dy: 0, fade: true }
 
-const reduced = ref(false)
+const reduced = shallowRef(false)
 let watching = false
 
 /**

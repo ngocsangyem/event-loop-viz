@@ -22,18 +22,18 @@ export function useRunSession(options: {
   /** Overrides the 30 s wall-clock watchdog; lets tests shorten it. */
   watchdogMs?: number
 }) {
-  const script = ref(options.initial?.script ?? DEFAULT_SCRIPT)
+  const script = shallowRef(options.initial?.script ?? DEFAULT_SCRIPT)
   /** Run settings travel with a share link so the recipient reproduces the same Trace. */
   const settings = ref<SharedSettings>(options.initial?.settings ?? {})
   // Shallow: the Trace is immutable and large, deep proxies would only cost.
   const trace = shallowRef<Trace | null>(null)
-  const syntaxError = ref<string | null>(null)
+  const syntaxError = shallowRef<string | null>(null)
   /** Where the engine rejected the Script; drives the editor marker. Cleared on edit. */
-  const syntaxErrorAt = ref<{ line: number; column: number } | null>(null)
-  const position = ref(0)
-  const running = ref(false)
+  const syntaxErrorAt = shallowRef<{ line: number; column: number } | null>(null)
+  const position = shallowRef(0)
+  const running = shallowRef(false)
   /** "Show all events" makes Bookkeeping Events steppable, not only visible in the list. */
-  const showAll = ref(false)
+  const showAll = shallowRef(false)
   let activeRun: WorkerRun | null = null
 
   const events = computed(() => trace.value?.events ?? [])
@@ -78,6 +78,13 @@ export function useRunSession(options: {
   function discardTrace() {
     trace.value = null
     position.value = 0
+  }
+
+  /** Puts a new Script in the editor (an example): it ends the replay and any old error. */
+  function replaceScript(text: string) {
+    discardTrace()
+    syntaxError.value = null
+    script.value = text
   }
 
   async function run() {
@@ -130,6 +137,7 @@ export function useRunSession(options: {
     previousReplayState,
     unsupportedApis,
     discardTrace,
+    replaceScript,
     run,
     cancel: () => activeRun?.cancel(),
   }

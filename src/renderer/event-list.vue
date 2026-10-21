@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import { EVENT_FAMILIES, eventFamily } from '../player/event-family'
 import type { EventFamily } from '../player/event-family'
 import type { TraceEvent } from '../trace/trace-event'
@@ -15,7 +15,7 @@ const position = defineModel<number>({ required: true })
 /** Reveals Bookkeeping Events in the list and makes them steppable (the parent follows this). */
 const showAll = defineModel<boolean>('showAll', { required: true })
 
-const hidden = ref<ReadonlySet<EventFamily>>(new Set())
+const hidden = shallowRef<ReadonlySet<EventFamily>>(new Set())
 
 function toggleFamily(family: EventFamily) {
   const next = new Set(hidden.value)
@@ -30,8 +30,8 @@ const rows = computed(() =>
 // Long Runs render only the rows in view (fixed row height), so a 200k-event Trace stays light.
 const ROW_HEIGHT = 24
 const VIEWPORT_HEIGHT = 320
-const scroller = ref<HTMLElement | null>(null)
-const scrollTop = ref(0)
+const scroller = useTemplateRef<HTMLElement>('scroller')
+const scrollTop = shallowRef(0)
 
 const rowWindow = computed(() =>
   visibleWindow({

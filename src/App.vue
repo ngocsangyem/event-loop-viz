@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, useTemplateRef } from 'vue'
 import { findExample } from '@/examples/example-library'
-import { decodeShareFragment, encodeShareFragment } from '@/share/share-link-codec'
+import { decodeShareFragment } from '@/share/share-link-codec'
 import { useRunSession } from '@/use-run-session'
+import { useShareLink } from '@/use-share-link'
 import { Card, CardContent } from '@/components/ui/card'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import AppHeader from '@/renderer/app-header.vue'
@@ -29,9 +30,6 @@ import type { SameView } from '@/renderer/use-playback'
 const SceneView = defineAsyncComponent(() => import('@/renderer/scene/event-loop-scene.vue'))
 
 const shared = decodeShareFragment(window.location.hash)
-const shareUrl = ref<string | null>(null)
-/** Whether the last Share put the link on the clipboard; copying can be denied. */
-const shareCopied = ref(false)
 /** A share link runs on load; that Run must not move focus the user never placed. */
 let autoRun = false
 const editor = useTemplateRef('editor')
@@ -86,25 +84,10 @@ async function editScript() {
 
 function loadExample(id: string) {
   const example = findExample(id)
-  if (!example) return
-  session.discardTrace()
-  syntaxError.value = null
-  script.value = example.script
+  if (example) session.replaceScript(example.script)
 }
 
-async function share() {
-  const url = new URL(window.location.href)
-  url.hash = encodeShareFragment({ script: script.value, settings: settings.value })
-  shareUrl.value = url.href
-  history.replaceState(null, '', url)
-  shareCopied.value = false
-  try {
-    await navigator.clipboard.writeText(url.href)
-    shareCopied.value = true
-  } catch {
-    // Clipboard may be denied; the URL stays visible and in the address bar.
-  }
-}
+const { url: shareUrl, copied: shareCopied, share } = useShareLink(script, settings)
 
 // Opening a share link runs it immediately: the link carries inputs, not a Trace.
 onMounted(() => {

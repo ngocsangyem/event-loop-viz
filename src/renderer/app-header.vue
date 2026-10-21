@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { shallowRef } from 'vue'
 import { BoxIcon, LayoutGridIcon, MonitorIcon, MoonIcon, RefreshCwIcon, Share2Icon, SunIcon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,7 @@ const view = defineModel<VisualizerView>('view', { required: true })
 const theme = defineModel<ThemeChoice>('theme', { required: true })
 const emit = defineEmits<{ share: [] }>()
 
-const shareOpen = ref(false)
+const shareOpen = shallowRef(false)
 
 function onView(value: unknown) {
   // A single-select toggle group emits undefined when the active item is clicked again.

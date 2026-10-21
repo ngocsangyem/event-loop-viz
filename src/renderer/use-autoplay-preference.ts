@@ -1,22 +1,11 @@
-import { ref, watch } from 'vue'
-
-const STORAGE_KEY = 'elv-autoplay'
+import { computed } from 'vue'
+import { useStoredChoice } from './use-stored-choice'
 
 /** Whether a finished Run starts playing by itself. On unless the viewer turned it off. */
 export function useAutoplayPreference() {
-  let stored: string | null = null
-  try {
-    stored = localStorage.getItem(STORAGE_KEY)
-  } catch {
-    // Storage can be blocked; the default applies.
-  }
-  const autoplay = ref(stored !== 'off')
-  watch(autoplay, (on) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, on ? 'on' : 'off')
-    } catch {
-      // Not remembering the choice is harmless.
-    }
+  const stored = useStoredChoice('elv-autoplay', ['on', 'off'] as const, 'on')
+  return computed({
+    get: () => stored.value === 'on',
+    set: (on: boolean) => (stored.value = on ? 'on' : 'off'),
   })
-  return autoplay
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import type { ReplayState } from '../../player/replay-state'
 import { formatVirtualMs } from '../scene/timer-shelf-model'
 import { cn } from '@/lib/utils'
@@ -22,7 +22,7 @@ const PHASE_ANGLE: Record<LoopPhase, number> = { idle: 0, task: 90, microtasks: 
  * The pointer only ever turns clockwise, like the loop itself: going from microtasks back to
  * the next Task completes the circle instead of turning back.
  */
-const pointerAngle = ref(PHASE_ANGLE[phase.value])
+const pointerAngle = shallowRef(PHASE_ANGLE[phase.value])
 watch(phase, (next) => {
   const current = ((pointerAngle.value % 360) + 360) % 360
   pointerAngle.value += (PHASE_ANGLE[next] - current + 360) % 360

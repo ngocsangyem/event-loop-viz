@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 import { EditorState, Compartment } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
@@ -10,16 +10,17 @@ import { applySourceHighlight, sourceHighlight } from './source-highlight'
 import type { SourceHighlight } from './source-highlight'
 import { editorSyntaxTheme } from './editor-syntax-theme'
 
+/** The Script text; edits in the editor write it back. */
+const script = defineModel<string>({ required: true })
 const props = defineProps<{
-  modelValue: string
   readOnly: boolean
   errorAt?: SyntaxErrorPosition | null
   /** Ranges of the current replay position; null/absent clears the highlight. */
   highlight?: SourceHighlight | null
 }>()
-const emit = defineEmits<{ 'update:modelValue': [value: string]; run: [] }>()
+const emit = defineEmits<{ run: [] }>()
 
-const host = ref<HTMLElement | null>(null)
+const host = useTemplateRef<HTMLElement>('host')
 let view: EditorView | null = null
 // Read-only is a facet, not contenteditable=false, so the editor stays focusable and selectable.
 const readOnlyCompartment = new Compartment()
@@ -29,7 +30,7 @@ onMounted(() => {
   view = new EditorView({
     parent: host.value!,
     state: EditorState.create({
-      doc: props.modelValue,
+      doc: script.value,
       extensions: [
         // Placed before basicSetup so the run shortcut wins over the default newline binding.
         keymap.of([
@@ -54,7 +55,7 @@ onMounted(() => {
         sourceHighlight(),
         EditorView.contentAttributes.of({ 'aria-label': 'Script' }),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) emit('update:modelValue', update.state.doc.toString())
+          if (update.docChanged) script.value = update.state.doc.toString()
         }),
       ],
     }),
@@ -85,7 +86,7 @@ watch(
 )
 
 watch(
-  () => props.modelValue,
+  script,
   (value) => {
     if (view && value !== view.state.doc.toString()) {
       view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } })

@@ -1,4 +1,4 @@
-import { onScopeDispose, ref, watch } from 'vue'
+import { onScopeDispose, shallowRef, watch } from 'vue'
 import type { Ref } from 'vue'
 import type { Player } from '../player/player'
 
@@ -25,8 +25,8 @@ export function usePlayback(
   position: Ref<number>,
   sameView: () => SameView | undefined = () => undefined,
 ) {
-  const playing = ref(false)
-  const speed = ref<Speed>(1)
+  const playing = shallowRef(false)
+  const speed = shallowRef<Speed>(1)
   let timer: ReturnType<typeof setInterval> | null = null
 
   function clear() {
