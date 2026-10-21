@@ -3,13 +3,13 @@
 Paste a JavaScript Script, press Run, and replay every step of the Run against a simulated browser
 event loop: call stack, microtask queue, task queue, timers, Virtual Clock and console.
 
-**Correctness claim.** The Observable Output of a Run (console lines, uncaught exceptions,
-unhandled rejections) equals what Chrome 155 produces for the same Script. This is proven by
-differential tests that run each fixture in real Chrome and in the simulator and compare the two
-outputs (ADR-0002, ADR-0008). The app targets one Host Profile, `chrome-155`.
+The Observable Output of a Run (console lines, uncaught exceptions, unhandled rejections) matches
+what Chrome 155 produces for the same Script. Differential tests check this: they run each fixture
+in real Chrome and in the simulator and compare the two outputs. The app
+targets one Host Profile, `chrome-155`.
 
-Live site: not deployed yet. The maintainer deploys manually by following
-[docs/deployment-guide.md](docs/deployment-guide.md); the URL will be added here afterwards.
+The site is not deployed yet. The maintainer deploys by hand with
+[docs/deployment-guide.md](docs/deployment-guide.md) and will add the URL here.
 
 ## How it works
 
@@ -20,7 +20,7 @@ source highlighting). Architecture: [docs/system-architecture.md](docs/system-ar
 Status and plans: [docs/project-roadmap.md](docs/project-roadmap.md). Terms are defined in
 [GLOSSARY.md](GLOSSARY.md); decisions are in [docs/adr/](docs/adr/).
 
-## Supported APIs (ADR-0006, ADR-0010)
+## Supported APIs
 
 - Everything engine262 implements: Promise, async/await, generators, async generators, `for await`.
 - `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
@@ -30,24 +30,25 @@ Status and plans: [docs/project-roadmap.md](docs/project-roadmap.md). Terms are 
 - `Date.now()` and `performance.now()` (they read the Virtual Clock)
 - Scripts run as classic scripts. `Math.random` is seeded per Run.
 
-## Unsupported APIs (ADR-0006, ADR-0010)
+## Unsupported APIs
 
 `fetch`, the DOM (`document`, `window`), `requestAnimationFrame`, `window.postMessage`,
 `addEventListener` (including `addEventListener('message')`), `MessagePort` transfer, modules and
 `import`, `FinalizationRegistry`, `WeakRef`, `Atomics.wait`, `SharedArrayBuffer`.
 
-Each one exists as a stub that throws `UnsupportedApiError` naming the API, and a pre-run scan lists
-them before the Run. The app never guesses at their ordering. `requestAnimationFrame` is the first
+Each one is a stub that throws `UnsupportedApiError` with the API's name, and a scan lists the ones
+a Script uses before it runs. The app does not guess how they would be ordered. `requestAnimationFrame` is the first
 candidate for v1.1 (see the roadmap).
 
 ## Prerequisites
 
 - Node.js `^22.18.0 || >=24.12.0` (CI uses 24)
-- pnpm 12.14.0, pinned by `packageManager` in `package.json` (an older global pnpm switches to it
-  by itself; `corepack pnpm` also works). Do not use npm or yarn: the lockfile, the engine262 pin
-  and the engine262 patch (ADR-0009, reapplied automatically on install) are managed by pnpm.
-- `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440`: pnpm only resolves package versions that
-  have been published for at least a day, and the lockfile must not contain newer ones.
+- pnpm 12.14.0, pinned by `packageManager` in `package.json`. Install it globally or run
+  `corepack pnpm`. A global pnpm 10 cannot switch itself to 12. Do not use npm or yarn: pnpm
+  manages the lockfile, the engine262 pin and the engine262 patch, which it reapplies
+  on every install.
+- `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440`, so pnpm only resolves versions published at
+  least a day ago, and the lockfile must not contain newer ones.
 
 ## Run it
 
@@ -71,23 +72,24 @@ pnpm test:e2e           # Playwright e2e (dev server on :5173; CI serves the bui
   oracle fixtures. Check `git status` afterwards. CI runs `pnpm exec oxlint .` and
   `pnpm exec eslint .` without `--fix`.
 - `test:oracle` needs no browser: it runs each fixture in the simulator and compares it with the
-  committed `oracle/fixtures/*.golden.json`. Fixtures that fail until their behavior lands are
-  listed in `.github/oracle-known-failures.txt`; CI fails on any other failure.
+  committed `oracle/fixtures/*.golden.json`. `.github/oracle-known-failures.txt` lists the fixtures
+  expected to fail until their behavior lands; CI fails on any other failure.
 - `check:build` asserts that engine262 is only in the Worker chunk and that built-in function names
   survive minification (they become frame labels in the Trace).
 
 ## Re-record the oracle goldens
 
-Only needed when adding a fixture or bumping the Chrome major. It needs a local Google Chrome whose
-major version is exactly 155; otherwise the recorder refuses to run (add a new Host Profile first,
-ADR-0008).
+You only need this when you add a fixture or move to a new Chrome major. It needs a local Google
+Chrome whose major version is exactly 155; the recorder refuses to run with any other version (add
+a new Host Profile first).
 
 ```sh
 pnpm oracle:record                  # all fixtures
 pnpm oracle:record <fixture-name>   # one fixture, e.g. queue-microtask-vs-then
 ```
 
-Each fixture is run 5 times in Chrome; the runs must agree or the fixture is non-deterministic.
+The recorder runs each fixture 5 times in Chrome. If the runs disagree, the fixture is
+non-deterministic.
 A `// @oracle-skip: <reason>` line at the top of a fixture marks a Skipped Fixture.
 
 ## CI
