@@ -5,11 +5,12 @@ import { usePrefersReducedMotion } from '../scene/scene-motion'
 import DrivePopover from './drive-popover.vue'
 import { placeDrivePopover } from './place-drive-popover'
 import { driveTargetElement, measureDriveTarget, revealDriveTarget } from './drive-target-rect'
-import type { DriveSpot } from './drive-step'
+import type { DriveInfo, DriveSpot } from './drive-step'
 
 /**
- * Drive me's spotlight: the page dims under a scrim with one rectangular hole around the step's
- * spot, outlined by a 1px brand rule (radius 0, no shadow), and the step card sits beside it.
+ * Drive me's spotlight: the page dims under a scrim with a rectangular hole around the step's
+ * spot, outlined by a 1px brand rule (radius 0, no shadow), and the step card sits beside it. A
+ * second hole keeps the Script line the step is about in view, so the code is never dimmed.
  * Between steps the hole and the card glide (GSAP); under reduced motion they jump. Clicks on
  * the scrim are swallowed, the hole stays clickable. The parent mounts it only while driving.
  */
@@ -19,6 +20,10 @@ const props = defineProps<{
   total: number
   title: string
   body: string
+  note?: string
+  info?: DriveInfo
+  /** The Script line the step is about; lit in the Source pane next to the spot. */
+  codeLine?: number
   /** Space at the bottom the card must keep clear: the pinned dock. */
   bottomReserve?: number
   /** Changes when the page swaps what is drawn (the visualization), so the spot is found again. */
@@ -33,6 +38,8 @@ const card = useTemplateRef<HTMLElement>('card')
 const viewport = shallowRef({ width: window.innerWidth, height: window.innerHeight })
 const hole = reactive({ x: 0, y: 0, w: 0, h: 0 })
 const lit = shallowRef(false)
+const codeHole = reactive({ x: 0, y: 0, w: 0, h: 0 })
+const codeLit = shallowRef(false)
 let tweens: gsap.core.Tween[] = []
 let observer: ResizeObserver | null = null
 let frame = 0
@@ -42,11 +49,29 @@ const MAX_SEARCHES = 12
 let searches = 0
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
+type Box = { x: number; y: number; w: number; h: number }
+const cut = (b: Box) => `M${b.x} ${b.y}h${b.w}v${b.h}h${-b.w}Z`
 const scrimPath = computed(() => {
   const { width: w, height: h } = viewport.value
-  const outer = `M0 0H${w}V${h}H0Z`
-  return lit.value ? `${outer}M${hole.x} ${hole.y}h${hole.w}v${hole.h}h${-hole.w}Z` : outer
+  return `M0 0H${w}V${h}H0Z${lit.value ? cut(hole) : ''}${codeLit.value ? cut(codeHole) : ''}`
 })
+
+/** The code spot, unless the step already lights that line (or the whole Source pane) itself. */
+const codeSpot = computed(() =>
+  props.codeLine === undefined || props.spot?.target === 'source' ? null : { target: 'source' as const, line: props.codeLine })
+
+const padded = (r: { left: number; top: number; width: number; height: number }, pad: number): Box =>
+  ({ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 })
+/** Two holes must not overlap: evenodd would fill their overlap back in. */
+const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+
+function moveHole(box: Box, to: Box | null, on: { value: boolean }, motion: boolean) {
+  if (to) {
+    if (motion && on.value) tweens.push(gsap.to(box, { ...to, duration: GLIDE_S, ease: 'power3.inOut' }))
+    else Object.assign(box, to)
+  }
+  on.value = to !== null
+}
 
 /** Measures the spot and moves the hole and the card there; `glide` animates from where they are. */
 function draw(glide: boolean) {
@@ -60,7 +85,10 @@ function draw(glide: boolean) {
       draw(true)
     }, 120)
   }
-  const next = rect && { x: rect.left - PAD, y: rect.top - PAD, w: rect.width + PAD * 2, h: rect.height + PAD * 2 }
+  const next = rect && padded(rect, PAD)
+  const codeRect = codeSpot.value ? measureDriveTarget(codeSpot.value) : null
+  const codeNext = codeRect && padded(codeRect, 2)
+  const code = codeNext && !(next && overlaps(next, codeNext)) ? codeNext : null
   const el = card.value
   const size = el ? { width: el.offsetWidth, height: el.offsetHeight } : { width: 360, height: 180 }
   const spot = next && { left: next.x, top: next.y, width: next.w, height: next.h }
@@ -69,11 +97,8 @@ function draw(glide: boolean) {
   for (const tween of tweens) tween.kill()
   tweens = []
   const motion = glide && !reduced.value
-  if (next) {
-    if (motion && lit.value) tweens.push(gsap.to(hole, { ...next, duration: GLIDE_S, ease: 'power3.inOut' }))
-    else Object.assign(hole, next)
-  }
-  lit.value = next !== null
+  moveHole(hole, next, lit, motion)
+  moveHole(codeHole, code, codeLit, motion)
   if (el) {
     if (motion) tweens.push(gsap.to(el, { x: place.left, y: place.top, duration: GLIDE_S, ease: 'power3.inOut' }))
     else gsap.set(el, { x: place.left, y: place.top })
@@ -88,19 +113,22 @@ function follow() {
 
 function watchTarget() {
   observer?.disconnect()
-  const el = props.spot ? driveTargetElement(props.spot) : null
-  if (el && typeof ResizeObserver === 'function') {
-    observer = new ResizeObserver(follow)
-    observer.observe(el)
+  if (typeof ResizeObserver !== 'function') return
+  observer = new ResizeObserver(follow)
+  for (const spot of [props.spot, codeSpot.value]) {
+    const el = spot ? driveTargetElement(spot) : null
+    if (el) observer.observe(el)
   }
 }
 
 // A new step: let the replay patch, bring the spot into view, then glide to it.
 watch(
-  () => [props.spot?.target, props.spot?.line, props.index, props.layoutKey] as const,
+  () => [props.spot?.target, props.spot?.line, props.codeLine, props.index, props.layoutKey] as const,
   async () => {
     searches = 0
     await nextTick()
+    // The code line first: it scrolls inside the editor; the spot last, so it ends up in view.
+    if (codeSpot.value) revealDriveTarget(codeSpot.value, reduced.value)
     if (props.spot) revealDriveTarget(props.spot, reduced.value)
     watchTarget()
     cancelAnimationFrame(frame)
@@ -110,6 +138,7 @@ watch(
 
 onMounted(() => {
   returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  if (codeSpot.value) revealDriveTarget(codeSpot.value, true)
   if (props.spot) revealDriveTarget(props.spot, true)
   watchTarget()
   draw(false)
@@ -146,9 +175,22 @@ onBeforeUnmount(() => {
           style="stroke: var(--brand)"
           stroke-width="1"
         />
+        <!-- The code line: a quieter dashed rule, so the spot still reads as the main thing. -->
+        <rect
+          v-if="codeLit"
+          :x="codeHole.x + 0.5"
+          :y="codeHole.y + 0.5"
+          :width="Math.max(codeHole.w - 1, 0)"
+          :height="Math.max(codeHole.h - 1, 0)"
+          fill="none"
+          style="stroke: var(--brand)"
+          stroke-width="1"
+          stroke-dasharray="3 3"
+          data-testid="drive-code-hole"
+        />
       </svg>
       <div ref="card" class="absolute top-0 left-0" style="pointer-events: auto">
-        <DrivePopover :index="index" :total="total" :title="title" :body="body" @next="emit('next')" @prev="emit('prev')" @end="emit('end')">
+        <DrivePopover :index="index" :total="total" :title="title" :body="body" :note="note" :info="info" @next="emit('next')" @prev="emit('prev')" @end="emit('end')">
           <!-- Forwarded only when given, so the popover falls back to the step body. -->
           <template v-if="$slots.default" #default><slot /></template>
         </DrivePopover>

@@ -50,9 +50,22 @@ export interface DriveStep extends DriveSpot {
   body: string
 }
 
+/** An "under the hood" note: what a spec or MDN says about the mechanism, with its source. */
+export interface DriveInfo {
+  title: string
+  body: string
+  source: string
+  url: string
+}
+
 /** A step placed on the replay: the position (event seq) it moves the playhead to. */
 export interface ResolvedDriveStep extends DriveSpot {
   position: number
   title: string
   body: string
+  /** The Script line the step is about; it is lit too, so the code never hides under the scrim. */
+  code?: number
+  /** Why this happens at this point; hand-written for the built-in examples. */
+  note?: string
+  info?: DriveInfo
 }

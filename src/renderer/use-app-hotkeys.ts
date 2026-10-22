@@ -24,6 +24,8 @@ const VIEW_KEYS: Record<string, VisualizerView> = { '1': 'panels', '2': 'diagram
 
 /** A modal dialog owns the keyboard while it is open; its own Esc and Tab handling must win. */
 const OPEN_DIALOG = '[data-slot=dialog-content][data-state=open]'
+/** An open popover (a Drive me "under the hood" note, a picker) closes on Esc by itself; Esc is its alone. */
+const OPEN_POPOVER = '[data-slot=popover-content][data-state=open]'
 
 /**
  * Page-wide app keys from DESIGN.md · Keyboard map, beyond the playback keys: E/R, 1/2/3, L/T/S,
@@ -46,7 +48,7 @@ export function useAppHotkeys(actions: AppHotkeyActions) {
       return
     }
     if (event.key === 'Escape') {
-      if (!inDialog) actions.cancelRun()
+      if (!inDialog && !document.querySelector(OPEN_POPOVER)) actions.cancelRun()
       return
     }
 

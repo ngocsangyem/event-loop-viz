@@ -1,9 +1,13 @@
 import type en from '../en/core-drive'
 import examples from './drive-examples'
+import narration from './drive-narration'
+import info from './drive-info'
 
 export default {
   drive: {
     examples,
+    narration,
+    info,
     ai: {
       keyTitle: 'Kết nối OpenRouter để chạy Drive me cho Script này',
       keyBody: 'Script này chưa có hướng dẫn soạn sẵn. Có key OpenRouter, AI sẽ viết hướng dẫn từ Run này. Script và Trace chỉ được gửi đi khi bạn bấm Drive me.',
@@ -17,6 +21,9 @@ export default {
     next: 'Tiếp',
     done: 'Xong',
     end: 'Kết thúc',
+    why: 'Tại sao',
+    infoButton: 'Bên trong',
+    infoSource: 'Nguồn',
     start: 'Drive me',
     stop: 'Kết thúc Drive me',
     loading: 'Đang chuẩn bị hướng dẫn…',

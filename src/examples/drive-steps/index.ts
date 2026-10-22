@@ -1,4 +1,4 @@
-import type { CuratedDriveStep } from './curated-drive-step'
+import type { CuratedDriveNote } from './curated-drive-step'
 import { awaitVsThen } from './await-vs-then'
 import { syncPromiseAsyncTimeout } from './sync-promise-async-timeout'
 import { timersAndClamp } from './timers-and-clamp'
@@ -9,8 +9,8 @@ import { unhandledRejection } from './unhandled-rejection'
 import { busyWait } from './busy-wait'
 import { infiniteLoop } from './infinite-loop'
 
-/** Curated walkthroughs, by example id. An example without an entry has no curated walkthrough. */
-export const CURATED_DRIVE_STEPS: Readonly<Record<string, readonly CuratedDriveStep[]>> = {
+/** The why notes of each example's walkthrough, by example id. An example without an entry has no curated walkthrough. */
+export const CURATED_DRIVE_NOTES: Readonly<Record<string, readonly CuratedDriveNote[]>> = {
   'await-vs-then': awaitVsThen,
   'sync-promise-async-timeout': syncPromiseAsyncTimeout,
   'timers-and-clamp': timersAndClamp,
@@ -22,4 +22,4 @@ export const CURATED_DRIVE_STEPS: Readonly<Record<string, readonly CuratedDriveS
   'infinite-loop': infiniteLoop,
 }
 
-export type { CuratedDriveStep }
+export type { CuratedDriveNote }

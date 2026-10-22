@@ -51,3 +51,48 @@
 
 ## Unresolved questions
 1. A 16-step walkthrough (sync-promise-async-timeout) is long. Should Drive me offer a "short" mode that skips the call stack steps?
+
+## Second pass (same day): every call, not only callbacks
+**User report:** after `console.log('start')` the walkthrough jumped straight to setTimeout. It never said that the log goes on the call stack, prints, and leaves.
+
+**Root cause:** the steps were written by hand per example, so any call the author did not think of was missing.
+
+**Fix: steps are now built from the Trace** (`renderer/drive/narrate-trace.ts`).
+- **Every move the learner can see is a step:**
+  - the Script going on the call stack;
+  - every function the Script calls, including built-ins the Script calls by name (`console.log()`, `setTimeout()`, `Promise.resolve()`, `.then()`, `.next()`, `postMessage()`, `Date.now()`…);
+  - what each call prints, schedules or queues;
+  - each Checkpoint;
+  - each Job or Task taken, and its callback going on the call stack;
+  - awaits and resumes;
+  - how the Run ends.
+- **Left out:** engine-internal frames (Promise constructor, executor, species, message dispatch), pops, and bookkeeping events.
+- **Loops:** a loop calling a built-in more than 3 times back to back becomes one step with the count read from the Trace (busy-wait: `Date.now()` × 2499). A short `.then().then()` chain stays as separate steps.
+- **No fabrication:** the words come from generic templates (`drive.narration`) filled only with values from the event: line, printed text, ms, Task/Job number. Each template sentence holds for every Script that can produce that step.
+- **Curated layer:** per-example "why" notes (`examples/drive-steps/*.ts`) stand on narrated steps. A test fails if a note lands off a step.
+- **Under the hood:** an ⓘ popover on the first step of each mechanism. The text restates passages verified in `researcher-2026-10-22-event-loop-under-the-hood-sources.md`, with a source link.
+
+**Fixed during this pass:**
+- **The rejection report is queued at the *end* of the Checkpoint, not "after" it.** Trace: `task:queue` seq 64 comes before `checkpoint:end` seq 65. Spec: notify about rejected promises is part of the checkpoint steps.
+- **Esc on an open ⓘ popover also ended Drive me.** Now Esc closes the popover only.
+
+**Step counts:**
+
+| Example | Steps |
+|---|---|
+| sync-promise-async-timeout | 31 |
+| await-vs-then | 23 |
+| thenables | 29 |
+| async-generators | 24 |
+| message-channel | 21 |
+| unhandled-rejection | 26 |
+| busy-wait | 23 |
+| timers-and-clamp | 76 |
+| infinite-loop | 4 |
+
+**Checks:**
+- Rendered the en and vi text of every example with the real simulator and read it through.
+- In the browser: step 2/31 lights the Call Stack panel showing `console.log`; the ⓘ link opens console.spec.whatwg.org/#printer; Esc closes ⓘ while Drive me stays on.
+- vitest and type-check were not run.
+
+**Open:** custom Scripts still go to the AI (the user's decision). The narration now works for any Script without a key; the AI could be limited to adding "why" notes.

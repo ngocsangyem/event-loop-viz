@@ -1,53 +1,41 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
-import en from '../../i18n/messages/en/drive-examples'
-import vi from '../../i18n/messages/vi/drive-examples'
-import { exampleMessageKey } from '../../renderer/drive/curated-drive-steps'
-import { resolveDriveSteps } from '../../renderer/drive/resolve-drive-steps'
+import { afterEach, describe, expect, it } from 'vitest'
+import { i18n } from '../../i18n'
+import { curatedDriveSteps } from '../../renderer/drive/curated-drive-steps'
 import { runScript } from '../../runner/run-script'
-import { CURATED_DRIVE_STEPS } from '../drive-steps'
+import { CURATED_DRIVE_NOTES } from '../drive-steps'
 import { EXAMPLES } from '../example-library'
 
-type Words = Record<string, Record<string, { title: string; body: string }>>
+const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params ?? {})
 
-describe('curated Drive me steps', () => {
-  it('cover every example', () => {
-    expect(Object.keys(CURATED_DRIVE_STEPS).sort()).toEqual(EXAMPLES.map((e) => e.id).sort())
+afterEach(() => {
+  i18n.global.locale.value = 'en'
+})
+
+describe('example walkthroughs', () => {
+  it('exist for every example', () => {
+    expect(Object.keys(CURATED_DRIVE_NOTES).sort()).toEqual(EXAMPLES.map((e) => e.id).sort())
   })
 
-  it('all find their event in the Run, in the written order, and have words in en and vi', async () => {
-    for (const example of EXAMPLES) {
-      const curated = CURATED_DRIVE_STEPS[example.id] ?? []
-      const result = await runScript(example.script)
-      expect(result.kind, example.id).toBe('ran')
-      if (result.kind !== 'ran') continue
-
-      const { steps, unresolved } = resolveDriveSteps(
-        curated.map(({ key, ...step }) => ({ ...step, title: key, body: '' })),
-        result.trace.events,
-      )
-      expect(unresolved.map((s) => s.title), example.id).toEqual([])
-      const positions = steps.map((s) => s.position)
-      expect(positions, example.id).toEqual([...new Set(positions)].sort((a, b) => a - b))
-
-      const key = exampleMessageKey(example.id)
-      for (const words of [en as Words, vi as Words]) {
-        for (const { key: step } of curated) {
-          expect(words[key]?.[step]?.title, `${example.id}.${step}`).toBeTruthy()
-          expect(words[key]?.[step]?.body, `${example.id}.${step}`).toBeTruthy()
+  for (const locale of ['en', 'vi'] as const) {
+    it(`land every note on a step and leave no message unfilled (${locale})`, async () => {
+      i18n.global.locale.value = locale
+      for (const example of EXAMPLES) {
+        const result = await runScript(example.script)
+        if (result.kind !== 'ran') throw new Error(`${example.id} did not run`)
+        const steps = curatedDriveSteps(example.id, result.trace, t)
+        expect(steps, example.id).not.toBeNull()
+        const notes = steps!.filter((s) => s.note).length
+        expect(notes, example.id).toBe(CURATED_DRIVE_NOTES[example.id]!.length)
+        const positions = steps!.map((s) => s.position)
+        expect(positions, example.id).toEqual([...new Set(positions)].sort((a, b) => a - b))
+        for (const step of steps!) {
+          for (const text of [step.title, step.body, step.note ?? '', step.info?.title ?? '', step.info?.body ?? '']) {
+            expect(text, `${example.id}@${step.position}`).not.toMatch(/\{|\}|drive\.|halt\./)
+          }
+          if (step.line !== undefined) expect(step.line).toBeLessThanOrEqual(example.script.split('\n').length)
         }
-        // No orphans: every written step is used by the walkthrough.
-        expect(Object.keys(words[key] ?? {}).sort(), example.id).toEqual(curated.map((s) => s.key).sort())
       }
-    }
-  })
-
-  it('point Source steps at a real line of the Script', () => {
-    for (const example of EXAMPLES) {
-      const lines = example.script.split('\n').length
-      for (const step of CURATED_DRIVE_STEPS[example.id] ?? []) {
-        if (step.line !== undefined) expect(step.line, `${example.id}.${step.key}`).toBeLessThanOrEqual(lines)
-      }
-    }
-  })
+    })
+  }
 })

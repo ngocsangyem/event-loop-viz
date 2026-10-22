@@ -1,9 +1,13 @@
 import examples from './drive-examples'
+import narration from './drive-narration'
+import info from './drive-info'
 
 /** Drive me: the highlighted, step-by-step walkthrough of a Run. */
 export default {
   drive: {
     examples,
+    narration,
+    info,
     ai: {
       keyTitle: 'Connect OpenRouter to drive this Script',
       keyBody: 'This Script has no hand-written walkthrough. With an OpenRouter key, the AI writes one from this Run. The Script and its Trace are sent only when you press Drive me.',
@@ -17,6 +21,9 @@ export default {
     next: 'Next',
     done: 'Done',
     end: 'End',
+    why: 'Why',
+    infoButton: 'Under the hood',
+    infoSource: 'Source',
     start: 'Drive me',
     stop: 'End Drive me',
     loading: 'Preparing the walkthrough…',
