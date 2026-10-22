@@ -16,8 +16,9 @@
       transform var(--motion-base) var(--ease-swift),
       opacity var(--motion-base) var(--ease-swift) var(--motion-tick);
   }
+  /* During a flight the glide takes the flight's pace, so neighbours make room as the chip travels. */
   .queue-item-move {
-    transition: transform var(--motion-slow) var(--ease-swift);
+    transition: transform var(--lane-glide-ms, var(--motion-slow)) var(--ease-swift);
   }
   .queue-item-enter-from {
     opacity: 0;

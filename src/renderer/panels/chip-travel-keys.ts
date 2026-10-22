@@ -10,10 +10,12 @@ export interface ChipTravelState {
   arriving: ShallowRef<ReadonlySet<string>>
   /** The coming patch is a jump: rows appear and vanish without transitions. */
   snapping: ShallowRef<boolean>
+  /** Length of the lane glide while chips are flying, in ms; null means the lanes use their own pace. */
+  glideMs: ShallowRef<number | null>
 }
 
 export const CHIP_TRAVEL_KEY: InjectionKey<ChipTravelState> = Symbol('chip-travel')
 
 export function createChipTravelState(): ChipTravelState {
-  return { arriving: shallowRef<ReadonlySet<string>>(new Set()), snapping: shallowRef(false) }
+  return { arriving: shallowRef<ReadonlySet<string>>(new Set()), snapping: shallowRef(false), glideMs: shallowRef<number | null>(null) }
 }

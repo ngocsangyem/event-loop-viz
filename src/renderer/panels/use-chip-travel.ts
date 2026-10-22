@@ -5,8 +5,8 @@ import type { SameView } from '../use-playback'
 import { usePrefersReducedMotion } from '../scene/scene-motion'
 import { chipLabelsOf, chipsOf } from './callback-chip-model'
 import { chipElements } from './chip-elements'
-import { flyChip, isOnScreen, pulseChip, rectOf } from './chip-flight'
-import type { ChipRect, Flight } from './chip-flight'
+import { flyChip, isOnScreen, poseRect, pulseChip, rectOf } from './chip-flight'
+import type { ChipRect, Flight, FlightPose } from './chip-flight'
 import { isSingleStep } from './chip-step-detection'
 import type { ChipTravelState } from './chip-travel-keys'
 import { diffChipPlaces } from './chip-travel-plan'
@@ -23,6 +23,8 @@ export interface ChipTravelOptions {
 }
 
 const NO_IDS: ReadonlySet<string> = new Set()
+/** The lane glide ends as the chip starts settling, so the slot is open just as it lands. */
+const GLIDE_SHARE = 0.82
 
 /**
  * Makes callback chips visibly travel between panels on a single step, forward or back.
@@ -34,15 +36,19 @@ const NO_IDS: ReadonlySet<string> = new Set()
 export function useChipTravel(options: ChipTravelOptions) {
   const { t } = useI18n()
   const reduced = usePrefersReducedMotion()
-  const { arriving, snapping } = options.state
+  const { arriving, snapping, glideMs } = options.state
   let running: Flight[] = []
+  /** The flights still in the air, by chip id, so the next step can pick each one up mid-air. */
+  let flightsById = new Map<string, Flight>()
   let generation = 0
 
   /** Ends flights at once: ghosts go, hidden chips show, so the next step measures the real layout. */
   function finish() {
     for (const flight of running) flight.end()
     running = []
+    flightsById = new Map()
     arriving.value = NO_IDS
+    glideMs.value = null
   }
 
   /** A move that fails must not leave the lists without transitions or the chips hidden. */
@@ -59,6 +65,12 @@ export function useChipTravel(options: ChipTravelOptions) {
   }
 
   async function travel(mine: number, to: number, from: number, player: Player | null, previous: Player | null) {
+    // First for chips still in the air is where the eye is now, not where their real chip sits.
+    const midAir = new Map<string, FlightPose>()
+    for (const [id, flight] of flightsById) {
+      const pose = flight.pose?.()
+      if (pose) midAir.set(id, pose)
+    }
     finish()
     const canAnimate = typeof Element.prototype.animate === 'function' && !reduced.value
     // A new Trace has nothing to compare with: it just appears.
@@ -80,8 +92,11 @@ export function useChipTravel(options: ChipTravelOptions) {
     const flies = single && canAnimate && !plan.tooMany
     // Entered chips leave the highlighted code; going back there is nothing to leave from.
     const flyingEntered = to > from ? plan.entered : []
-    const flying = flies ? [...plan.moved, ...flyingEntered] : []
+    const flying = flies ? [...new Set([...plan.moved, ...flyingEntered, ...midAir.keys()])] : []
     arriving.value = flying.length > 0 ? new Set(flying) : NO_IDS
+    const duration = options.travelMs()
+    // Neighbours make room over the same stretch the chip is travelling, not on their own clock.
+    glideMs.value = flying.length > 0 ? Math.round(duration * GLIDE_SHARE) : null
 
     // Old DOM, before Vue patches it.
     const before = new Map<string, ChipRect>()
@@ -96,24 +111,35 @@ export function useChipTravel(options: ChipTravelOptions) {
     const chips = chipElements()
     const overlay = options.overlay()
     const highlight = document.querySelector('.cm-source-highlight')
-    const duration = options.travelMs()
-    for (const id of [...plan.moved, ...plan.entered]) {
+    const resumable = flies ? [...midAir.keys()] : []
+    for (const id of new Set([...plan.moved, ...plan.entered, ...resumable])) {
       const chip = chips.get(id)
       if (!chip) continue
       const last = rectOf(chip)
-      const origin = before.get(id) ?? (flyingEntered.includes(id) && highlight ? editorOrigin(highlight, last) : null)
+      const resume = flies ? midAir.get(id) : undefined
+      const origin = resume
+        ? poseRect(resume)
+        : (before.get(id) ?? (flyingEntered.includes(id) && highlight ? editorOrigin(highlight, last) : null))
       if (flies && overlay && origin && isOnScreen(origin) && isOnScreen(last)) {
-        running.push(flyChip(overlay, chip, origin, last, duration, !before.has(id)))
-      } else if (canAnimate) {
+        const flight = flyChip(overlay, chip, origin, last, duration, { resume, fromCode: !resume && !before.has(id) })
+        running.push(flight)
+        flightsById.set(id, flight)
+      } else if (canAnimate && !resume) {
         running.push(pulseChip(chip))
       }
     }
     // The rows only needed to skip their enter transform while they were measured and set off.
-    if (running.length === 0) arriving.value = NO_IDS
+    if (running.length === 0) {
+      arriving.value = NO_IDS
+      glideMs.value = null
+    }
     else {
       const settled = running
       void Promise.allSettled(settled.map((flight) => flight.settled)).then(() => {
-        if (mine === generation) arriving.value = NO_IDS
+        if (mine !== generation) return
+        arriving.value = NO_IDS
+        glideMs.value = null
+        flightsById = new Map()
       })
     }
   }

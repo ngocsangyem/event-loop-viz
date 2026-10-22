@@ -45,7 +45,14 @@ const departed = useDepartedItems(() => props.items)
 <template>
   <div class="relative flex flex-col gap-1.5">
     <p v-if="items.length === 0 && departed.length === 0" class="empty-slot">{{ empty }}</p>
-    <TransitionGroup tag="ol" :name="transitionName" :data-testid="testid" class="relative flex flex-col gap-1.5">
+    <!-- While chips fly, rows glide over the flight's own length (panel-motion.css reads the variable). -->
+    <TransitionGroup
+      tag="ol"
+      :name="transitionName"
+      :data-testid="testid"
+      :style="travel?.glideMs.value ? { '--lane-glide-ms': `${travel.glideMs.value}ms` } : undefined"
+      class="relative flex flex-col gap-1.5"
+    >
       <li
         v-for="item in items"
         :key="item.id"
