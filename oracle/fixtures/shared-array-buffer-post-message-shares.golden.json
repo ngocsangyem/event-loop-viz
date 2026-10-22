@@ -1,0 +1,26 @@
+{
+  "fixture": "shared-array-buffer-post-message-shares.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "4 [object SharedArrayBuffer] false 3"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "false true 1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "9"
+    }
+  ]
+}

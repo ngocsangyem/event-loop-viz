@@ -51,18 +51,25 @@ export function createPromiseEventReporters(
    * it is pausing at and the current position is the right one.
    */
   const awaitSite: AwaitSite = (context) => parkedSites.get(context) ?? currentSite(context)
+  /**
+   * Async functions parked at an await. engine262 holds their context only in a JS closure of
+   * the await's reaction handler, which `gc()` cannot see, so they are marked as roots.
+   */
+  const parkedContexts = new Set<object>()
 
   const reportAwaitEvent = (event: E.AwaitEvent) => {
     if (state.hostDepth) return
     const fid = frameInfo(event.context as unknown as Frame).frameId
     if (event.type === 'suspend') {
       parkedSites.set(event.context, currentSite(event.context))
+      parkedContexts.add(event.context)
       // This await is now paused; an enclosing one (`await (await a)`) is next in line.
       state.pendingAwaits.get(event.context)?.pop()
       state.hooks.onAwaitEvent({ type: 'suspend', fid, awaitedPid: promiseId(event.promise) })
     } else {
       // The next await in this context must not reuse this pause site.
       parkedSites.delete(event.context)
+      parkedContexts.delete(event.context)
       state.hooks.onAwaitEvent({ type: 'resume', fid, mode: event.mode })
     }
   }
@@ -76,5 +83,7 @@ export function createPromiseEventReporters(
     state.hooks.onAsyncGeneratorEvent({ type: event.type, gid })
   }
 
-  return { promiseId, awaitSite, reportPromiseEvent, reportAwaitEvent, reportAsyncGeneratorEvent }
+  const markParked = (m: (value: unknown) => void) => parkedContexts.forEach(m)
+
+  return { promiseId, awaitSite, reportPromiseEvent, reportAwaitEvent, reportAsyncGeneratorEvent, markParked }
 }

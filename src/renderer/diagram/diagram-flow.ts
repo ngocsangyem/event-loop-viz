@@ -24,8 +24,11 @@ export const EDGE_IDS = Object.keys(EDGE_ENDS) as EdgeId[]
 /** Which message `diagram.step.<key>` describes the step, and its parameters. */
 export type StepKey =
   | 'register'
+  | 'registerWebApi'
   | 'timerCallback'
   | 'message'
+  | 'webApiDone'
+  | 'frame'
   | 'runTask'
   | 'timerDue'
   | 'runTimerTask'
@@ -76,10 +79,18 @@ export function flowForEvent(
     case 'timer:fire':
       // The timer's Task is already running: its callback is what lands on the stack.
       return flow('timerCallback', [], ['stack'])
+    case 'webapi:start':
+      return flow('registerWebApi', ['register'], ['webapis'], { api: event.api })
+    case 'render:frame':
+      return flow('frame', [], ['loop', 'webapis'], { count: String(event.callbacks) })
     case 'task:queue':
       // A timer's Task is queued when its time is up, so the Web APIs -> Task Queue hop plays here.
       if (event.source === 'timer') return flow('timerDue', ['timer-fires'], ['taskq'])
-      if (event.source === 'port-message') return flow('message', ['timer-fires'], ['taskq'])
+      if (event.source === 'port-message' || event.source === 'posted-message') return flow('message', ['timer-fires'], ['taskq'])
+      // A fetch response, an import, a rAF callback, a cleanup: work done outside the loop comes in.
+      if (event.source !== 'script' && event.source !== 'dom-manipulation') {
+        return flow('webApiDone', ['timer-fires'], ['taskq'], { source: event.source })
+      }
       return IDLE_FLOW
     case 'task:begin':
       return taskSource === 'timer'

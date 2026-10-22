@@ -1,0 +1,31 @@
+{
+  "fixture": "module-import-cached-still-takes-a-task.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "evaluated once"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "message"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "imported again"
+    }
+  ]
+}

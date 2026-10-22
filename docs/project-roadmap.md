@@ -17,13 +17,12 @@ Spec: GitHub issue #1. Status reflects the `integration/v1` branch at the time o
 | M6.3 Callback chips (Panels) | Timer Tasks queued when due; callback descriptors in the Trace (schema v2); Callback chips in every panel; Web APIs timer cards; chips fly between panels on single steps | Done |
 | M6.4 Warm terminal theme | `DESIGN.md` tokens (`docs/design/tokens.css`) drive every surface: cream/near-black palette, Inter + JetBrains Mono, radius 0, no shadows, one orange accent for "now", concept hues per pane, scrubber tick, Diagram edge and Scene item; word controls with printed hotkeys; motion on the design's tokens. Layout (Why rail, 92px dock, mobile tabs) not yet restructured | Done |
 | M7 Ship | CI, production build gate, README and project docs (done); manual Vercel deploy (pending, see deployment guide) | In progress |
+| M8 Host APIs | `fetch` (`data:` URLs, `// @fetch` mocks), `document` / `window`, events and `addEventListener`, `window.postMessage`, `requestAnimationFrame`, `MessagePort` transfer and structured clone, modules and `import()`, `WeakRef` / `FinalizationRegistry` / `gc()`, `SharedArrayBuffer` / `Atomics`; Trace schema v3; Web API cards in Panels, Diagram and Scene; 59 new Fixtures recorded in Chrome 155 | Done |
 
 Deploy is manual: follow `docs/deployment-guide.md`, then add the URL to the README.
 
 ## v1.1 candidates
 
-- `requestAnimationFrame`: first candidate. Its ordering against timers is unverified
-  against the Oracle, so it ships only behind differential fixtures.
 - Seeded, grammar-based fuzzer for differential testing: mixes `then`, `await`,
   thenables, async generators, `queueMicrotask`, timers with safe delays and `throw`/reject;
   about 200 programs per PR and 10,000 nightly, with automatic minimization of mismatches into the

@@ -15,13 +15,6 @@ describe('findUnsupportedUsages', () => {
     expect(findUnsupportedUsages(text, ['fetch', 'window'])).toEqual([])
   })
 
-  it('treats Atomics.wait as one reference and plain Atomics as fine', () => {
-    expect(findUnsupportedUsages('Atomics.wait(a, 0, 0)', ['Atomics.wait'])).toEqual([
-      { api: 'Atomics.wait', from: 0, to: 12, line: 1 },
-    ])
-    expect(findUnsupportedUsages('Atomics.add(a, 0, 1)', ['Atomics.wait'])).toEqual([])
-  })
-
   it('finds nothing when no API is unsupported', () => {
     expect(findUnsupportedUsages('fetch()', [])).toEqual([])
   })

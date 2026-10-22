@@ -18,12 +18,13 @@ function foldFromZero(trace: Trace, position: number) {
   return state
 }
 
+// Recorded with older schema versions on purpose: the player must keep replaying them.
 const GOLDEN: Record<string, Trace> = {
-  'timers and jobs': timersAndJobs as Trace,
-  'async await and interval': asyncAwaitAndInterval as Trace,
-  'unhandled rejection': unhandledRejection as Trace,
-  'many console lines': manyConsoleLines as Trace,
-  'halted run': haltedRun as Trace,
+  'timers and jobs': timersAndJobs as unknown as Trace,
+  'async await and interval': asyncAwaitAndInterval as unknown as Trace,
+  'unhandled rejection': unhandledRejection as unknown as Trace,
+  'many console lines': manyConsoleLines as unknown as Trace,
+  'halted run': haltedRun as unknown as Trace,
 }
 
 describe.each(Object.entries(GOLDEN))('golden Trace: %s', (_name, trace) => {
@@ -54,12 +55,12 @@ describe.each(Object.entries(GOLDEN))('golden Trace: %s', (_name, trace) => {
 
 describe('snapshots and halts', () => {
   it('exercises past the first snapshot interval', () => {
-    const trace = manyConsoleLines as Trace
+    const trace = manyConsoleLines as unknown as Trace
     expect(trace.events.length).toBeGreaterThan(SNAPSHOT_INTERVAL)
   })
 
   it('replays a halted Trace to its end', () => {
-    const trace = haltedRun as Trace
+    const trace = haltedRun as unknown as Trace
     const player = createPlayer(trace)
     const end = player.stateAt(player.last())
     expect(end.halted?.reason).toBe('nodes')
@@ -67,7 +68,7 @@ describe('snapshots and halts', () => {
   })
 
   it('Task jumps land on task:begin events of a golden Trace', () => {
-    const trace = timersAndJobs as Trace
+    const trace = timersAndJobs as unknown as Trace
     const player = createPlayer(trace)
     const begins = trace.events.filter((e) => e.k === 'task:begin').map((e) => e.seq)
     const visited: number[] = []

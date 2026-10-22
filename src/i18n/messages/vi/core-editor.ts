@@ -73,6 +73,42 @@ export default {
         title: 'Vòng lặp vô hạn',
         description: 'Vòng lặp chạy mất kiểm soát bị Budget thực thi chặn lại, thay vì làm treo tab.',
       },
+      requestAnimationFrame: {
+        title: 'requestAnimationFrame',
+        description: 'Các callback của animation frame chạy lần lượt, sau mỗi cái là một microtask checkpoint.',
+      },
+      postMessageListeners: {
+        title: 'Listener của window.postMessage',
+        description: 'Event loop bắn event message: microtask chạy xen giữa các listener.',
+      },
+      clickIsSynchronous: {
+        title: 'click() chạy listener ngay',
+        description: 'element.click() dispatch ngay trên stack, nên microtask chờ đến khi Script chạy xong.',
+      },
+      fetchMockApi: {
+        title: 'fetch một API (giả lập)',
+        description: 'Response đến như một Task networking sau độ trễ; đọc body tốn thêm một Task nữa.',
+      },
+      dynamicImport: {
+        title: 'import() động',
+        description: 'import() tải và chạy module trong một Task, sau các microtask hiện tại.',
+      },
+      topLevelAwait: {
+        title: 'Top-level await',
+        description: 'Module tạm dừng ở await như một hàm async, để timer chạy xen vào giữa.',
+      },
+      messagePortTransfer: {
+        title: 'Chuyển MessagePort',
+        description: 'Port được chuyển đi đến nơi như một object mới, vẫn nối với port cũ bên kia.',
+      },
+      finalizationRegistry: {
+        title: 'gc() và FinalizationRegistry',
+        description: 'Sau gc(), các callback cleanup chạy trong một Task riêng, sau các microtask hiện tại.',
+      },
+      atomicsWaitAsync: {
+        title: 'Atomics.waitAsync và notify',
+        description: 'Atomics.wait sẽ chặn luồng nên ném lỗi trên trang; waitAsync được đánh thức trong một Task do notify xếp hàng.',
+      },
     },
   },
   settings: {
@@ -89,12 +125,21 @@ export default {
   supportedApis: {
     button: 'API được hỗ trợ',
     title: 'Được hỗ trợ trong mô hình Chrome 155',
-    group: { timer: 'Timer · Web API', job: 'Job · Promise', console: 'Log · Console' },
-    footer: 'Mọi thứ khác là Unsupported API và chặn Run ngay từ trước khi chạy.',
+    group: { timer: 'Timer · Web API', dom: 'Task · DOM và event', job: 'Job · Promise và engine', console: 'Log · Console' },
+    footer: 'Worker, XMLHttpRequest, WebSocket và requestIdleCallback là Unsupported API và chặn Run ngay từ trước khi chạy.',
     promises: 'Promise, async/await, generator, async generator, for await',
     timers: 'setTimeout, setInterval, clearTimeout, clearInterval',
+    raf: 'requestAnimationFrame, cancelAnimationFrame (mỗi frame 16,7 ms)',
     microtask: 'queueMicrotask',
-    messageChannel: 'MessageChannel',
+    messageChannel: 'MessageChannel, MessagePort, chuyển (transfer) port',
+    postMessage: 'window.postMessage (structured clone)',
+    fetch: "fetch với URL data:, và URL http(s) khai báo bằng dòng // {'@'}fetch; Response, Headers",
+    window: 'window, self, onmessage, onerror, onunhandledrejection',
+    dom: 'document, element: createElement, append, querySelector, textContent, click()',
+    events: 'addEventListener, dispatchEvent, Event, CustomEvent, MessageEvent',
+    modules: 'Module: import / export, top-level await, import() URL data:',
+    weak: 'WeakRef, FinalizationRegistry, gc()',
+    atomics: 'SharedArrayBuffer, Atomics (wait ném lỗi trên window, waitAsync + notify)',
     console: 'console.log / info / warn / error',
     clock: 'Date.now() và performance.now() (Virtual Clock)',
     random: 'Math.random (seed theo từng Run)',
@@ -105,7 +150,7 @@ export default {
   },
   timing: {
     badge: 'Nhạy về thời gian: thứ tự phụ thuộc vào thời gian tính toán và có thể khác trên trình duyệt của bạn.',
-    hint: 'Có một timer đến hạn chỉ trong vòng 2 ms sau khi một đoạn tính toán kết thúc, nên timing thật của Chrome có thể sắp xếp Run này khác đi.',
+    hint: 'Có một timer đến hạn chỉ trong vòng 2 ms sau khi một đoạn tính toán kết thúc, hoặc trong vòng 4 ms quanh một lần rendering, nên timing thật của Chrome có thể sắp xếp Run này khác đi.',
   },
   halt: {
     withLimit: 'Đã dừng: vượt Budget {name} ({limit} {unit}).',

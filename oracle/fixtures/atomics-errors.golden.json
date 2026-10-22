@@ -1,0 +1,36 @@
+{
+  "fixture": "atomics-errors.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError [object Float32Array] is not an integer typed array."
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "RangeError Invalid atomic access index"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError [object Uint8Array] is not an int32 or BigInt64 typed array."
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError Constructor SharedArrayBuffer requires 'new'"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "true [object Atomics]"
+    }
+  ]
+}

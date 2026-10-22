@@ -87,6 +87,10 @@ export default {
       timer: 'Timer',
       'port-message': 'Message',
       'dom-manipulation': 'DOM',
+      'posted-message': 'postMessage',
+      networking: 'Network',
+      'javascript-engine': 'JS engine',
+      'animation-frame': 'rAF',
     },
   },
   detail: {

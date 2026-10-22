@@ -69,12 +69,22 @@ export function diagramModelOf(state: ReplayState, capacity: Capacity): DiagramM
     )
     .reverse()
 
-  const timerRows = timerShelfOf(state, Number.POSITIVE_INFINITY).shown.map(
+  const timerRows = timerShelfOf(state, Number.POSITIVE_INFINITY).shown.filter((block) => block.name === undefined).map(
     (timer): RowModel => ({
       id: timer.tid,
       label: `${timer.repeat ? 'setInterval' : 'setTimeout'} ${timer.tid}`,
       detail: timer.due,
       detailKey: 'due',
+    }),
+  )
+
+  // Other Web API work in progress: a fetch, a body read, an import, a rAF callback, a waitAsync.
+  const opRows = state.webOps.map(
+    (op): RowModel => ({
+      id: op.opId,
+      label: op.api,
+      labelKey: `panels.webApis.op.${op.api}`,
+      ...(op.dueUs !== undefined && op.dueUs > op.startUs && { detail: formatVirtualMs(op.dueUs), detailKey: 'due' as const }),
     }),
   )
 
@@ -101,7 +111,7 @@ export function diagramModelOf(state: ReplayState, capacity: Capacity): DiagramM
   const firstShown = Math.max(0, lines.length - capacity.console)
   return {
     stack: limit(stackRows, capacity.stack),
-    webapis: limit(timerRows, capacity.webapis),
+    webapis: limit([...timerRows, ...opRows], capacity.webapis),
     taskq: limit(taskRows, capacity.taskq),
     microq: limit(jobRows, capacity.microq),
     console: {

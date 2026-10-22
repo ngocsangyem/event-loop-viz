@@ -1,0 +1,26 @@
+{
+  "fixture": "raf-nested-runs-next-frame.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "a"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "b, same frame: true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "nested, later frame: true"
+    }
+  ]
+}

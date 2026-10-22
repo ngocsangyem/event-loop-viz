@@ -1,0 +1,30 @@
+{
+  "fixture": "unhandled-rejection-listener-checkpoint.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "unhandled-rejection",
+      "message": "nobody caught this"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "first nobody caught this"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "first micro"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "second"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "fixture": "unsupported-api-worker.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "skip",
+  "skipReason": "Worker is an Unsupported API; Chrome output is not comparable",
+  "observableOutput": []
+}

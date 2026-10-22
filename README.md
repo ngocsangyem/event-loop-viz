@@ -52,22 +52,49 @@ The block uses the app's orange accent, which in the UI always means "now". The 
 ## Supported APIs
 
 - Everything engine262 implements: Promise, async/await, generators, async generators, `for await`.
-- `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
+- `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval` (the callback gets `window` as
+  `this` and the extra arguments)
 - `queueMicrotask`
-- `MessageChannel`, `port.postMessage`, `port.onmessage`, `port.start()`, `port.close()`
+- `requestAnimationFrame`, `cancelAnimationFrame`: rendering opportunities every 16.7 ms of
+  virtual time, the first 4 ms after the Script starts. Each callback is shown as an
+  `animation-frame` Task with a microtask checkpoint after it.
+- `MessageChannel` and `MessagePort` as event targets: `postMessage` with a structured clone and a
+  transfer list, `onmessage`, `addEventListener('message')` with `start()`, `close()`, and port transfer.
+- `window.postMessage(message, targetOrigin, transfer)`: a Task on the posted message source;
+  listeners run with a microtask checkpoint between them.
+- `window`, `self`, `globalThis` (the same object), `EventTarget`, `Event`, `CustomEvent`,
+  `MessageEvent`, `ErrorEvent`, `PromiseRejectionEvent`, `DOMException`, `addEventListener` /
+  `removeEventListener` / `dispatchEvent`, and `onmessage`, `onerror`, `onunhandledrejection`,
+  `onrejectionhandled`. `error` and `unhandledrejection` reach the Script's listeners.
+- `document`: the Oracle's page (`<html><head></head><body><script>`), `createElement`,
+  `createTextNode`, `getElementById`, `querySelector(All)` with tag / `#id` / `.class` / descendant
+  selectors, `append`, `appendChild`, `insertBefore`, `remove`, `textContent`, `innerHTML` (read),
+  attributes, `classList`, `click()` (synchronous dispatch with capture and bubbling), `onclick`.
+- `fetch` with `Response` and `Headers`. `data:` URLs behave as in Chrome. A Run has no network:
+  a `// @fetch <url> [status] [latency]ms [body]` line in the Script declares the response an
+  http(s) URL gets; any other URL fails with `TypeError: Failed to fetch`, as when offline.
+- Modules: a Script that only parses as a module (`import`, `export`, top-level `await`,
+  `import.meta`) runs as one. `import` and `import()` load `data:` URLs.
+- `WeakRef`, `FinalizationRegistry`, and `gc()` (as Chrome with `--js-flags=--expose-gc`):
+  cleanup callbacks run in a Task of their own.
+- `SharedArrayBuffer` (the page counts as cross-origin isolated) and `Atomics`: `Atomics.wait`
+  throws on the window as in Chrome; `Atomics.waitAsync` wakes in a Task queued by `Atomics.notify`.
 - `console.log`, `console.info`, `console.warn`, `console.error`
-- `Date.now()` and `performance.now()` (they read the Virtual Clock)
-- Scripts run as classic scripts. `Math.random` is seeded per Run.
+- `Date.now()` and `performance.now()` (they read the Virtual Clock). `Math.random` is seeded per Run.
+
+The measured Chrome behaviour behind each of them is in
+[docs/research/host-api-semantics.md](docs/research/host-api-semantics.md).
 
 ## Unsupported APIs
 
-`fetch`, the DOM (`document`, `window`), `requestAnimationFrame`, `window.postMessage`,
-`addEventListener` (including `addEventListener('message')`), `MessagePort` transfer, modules and
-`import`, `FinalizationRegistry`, `WeakRef`, `Atomics.wait`, `SharedArrayBuffer`.
+`Worker`, `SharedWorker`, `XMLHttpRequest`, `WebSocket` and `requestIdleCallback`. Each one is a
+stub that throws `UnsupportedApiError` with the API's name, and a scan lists the ones a Script uses
+before it runs. The app does not guess how they would be ordered.
 
-Each one is a stub that throws `UnsupportedApiError` with the API's name, and a scan lists the ones
-a Script uses before it runs. The app does not guess how they would be ordered. `requestAnimationFrame` is the first
-candidate for v1.1 (see the roadmap).
+A few parts of supported APIs also fail loudly instead of approximating: setting `innerHTML` to
+markup, selectors beyond tag / `#id` / `.class` / descendant, and `Atomics.waitAsync` with a finite
+timeout (Chrome resolves it about 5 ms late, for a reason not pinned down). `DOMContentLoaded` and
+`load` never fire: the Oracle loads its page with `document.write`, so it cannot pin their timing.
 
 ## Prerequisites
 
@@ -117,9 +144,18 @@ pnpm oracle:record                  # all fixtures
 pnpm oracle:record <fixture-name>   # one fixture, e.g. queue-microtask-vs-then
 ```
 
-The recorder runs each fixture 5 times in Chrome. If the runs disagree, the fixture is
-non-deterministic.
-A `// @oracle-skip: <reason>` line at the top of a fixture marks a Skipped Fixture.
+The recorder runs each fixture 5 times in Chrome (with `--js-flags=--expose-gc`, so `gc()` exists).
+If the runs disagree, the fixture is non-deterministic. The page is the harness in `<head>` and the
+fixture in `<body>`. Directives, each on its own line:
+
+- `// @oracle-skip: <reason>` marks a Skipped Fixture.
+- `// @oracle-module` runs the fixture as `<script type="module">`. The fixture must also contain
+  module syntax (`export {}` will do), because the simulator detects modules from the source; the
+  oracle test checks that both agree.
+- `// @oracle-isolated` serves the page over http with COOP/COEP, so it is cross-origin isolated
+  and `SharedArrayBuffer` exists.
+- `// @fetch <url> ...` lines are served to Chrome by Playwright routing, with their latency, so
+  both sides see the same network.
 
 ## CI
 

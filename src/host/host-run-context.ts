@@ -1,8 +1,10 @@
 import type {
+  CallbackInfo,
   SourceLocation,
   TraceBudgets,
   TraceEvent,
   TraceEventBody,
+  WebApiKind,
 } from '../trace/trace-event'
 import { createBudgetMeter } from './budget-meter'
 import type { BudgetMeter } from './budget-meter'
@@ -28,6 +30,14 @@ export interface HostRunContext {
   readonly taskQueueSeq: Map<string, number>
   emit(body: TraceEventBody, ref: TraceEvent['ref'], visible?: boolean, cause?: number): void
   newTaskId(): string
+  /**
+   * A Web API operation started: reserves the id of the Task it will queue (so the card and the
+   * Task share a chip) and emits webapi:start. `delayMs` is how long it waits on the Virtual Clock.
+   */
+  startWebApi(op: { api: WebApiKind; callback?: CallbackInfo; detail?: string; delayMs?: number }): {
+    opId: string
+    taskId: string
+  }
 }
 
 /** Steps the host performs itself: no Script code runs, so they carry no source location. */
@@ -48,8 +58,9 @@ export function createHostRunContext(settings: HostSettings): HostRunContext {
   const clock: HostRunContext['clock'] = { nowUs: 0, loc: undefined }
   const taskQueueSeq = new Map<string, number>()
   let taskCounter = 0
+  let opCounter = 0
 
-  return {
+  const context: HostRunContext = {
     settings,
     events,
     meter,
@@ -74,5 +85,32 @@ export function createHostRunContext(settings: HostSettings): HostRunContext {
       meter.countTask()
       return `task-${++taskCounter}`
     },
+    startWebApi({ api, callback, detail, delayMs }) {
+      const opId = `op-${++opCounter}`
+      const taskId = context.newTaskId()
+      context.emit(
+        {
+          k: 'webapi:start',
+          opId,
+          api,
+          taskId,
+          ...(delayMs !== undefined && { dueUs: clock.nowUs + delayMs * 1000 }),
+          ...(callback && { callback }),
+          ...(detail !== undefined && { detail }),
+        },
+        WEB_API_REF[api],
+      )
+      return { opId, taskId }
+    },
   }
+  return context
+}
+
+/** Spec step each kind of Web API operation starts from. */
+const WEB_API_REF: Record<WebApiKind, TraceEvent['ref']> = {
+  requestAnimationFrame: 'HTML:#dom-animationframeprovider-requestanimationframe',
+  fetch: 'HTML:#networking-task-source',
+  body: 'HTML:#networking-task-source',
+  import: 'HTML:#hostloadimportedmodule',
+  waitAsync: 'ES:#sec-atomics.waitasync',
 }

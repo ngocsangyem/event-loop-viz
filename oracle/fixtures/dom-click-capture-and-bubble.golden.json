@@ -1,0 +1,41 @@
+{
+  "fixture": "dom-click-capture-and-bubble.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "window capture"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "button 2 true false PointerEvent"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "body"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "document"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "window"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "detached div"
+    }
+  ]
+}

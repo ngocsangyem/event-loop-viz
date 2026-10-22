@@ -37,23 +37,25 @@ const expectations: Record<string, () => Promise<void>> = {
     expect(one.trace.header.randomSeed).toBe(7)
     expect(one.observableOutput).toEqual([{ kind: 'console', level: 'log', text: 'true' }])
   },
-  'raf-microtask-checkpoint.js': async () => {
-    const { trace, observableOutput } = await ran('raf-microtask-checkpoint.js')
-    expect(trace.header.unsupportedApis).toContain('requestAnimationFrame')
-    expect(trace.events).toContainEqual(
-      expect.objectContaining({ k: 'exception:report', unsupportedApi: 'requestAnimationFrame' }),
-    )
-    expect(observableOutput.some((o) => o.kind === 'console')).toBe(false)
+  'raf-after-timeout-0.js': async () => {
+    // Chrome's first frame lands 2 to 7 ms after the Script starts, so it races a 0 ms timer.
+    // The model's frame at 4 ms runs after the timer, and the Run says it is timing-sensitive.
+    const { trace, observableOutput } = await ran('raf-after-timeout-0.js')
+    expect(trace.header.timingSensitive).toBe(true)
+    expect(observableOutput).toEqual([
+      { kind: 'console', level: 'log', text: 'timeout 0' },
+      { kind: 'console', level: 'log', text: 'raf' },
+    ])
   },
   'syntax-error-runs-nothing.js': async () => {
     const result = await runScript(source('syntax-error-runs-nothing.js'))
     expect(result).toMatchObject({ kind: 'syntax-error', line: 4 })
   },
-  'unsupported-api-fetch.js': async () => {
-    const { trace } = await ran('unsupported-api-fetch.js')
-    expect(trace.header.unsupportedApis).toContain('fetch')
+  'unsupported-api-worker.js': async () => {
+    const { trace } = await ran('unsupported-api-worker.js')
+    expect(trace.header.unsupportedApis).toContain('Worker')
     expect(trace.events).toContainEqual(
-      expect.objectContaining({ k: 'exception:report', origin: 'script', unsupportedApi: 'fetch' }),
+      expect.objectContaining({ k: 'exception:report', origin: 'script', unsupportedApi: 'Worker' }),
     )
   },
 }

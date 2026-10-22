@@ -1,10 +1,18 @@
 // Records the Oracle's Observable Output for every fixture by running it in real Chrome
 // Writes fixtures/<name>.golden.json next to each fixture.
 // Usage: pnpm oracle:record [fixture-name ...]
+//
+// Fixture directives (each on its own line):
+//   // @oracle-skip: <reason>   no Golden, the reason is recorded instead
+//   // @oracle-module           the Fixture runs as <script type="module">
+//   // @oracle-isolated         the page is cross-origin isolated (served over http with COOP/COEP)
+//   // @fetch <url> ...         a canned network response (src/host/fetch-mock-directives.ts)
 import { chromium } from '@playwright/test'
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:http'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseFetchMocks } from '../src/host/fetch-mock-directives.ts'
 
 const PINNED_CHROME_MAJOR = 155 // Host Profile chrome-155
 const RUNS_PER_FIXTURE = 5 // outputs must agree across all runs, else the fixture is non-deterministic
@@ -32,19 +40,55 @@ addEventListener('rejectionhandled', (e) => window.__oracle.push({ kind: 'reject
 `
 
 const skipDirective = (src) => src.match(/^\/\/ @oracle-skip:\s*(.+)$/m)?.[1].trim() ?? null
+const hasDirective = (src, name) => new RegExp(`^// @${name}\\s*$`, 'm').test(src)
 
-const browser = await chromium.launch({ channel: 'chrome', headless: true })
+// The harness sits in <head>, the Fixture in <body>, so `document.body` exists while it runs.
+const pageHtml = (source) =>
+  `<!doctype html><html><head><script>${HARNESS}</script></head>` +
+  `<body><script${hasDirective(source, 'oracle-module') ? ' type="module"' : ''}>${source}</script></body></html>`
+
+// Serves the page for isolated Fixtures; COOP + COEP make the page cross-origin isolated.
+let served = ''
+const server = createServer((_req, res) => {
+  res.writeHead(200, {
+    'content-type': 'text/html',
+    'cross-origin-opener-policy': 'same-origin',
+    'cross-origin-embedder-policy': 'require-corp',
+  })
+  res.end(served)
+}).listen(0)
+const isolatedUrl = `http://localhost:${server.address().port}/`
+
+const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--js-flags=--expose-gc'] })
 const version = browser.version()
 if (Number(version.split('.')[0]) !== PINNED_CHROME_MAJOR) {
   await browser.close()
+  server.close()
   throw new Error(`Chrome ${version} does not match pinned major ${PINNED_CHROME_MAJOR}; add a new Host Profile first`)
 }
 
 async function runOnce(source) {
   const page = await browser.newPage()
   try {
+    for (const mock of parseFetchMocks(source)) {
+      // A predicate, not a glob: `?` and `*` in a URL must match literally.
+      const href = new URL(mock.url).href
+      await page.route((url) => url.href === href, async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, mock.latencyMs))
+        await route.fulfill({
+          status: mock.status,
+          body: mock.body,
+          headers: { 'access-control-allow-origin': '*', 'content-type': mock.contentType },
+        })
+      })
+    }
     // Classic <script> tags in a fresh page: the fixture runs as a script Task at timer nesting level 0.
-    await page.setContent(`<script>${HARNESS}</script><script>${source}</script>`)
+    if (hasDirective(source, 'oracle-isolated')) {
+      served = pageHtml(source)
+      await page.goto(isolatedUrl)
+    } else {
+      await page.setContent(pageHtml(source))
+    }
     await page.waitForTimeout(SETTLE_MS)
     return await page.evaluate(() => window.__oracle)
   } finally {
@@ -74,4 +118,5 @@ for (const file of fixtures) {
   console.log(`${golden.status === 'skip' ? 'SKIP  ' : 'RECORD'} ${file}${golden.skipReason ? `  (${golden.skipReason})` : ''}`)
 }
 await browser.close()
+server.close()
 console.log(`\nChrome ${version}: ${recorded} recorded, ${skipped} skipped`)

@@ -15,7 +15,7 @@ const CONCEPT_ORDER: QueuedConcept[] = ['job', 'task', 'webapi']
  * Callbacks without a source location (built-ins) have no line and are skipped.
  */
 export function queuedLinesAt(
-  state: Pick<ReplayState, 'jobs' | 'tasks' | 'timers'>,
+  state: Pick<ReplayState, 'jobs' | 'tasks' | 'timers' | 'webOps'>,
 ): Map<number, QueuedConcept[]> {
   const found = new Map<number, Set<QueuedConcept>>()
   const add = (concept: QueuedConcept, line: number | undefined) => {
@@ -27,6 +27,7 @@ export function queuedLinesAt(
   for (const job of state.jobs) add('job', job.callback?.loc?.line)
   for (const task of state.tasks) add('task', task.callback?.loc?.line)
   for (const timer of state.timers) add('webapi', timer.callback?.loc?.line)
+  for (const op of state.webOps) add('webapi', op.callback?.loc?.line)
 
   const out = new Map<number, QueuedConcept[]>()
   for (const [line, set] of found) out.set(line, CONCEPT_ORDER.filter((c) => set.has(c)))

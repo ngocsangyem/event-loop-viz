@@ -1,0 +1,26 @@
+{
+  "fixture": "fetch-body-used-twice.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "bodyUsed true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "second read Failed to execute 'text' on 'Response': body stream already read"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask"
+    }
+  ]
+}

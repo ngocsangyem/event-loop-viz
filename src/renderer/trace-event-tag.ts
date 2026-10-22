@@ -45,10 +45,13 @@ export function eventTag(event: TraceEvent): EventTag {
     case 'task:end':
     case 'checkpoint:begin':
     case 'checkpoint:end':
+    case 'render:frame':
       return TAGS.TASK
     case 'timer:init':
     case 'timer:fire':
     case 'timer:clear':
+    case 'webapi:start':
+    case 'webapi:cancel':
       return TAGS.TIMER
     case 'console':
       return event.level === 'error' ? TAGS.ERR : TAGS.LOG

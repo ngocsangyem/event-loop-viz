@@ -1,0 +1,41 @@
+{
+  "fixture": "fetch-mock-response.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "200 true OK cors https://api.example.test/users application/json"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "hop 1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "user Ada"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "hop 2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "hop 3"
+    }
+  ]
+}

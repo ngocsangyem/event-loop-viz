@@ -1,0 +1,31 @@
+{
+  "fixture": "atomics-wait-throws-on-window.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "function true 0 5"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError Atomics.wait cannot be called in this context"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError [object Int32Array] is not a shared typed array."
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "5 7 3 0"
+    }
+  ]
+}

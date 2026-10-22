@@ -1,0 +1,46 @@
+{
+  "fixture": "atomics-wait-async-notify.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "true function"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "not-equal timed-out"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "notified 1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask after notify"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout queued before the notify"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "woke ok"
+    }
+  ]
+}

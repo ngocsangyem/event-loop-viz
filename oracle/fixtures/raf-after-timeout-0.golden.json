@@ -1,0 +1,10 @@
+{
+  "fixture": "raf-after-timeout-0.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "skip",
+  "skipReason": "non-deterministic in Chrome across 5 runs",
+  "observableOutput": []
+}

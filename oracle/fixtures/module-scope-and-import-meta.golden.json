@@ -1,0 +1,21 @@
+{
+  "fixture": "module-scope-and-import-meta.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "true true undefined about:blank"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "null complete"
+    }
+  ]
+}

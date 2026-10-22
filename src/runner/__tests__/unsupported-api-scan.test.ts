@@ -4,31 +4,21 @@ import { scanUnsupportedApis } from '../unsupported-api-scan'
 describe('scanUnsupportedApis', () => {
   const table: [name: string, script: string, expected: string[]][] = [
     ['nothing referenced', `setTimeout(() => console.log('x'), 0); Promise.resolve()`, []],
-    ['fetch call', `fetch('/x')`, ['fetch']],
-    ['requestAnimationFrame', `requestAnimationFrame(() => {})`, ['requestAnimationFrame']],
-    ['document and addEventListener', `document.addEventListener('x', f)`, ['document']],
-    ['bare addEventListener', `addEventListener('load', f)`, ['addEventListener']],
-    ['window reference', `window.foo = 1`, ['window']],
-    ['bare postMessage', `postMessage('hi', '*')`, ['postMessage']],
-    [
-      'WeakRef and FinalizationRegistry',
-      `new WeakRef({}); new FinalizationRegistry(() => {})`,
-      ['WeakRef', 'FinalizationRegistry'],
-    ],
-    ['SharedArrayBuffer', `const b = new SharedArrayBuffer(8)`, ['SharedArrayBuffer']],
-    ['Atomics.wait', `Atomics.wait(i32, 0, 0)`, ['Atomics.wait']],
-    ['other Atomics members are fine', `Atomics.add(i32, 0, 1)`, []],
+    ['supported host APIs are not listed', `fetch('/x'); requestAnimationFrame(f); document.body; new WeakRef({})`, []],
+    ['Worker', `new Worker('w.js')`, ['Worker']],
+    ['XMLHttpRequest and WebSocket', `new XMLHttpRequest(); new WebSocket(u)`, ['XMLHttpRequest', 'WebSocket']],
+    ['requestIdleCallback', `requestIdleCallback(f)`, ['requestIdleCallback']],
     [
       'each API listed once, in first-use order',
-      `fetch('/a'); requestAnimationFrame(f); fetch('/b')`,
-      ['fetch', 'requestAnimationFrame'],
+      `new Worker(a); requestIdleCallback(f); new Worker(b)`,
+      ['Worker', 'requestIdleCallback'],
     ],
-    ['string literals are not references', `console.log('fetch', "document", \`window\`)`, []],
-    ['comments are not references', `// fetch('/x')\n/* document */ 1`, []],
-    ['property names are not references', `obj.fetch(); obj.document; ({ window: 1 }).window`, []],
-    ['template interpolation is code', 'console.log(`${fetch}`)', ['fetch']],
-    ['regex literal is not code', `const r = /fetch/g; r.test('x')`, []],
-    ['identifiers merely containing a name', `const fetcher = 1; const documents = 2`, []],
+    ['string literals are not references', `console.log('Worker', "WebSocket", \`XMLHttpRequest\`)`, []],
+    ['comments are not references', `// new Worker('x')\n/* WebSocket */ 1`, []],
+    ['property names are not references', `obj.Worker(); obj.WebSocket; ({ Worker: 1 }).Worker`, []],
+    ['template interpolation is code', 'console.log(`${Worker}`)', ['Worker']],
+    ['regex literal is not code', `const r = /Worker/g; r.test('x')`, []],
+    ['identifiers merely containing a name', `const Workers = 1; const WebSocketish = 2`, []],
   ]
   it.each(table)('%s', (_name, script, expected) => {
     expect(scanUnsupportedApis(script)).toEqual(expected)

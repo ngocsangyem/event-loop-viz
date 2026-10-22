@@ -39,6 +39,10 @@ describe('Observable Output matches the Chrome Oracle', () => {
       const result = await runScript(source)
       expect(result.kind).toBe('ran')
       expect(result.kind === 'ran' ? result.observableOutput : null).toEqual(golden.observableOutput)
+      // Chrome ran it as <script type="module">: the simulator must detect a module too, which it
+      // does only from module syntax (import / export / top-level await / import.meta).
+      const recordedAsModule = /^\/\/ @oracle-module\s*$/m.test(source)
+      expect(result.kind === 'ran' ? result.trace.header.sourceType : null).toBe(recordedAsModule ? 'module' : 'script')
     })
   }
 })

@@ -1,4 +1,4 @@
-// Stubs for APIs outside the v1 scope: each fails loudly instead of being silently absent.
+// Stubs for APIs the simulator does not model: each fails loudly instead of being silently absent.
 import * as E from '@engine262/engine262'
 
 type EngineValue = E.Value
@@ -7,14 +7,17 @@ type NativeGenerator = (...args: EngineValue[]) => Generator<unknown, unknown, u
 
 const API_PROPERTY = 'unsupportedApi'
 
-/** Global functions that throw when called. */
-const CALLABLE_APIS = ['fetch', 'requestAnimationFrame', 'addEventListener', 'postMessage']
+/**
+ * Global functions that throw when called. All exist in Chrome 155 and schedule work of their own
+ * (an idle period, another thread, a socket), which the simulator does not model.
+ */
+const CALLABLE_APIS = ['requestIdleCallback']
 /** Globals that throw when referenced: objects and constructors have no call to hook. */
-const REFERENCE_APIS = ['document', 'window', 'FinalizationRegistry', 'WeakRef', 'SharedArrayBuffer']
+const REFERENCE_APIS = ['Worker', 'SharedWorker', 'XMLHttpRequest', 'WebSocket']
 
-/** Throws an Error named UnsupportedApiError and tagged with the API so the host can report it. */
-function throwUnsupported(api: string) {
-  const completion = E.Throw.Error(`${api} is not supported in v1`)
+/** An Error named UnsupportedApiError and tagged with the API so the host can report it. */
+export function unsupportedApiError(api: string) {
+  const completion = E.Throw.Error(`${api} is not supported by the simulator`)
   const error = completion.Value as InstanceType<typeof E.ObjectValue>
   const define = (name: string, value: EngineValue) =>
     error.properties.set(
@@ -25,6 +28,7 @@ function throwUnsupported(api: string) {
   define(API_PROPERTY, E.Value(api))
   return completion
 }
+const throwUnsupported = unsupportedApiError
 
 /** The API an engine error object is tagged with, or undefined for an ordinary error. */
 export function unsupportedApiOf(error: EngineValue): string | undefined {
@@ -63,22 +67,4 @@ export function installUnsupportedApiStubs(realm: InstanceType<typeof E.ManagedR
       >[1],
     )
   }
-  // engine262 ships no Atomics; a namespace holding only the stub keeps `Atomics.wait` reporting by name.
-  let atomics = global.properties.get(E.Value('Atomics'))?.Value
-  if (!(atomics instanceof E.ObjectValue)) {
-    atomics = E.OrdinaryObjectCreate(realm.Intrinsics['%Object.prototype%'])
-    global.properties.set(
-      E.Value('Atomics'),
-      E.Descriptor({ Configurable: true, Enumerable: false, Writable: true, Value: atomics }),
-    )
-  }
-  ;(atomics as InstanceType<typeof E.ObjectValue>).properties.set(
-    E.Value('wait'),
-    E.Descriptor({
-      Configurable: true,
-      Enumerable: false,
-      Writable: true,
-      Value: throwingFunction('Atomics.wait'),
-    }),
-  )
 }

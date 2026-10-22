@@ -12,6 +12,7 @@ const labels: ChipLabels = {
   line: (n) => `line ${n}`,
   taskSource: (s) => s,
   jobKind: (k) => k,
+  webApi: (a) => a,
 }
 const loc = (source: string, text: string): SourceLocation => {
   const start = source.indexOf(text)

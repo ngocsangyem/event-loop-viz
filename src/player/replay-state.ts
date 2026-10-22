@@ -1,5 +1,5 @@
 import type { ObservableOutput } from '../trace/observable-output'
-import type { CallbackInfo, HaltReason, JobKind, SourceLocation, TraceEventBody } from '../trace/trace-event'
+import type { CallbackInfo, HaltReason, JobKind, SourceLocation, TraceEventBody, WebApiKind } from '../trace/trace-event'
 import type { RunningCallback } from './running-callback'
 
 export interface StackFrame {
@@ -14,6 +14,8 @@ export interface QueuedTask {
   dueUs?: number
   /** Set on a timer Task (schema v2): the timer it came from. */
   tid?: string
+  /** Set on a Task that completes a Web API operation (schema v3). */
+  opId?: string
   /** The function the Task will call, when the Trace names it. */
   callback?: CallbackInfo
 }
@@ -35,6 +37,23 @@ export interface PendingTimer {
   dueUs: number
   /** Id of the Task this timer queues once due; the same id the callback chip keeps. */
   taskId?: string
+  callback?: CallbackInfo
+}
+
+/**
+ * A Web API operation waiting outside the event loop (a fetch in flight, a body read, an import,
+ * a requestAnimationFrame callback, an Atomics.waitAsync), until the Task it queues joins a queue.
+ */
+export interface PendingWebOp {
+  opId: string
+  api: WebApiKind
+  /** The Task it will queue: the id its chip keeps when it moves to the Task Queue. */
+  taskId?: string
+  /** Virtual Clock time it waits for (network latency), microseconds. */
+  dueUs?: number
+  /** Virtual Clock time it started, microseconds. */
+  startUs: number
+  detail?: string
   callback?: CallbackInfo
 }
 
@@ -77,6 +96,8 @@ export interface ReplayState {
   tick: number | null
   inCheckpoint: boolean
   timers: PendingTimer[]
+  /** Web API operations in progress (schema v3), in start order. */
+  webOps: PendingWebOp[]
   promises: Record<string, PromiseView>
   suspendedAwaits: SuspendedAwait[]
   /** Async generators seen so far, by generator id. */
@@ -111,6 +132,7 @@ export function createInitialState(): ReplayState {
     tick: null,
     inCheckpoint: false,
     timers: [],
+    webOps: [],
     promises: {},
     suspendedAwaits: [],
     asyncGens: {},
@@ -135,6 +157,7 @@ export function cloneReplayState(state: ReplayState): ReplayState {
     tasks: state.tasks.slice(),
     jobs: state.jobs.slice(),
     timers: state.timers.slice(),
+    webOps: state.webOps.slice(),
     promises: { ...state.promises },
     suspendedAwaits: state.suspendedAwaits.slice(),
     asyncGens: { ...state.asyncGens },

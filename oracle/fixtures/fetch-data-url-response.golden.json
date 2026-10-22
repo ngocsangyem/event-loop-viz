@@ -1,0 +1,36 @@
+{
+  "fixture": "fetch-data-url-response.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "200 true false basic application/json false"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "text/plain;charset=US-ASCII"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "json 42"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "base64 hello"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "a b"
+    }
+  ]
+}

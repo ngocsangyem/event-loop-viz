@@ -25,6 +25,7 @@ export function panelSignature(state: ReplayState): string {
     state.jobs.map((job) => job.jobId),
     state.currentJob,
     state.timers.map((timer) => timer.tid),
+    state.webOps.map((op) => op.opId),
     state.console.length,
     loopPhaseOf(state),
     state.halted?.reason ?? null,

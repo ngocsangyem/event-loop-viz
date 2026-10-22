@@ -1,0 +1,26 @@
+{
+  "fixture": "raf-cancel.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "number undefined"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "a"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "c"
+    }
+  ]
+}

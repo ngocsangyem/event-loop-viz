@@ -1,0 +1,21 @@
+{
+  "fixture": "weakref-kept-until-checkpoint.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "in microtask true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "in a later task false"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "fixture": "structured-clone-buffers-and-wrappers.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "transferred length 0"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "DataCloneError Failed to execute 'postMessage' on 'Window': An ArrayBuffer is detached and could not be cloned."
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "object:true object:a object:1 object:2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "true 8"
+    }
+  ]
+}

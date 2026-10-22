@@ -23,7 +23,7 @@ function lanesOf(state: ReplayState) {
     stack: visibleFrames(state).map((f) => f.frameId),
     job: state.jobs.map((j) => j.jobId),
     task: state.tasks.map((t) => t.taskId),
-    webapi: state.timers.map((t) => `${t.tid}@${t.dueUs}`),
+    webapi: [...state.timers.map((t) => `${t.tid}@${t.dueUs}`), ...state.webOps.map((o) => o.opId)],
   }
 }
 
@@ -45,6 +45,7 @@ export function stepFocusOf(previous: ReplayState | null, current: ReplayState):
     [before.job, after.job],
     [before.task, after.task],
     [previous.timers.map((t) => t.tid), current.timers.map((t) => t.tid)],
+    [previous.webOps.map((o) => o.taskId ?? o.opId), current.webOps.map((o) => o.taskId ?? o.opId)],
   ] as const
   for (const [was, is] of lanes) {
     const known = new Set(was)

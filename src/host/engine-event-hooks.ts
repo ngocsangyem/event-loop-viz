@@ -82,6 +82,7 @@ export function createEngineHooks(
         cause,
       )
     },
+    rejectionStillTracked: (pid) => rejections.tracked(pid),
     onRejectionTrack(pid, op, message) {
       emit({ k: 'rejection:track', pid, op }, HTML_REJECTION_TRACKER, false)
       const handledLater = rejections.track(pid, op, message)

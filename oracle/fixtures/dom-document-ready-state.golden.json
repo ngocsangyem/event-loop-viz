@@ -1,0 +1,31 @@
+{
+  "fixture": "dom-document-ready-state.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "loading SCRIPT SCRIPT"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "true true [object Window] [object HTMLDocument] about:blank"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask complete"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timer complete null"
+    }
+  ]
+}

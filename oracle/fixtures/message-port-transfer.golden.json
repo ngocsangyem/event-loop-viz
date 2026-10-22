@@ -1,0 +1,21 @@
+{
+  "fixture": "message-port-transfer.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "received hello 1 false true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "via transferred port ping"
+    }
+  ]
+}

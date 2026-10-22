@@ -103,6 +103,8 @@ function summarizeState(state: ReplayState, script: string): string {
     `${j.jobId} ${j.jobKind}${j.outcome ? ` (${j.outcome})` : ''}${callbackNote(j.callback, script)}`)
   const timers = list(state.timers, (t) =>
     `${t.tid} due ${t.dueUs / 1000} ms${t.repeat ? ' repeating' : ''}`)
+  const webOps = list(state.webOps, (o) =>
+    `${o.api}${o.detail ? ` ${o.detail}` : ''}${o.dueUs === undefined ? '' : ` due ${o.dueUs / 1000} ms`}`)
   const running = [
     state.currentTask ? `Task ${state.currentTask}` : null,
     state.currentJob ? `Job ${state.currentJob}${state.tick ? ` (Tick ${state.tick})` : ''}` : null,
@@ -115,6 +117,7 @@ function summarizeState(state: ReplayState, script: string): string {
     `Task queue: ${tasks}`,
     `Microtask queue (Jobs): ${jobs}`,
     `Pending timers: ${timers}`,
+    `Other Web API work in progress: ${webOps}`,
     state.halted ? `Halted: ${state.halted.reason}` : null,
     `Console so far:\n${consoleLines(state)}`,
   ]

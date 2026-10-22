@@ -45,4 +45,41 @@ export default {
   infiniteLoop: {
     neverReturns: 'while (true) không bao giờ trả call stack lại, nên không Task hay Job nào chạy được. Tab thật sẽ treo; ở đây Budget node dừng Run lại.',
   },
+  requestAnimationFrame: {
+    frame: 'Cả hai callback được đăng ký khi Script đang chạy. Chúng chờ lần rendering đầu tiên, khoảng 4 ms sau, và chạy chung ở đó.',
+    microBetween: 'Reaction của promise trong raf1 chạy trước raf2: sau mỗi callback của animation frame có một microtask checkpoint. Chrome 155 in raf1, raf1-micro, raf2.',
+  },
+  postMessageListeners: {
+    oneTask: 'postMessage xếp một Task cho event message, chứ không phải mỗi listener một Task.',
+    betweenListeners: 'Microtask của L1 chạy trước L2. Event loop gọi từng listener khi stack trống, nên sau mỗi listener có một checkpoint.',
+  },
+  clickIsSynchronous: {
+    sameStack: 'C2 chạy ngay sau C1, bên trong click(). Script vẫn còn trên stack, nên không có checkpoint nào giữa các listener.',
+    afterScript: 'Cả hai reaction phải chờ Script chạy xong. Khi chính event loop bắn event (ví dụ message), sau mỗi listener có một checkpoint.',
+  },
+  fetchMockApi: {
+    latency: "Dòng // {'@'}fetch cho request này độ trễ ảo 30 ms. Promise vẫn pending cho tới khi một Task networking mang response về.",
+    microFirst: 'Microtask của chính Script chạy trước: không response nào đến được trước khi checkpoint của Script kết thúc.',
+    oneHop: 'json() cần thêm một Task networking, nên nó resolve sau hop 1. Trong Chrome 155, body của URL data: cần hai.',
+  },
+  dynamicImport: {
+    microFirst: 'Cả ba microtask nối nhau chạy trước khi module được tải: import() cần một Task riêng.',
+    inTask: 'Module chạy bên trong Task networking đã tải nó. Promise của import() resolve ở checkpoint của Task đó, trước timer 0 ms.',
+  },
+  topLevelAwait: {
+    awaitNull: 'await null trong module chạy tiếp trong một microtask, nên b được in trước Task của timer.',
+    awaitTimer: 'await thứ hai chờ một timer 5 ms, trong lúc đó timer 0 ms đã chạy. Module kết thúc ở một Task sau.',
+  },
+  messagePortTransfer: {
+    newObject: 'e.ports[0] là một object MessagePort mới, không phải b.port2. Việc transfer đã vô hiệu hoá object cũ.',
+    queued: 'b.port1 gửi ping trước khi port mới tồn tại. Message chờ sẵn và đến nơi ngay khi onmessage khởi động port mới.',
+  },
+  finalizationRegistry: {
+    queued: 'gc() thu hồi object đã đăng ký và xếp cleanup thành một Task ngay. Callback không chạy bên trong gc().',
+    ownTask: 'Task cleanup chạy sau các microtask của Task timer, và trước timer 0 ms được đặt sau đó.',
+  },
+  atomicsWaitAsync: {
+    syncAnswers: 'waitAsync trả lời ngay khi giá trị khác (not-equal) hoặc timeout bằng 0 (timed-out). Chỉ khi thật sự chờ nó mới trả về promise.',
+    wakeTask: 'notify xếp việc đánh thức thành một Task, nên nó chạy sau Task timer đã có sẵn trong hàng, chứ không trong microtask của notify.',
+  },
 } satisfies typeof en

@@ -32,6 +32,7 @@ export function eventFamily(kind: TraceEvent['k']): EventFamily {
     case 'task:end':
     case 'checkpoint:begin':
     case 'checkpoint:end':
+    case 'render:frame':
       return 'task'
     case 'job:enqueue':
     case 'job:begin':
@@ -40,6 +41,8 @@ export function eventFamily(kind: TraceEvent['k']): EventFamily {
     case 'timer:init':
     case 'timer:fire':
     case 'timer:clear':
+    case 'webapi:start':
+    case 'webapi:cancel':
       return 'timer'
     case 'promise:create':
     case 'promise:reaction':

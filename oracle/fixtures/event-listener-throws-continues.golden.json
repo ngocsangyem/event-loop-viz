@@ -1,0 +1,25 @@
+{
+  "fixture": "event-listener-throws-continues.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "uncaught-exception",
+      "message": "listener failed"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "next listener"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "after dispatch"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "fixture": "module-static-import-bare-specifier.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "uncaught-exception",
+      "message": "Failed to resolve module specifier \"lodash\". Relative references must start with either \"/\", \"./\", or \"../\"."
+    }
+  ]
+}

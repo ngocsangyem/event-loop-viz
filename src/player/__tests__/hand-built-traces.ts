@@ -28,6 +28,7 @@ export function buildTrace(specs: Spec[]): Trace {
       source: '',
       unsupportedApis: [],
       timingSensitive: false,
+      sourceType: 'script',
     },
     events,
   }

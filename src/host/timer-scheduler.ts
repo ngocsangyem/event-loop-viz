@@ -130,5 +130,6 @@ export function createTimerScheduler(ctx: HostRunContext, nextOrder: () => numbe
       currentNesting = 0
     },
     pendingDueUs: () => [...timers.values()].map((t) => t.dueUs),
+    handles: () => [...timers.values()].map((t) => t.callback),
   }
 }

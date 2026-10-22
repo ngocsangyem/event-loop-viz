@@ -1,0 +1,31 @@
+{
+  "fixture": "dom-onclick-handler.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "onclick"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "listener"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "listener"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "done"
+    }
+  ]
+}

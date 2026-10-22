@@ -20,14 +20,20 @@ export function applyEvent(
   switch (event.k) {
     case 'task:queue': {
       // A timer joins the queue only once due, so it leaves Web APIs at that moment.
-      const callback = event.callback ?? state.timers.find((t) => t.tid === event.tid)?.callback
+      const callback =
+        event.callback ??
+        state.timers.find((t) => t.tid === event.tid)?.callback ??
+        state.webOps.find((o) => o.opId === event.opId)?.callback
       if (event.tid !== undefined) state.timers = state.timers.filter((t) => t.tid !== event.tid)
+      // A Web API operation's Task is queued: its card leaves Web APIs.
+      if (event.opId !== undefined) state.webOps = state.webOps.filter((o) => o.opId !== event.opId)
       state.tasks.push({
         taskId: event.taskId,
         source: event.source,
         ...(callback !== undefined && { callback }),
         ...(event.dueUs !== undefined && { dueUs: event.dueUs }),
         ...(event.tid !== undefined && { tid: event.tid }),
+        ...(event.opId !== undefined && { opId: event.opId }),
       })
       break
     }
@@ -109,6 +115,22 @@ export function applyEvent(
       state.timers = state.timers.filter((t) => t.tid !== event.tid)
       // Chrome cancels a timer Task that was already posted.
       state.tasks = state.tasks.filter((t) => t.tid !== event.tid)
+      break
+    case 'webapi:start':
+      state.webOps.push({
+        opId: event.opId,
+        api: event.api,
+        startUs: event.t,
+        ...(event.taskId !== undefined && { taskId: event.taskId }),
+        ...(event.dueUs !== undefined && { dueUs: event.dueUs }),
+        ...(event.detail !== undefined && { detail: event.detail }),
+        ...(event.callback !== undefined && { callback: event.callback }),
+      })
+      break
+    case 'webapi:cancel':
+      // cancelAnimationFrame: the card goes, and so does a Task already queued for this frame.
+      state.webOps = state.webOps.filter((o) => o.opId !== event.opId)
+      state.tasks = state.tasks.filter((t) => t.opId !== event.opId)
       break
     case 'promise:create':
       state.promises[event.pid] = 'pending'

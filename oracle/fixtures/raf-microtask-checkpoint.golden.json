@@ -4,7 +4,23 @@
     "browser": "chrome",
     "version": "155.0.8059.85"
   },
-  "status": "skip",
-  "skipReason": "requestAnimationFrame is out of v1 scope",
-  "observableOutput": []
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "raf1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "raf1-micro"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "raf2"
+    }
+  ]
 }

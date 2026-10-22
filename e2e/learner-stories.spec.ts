@@ -28,12 +28,12 @@ test('the editor shows line numbers and syntax-highlighted tokens', async ({ pag
 test('after an Unsupported API throws, the rest of the Script still runs', async ({ page }) => {
   await runScript(
     page,
-    `setTimeout(() => console.log('still runs'), 0)\nfetch('/x')\nconsole.log('unreached')`,
+    `setTimeout(() => console.log('still runs'), 0)\nnew Worker('w.js')\nconsole.log('unreached')`,
   )
   await goToEnd(page)
   await revealPanel(page, 'Console')
   await expect(page.getByTestId('console-panel')).toContainText(
-    'Uncaught UnsupportedApiError: fetch is not supported in v1',
+    'Uncaught UnsupportedApiError: Worker is not supported by the simulator',
   )
   await expect(page.getByTestId('console-panel')).toContainText('log: still runs')
   await expect(page.getByTestId('console-panel')).not.toContainText('unreached')

@@ -1,0 +1,20 @@
+{
+  "fixture": "raf-throws-next-runs.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "uncaught-exception",
+      "message": "boom in raf"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "next callback runs"
+    }
+  ]
+}

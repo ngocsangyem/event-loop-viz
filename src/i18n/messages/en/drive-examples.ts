@@ -47,4 +47,41 @@ export default {
   infiniteLoop: {
     neverReturns: 'while (true) never gives the call stack back, so no Task or Job could ever run. A real tab would freeze; here the node Budget stops the Run.',
   },
+  requestAnimationFrame: {
+    frame: 'Both callbacks were requested while the Script ran. They wait for the first rendering opportunity, about 4 ms in, and run there together.',
+    microBetween: 'raf1\'s promise reaction runs before raf2: a microtask checkpoint follows each animation frame callback. Chrome 155 prints raf1, raf1-micro, raf2.',
+  },
+  postMessageListeners: {
+    oneTask: 'postMessage queues one Task for the message event, not one Task per listener.',
+    betweenListeners: 'L1\'s microtask runs before L2. The event loop calls each listener on an empty stack, so a checkpoint follows each one.',
+  },
+  clickIsSynchronous: {
+    sameStack: 'C2 runs right after C1, inside click(). The Script is still on the stack, so no checkpoint runs between the listeners.',
+    afterScript: 'Both reactions waited for the Script to end. When the event loop fires an event instead (a message), a checkpoint follows each listener.',
+  },
+  fetchMockApi: {
+    latency: "The // {'@'}fetch line gives this request 30 ms of virtual latency. The promise stays pending until a networking Task delivers the response.",
+    microFirst: 'The Script\'s own microtask runs first: no response can arrive before the Script\'s checkpoint ends.',
+    oneHop: 'json() needed one more networking Task, so it resolved after hop 1. In Chrome 155 a data: URL body takes two.',
+  },
+  dynamicImport: {
+    microFirst: 'All three chained microtasks run before the module loads: import() needs a Task of its own.',
+    inTask: 'The module runs inside the networking Task that loaded it. The import() promise resolves in that Task\'s checkpoint, before the 0 ms timer.',
+  },
+  topLevelAwait: {
+    awaitNull: 'await null in a module continues in a microtask, so b prints before the timer\'s Task.',
+    awaitTimer: 'The second await waited for a 5 ms timer, and the 0 ms timer ran meanwhile. The module finished in a later Task.',
+  },
+  messagePortTransfer: {
+    newObject: 'e.ports[0] is a new MessagePort object, not b.port2. The transfer neutered the old object.',
+    queued: 'b.port1 posted ping before the new port existed. The message waited and arrived once onmessage started the new port.',
+  },
+  finalizationRegistry: {
+    queued: 'gc() collected the registered object and queued the cleanup as a Task at once. The callback does not run inside gc().',
+    ownTask: 'The cleanup Task runs after the timer Task\'s microtasks, and before the 0 ms timer set later.',
+  },
+  atomicsWaitAsync: {
+    syncAnswers: 'waitAsync answers at once when the value differs (not-equal) or the timeout is 0 (timed-out). Only a real wait returns a promise.',
+    wakeTask: 'notify queued the wake-up as a Task, so it runs after the timer Task that was already queued, not in notify\'s microtasks.',
+  },
 }

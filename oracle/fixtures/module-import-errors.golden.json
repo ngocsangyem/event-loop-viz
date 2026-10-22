@@ -1,0 +1,31 @@
+{
+  "fixture": "module-import-errors.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError Failed to resolve module specifier 'lodash'. The base URL is about:blank because import() is called from a CORS-cross-origin script."
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError Failed to resolve module specifier './local.js'. The base URL is about:blank because import() is called from a CORS-cross-origin script."
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "m1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "TypeError Failed to fetch dynamically imported module: data:text/plain,export default 1"
+    }
+  ]
+}

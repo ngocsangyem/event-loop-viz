@@ -1,0 +1,31 @@
+{
+  "fixture": "message-port-add-event-listener-needs-start.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "starting"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "P1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "P1 micro"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "P2"
+    }
+  ]
+}

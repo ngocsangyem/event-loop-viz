@@ -1,7 +1,7 @@
-import type { JobKind, CallbackInfo } from '../../trace/trace-event'
+import type { JobKind, CallbackInfo, WebApiKind } from '../../trace/trace-event'
 import type { QueuedTask, ReplayState } from '../../player/replay-state'
 import { visibleFrames } from './panel-view-model'
-import { webApiCardsOf } from './web-api-card-model'
+import { webApiCardsOf, webOpCardsOf } from './web-api-card-model'
 
 /** Longest chip text in the DOM; the CSS ellipsis then fits it to any width. */
 export const MAX_CHIP_CHARS = 120
@@ -33,6 +33,7 @@ export interface ChipTextLabels {
 export interface ChipLabels extends ChipTextLabels {
   taskSource: (source: QueuedTask['source']) => string
   jobKind: (kind: JobKind) => string
+  webApi: (api: WebApiKind) => string
 }
 
 type Translate = (key: string, params?: Record<string, unknown>) => string
@@ -45,6 +46,7 @@ export function chipLabelsOf(t: Translate): ChipLabels {
     line: (line) => t('panels.chip.line', { line }),
     taskSource: (source) => t(`panels.taskSource.${source}`),
     jobKind: (kind) => t(`panels.jobKind.${kind}`),
+    webApi: (api) => t(`panels.webApis.op.${api}`),
   }
 }
 
@@ -92,6 +94,9 @@ export function chipsOf(state: ReplayState, source: string, labels: ChipLabels):
   // can see must not count as a traveller.
   for (const card of webApiCardsOf(state).cards) {
     if (card.taskId !== undefined) add(card.taskId, card.callback, labels.taskSource('timer'), 'webapis')
+  }
+  for (const card of webOpCardsOf(state).cards) {
+    if (card.taskId !== undefined) add(card.taskId, card.callback, labels.webApi(card.api), 'webapis')
   }
   for (const task of state.tasks) add(task.taskId, task.callback, labels.taskSource(task.source), 'taskq')
   for (const job of state.jobs) add(job.jobId, job.callback, labels.jobKind(job.jobKind), 'microq')

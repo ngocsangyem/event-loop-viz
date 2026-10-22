@@ -7,7 +7,7 @@ export default {
   nothing: 'empty',
   edge: {
     register: 'register',
-    'timer-fires': 'timer fires',
+    'timer-fires': 'done: queue Task',
     'next-task': 'next Task',
     'run-task': 'run Task',
     'queue-job': 'queue Job',
@@ -18,6 +18,9 @@ export default {
     register: 'Call Stack → Web APIs: registering a timer',
     timerCallback: 'Call Stack: the timer callback runs',
     message: 'Web APIs → Task Queue: a message was queued as a Task',
+    registerWebApi: 'Call Stack → Web APIs: {api} hands its work to the browser',
+    webApiDone: 'Web APIs → Task Queue: the browser finished, a Task ({source}) was queued',
+    frame: 'Event Loop: a rendering opportunity runs {count} animation frame callback(s)',
     runTask: 'Task Queue → Event Loop → Call Stack: running a Task',
     timerDue: 'Web APIs → Task Queue: a timer is due and its Task was queued',
     runTimerTask: 'Task Queue → Event Loop → Call Stack: the timer Task runs',

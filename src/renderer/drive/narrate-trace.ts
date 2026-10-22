@@ -151,6 +151,13 @@ export function narrateTrace(trace: Trace): NarratedStep[] {
           line: lineOf(event.callback) ?? '',
         }, event.clampedMs !== event.requestedMs ? 'timer.clamped' : event.repeat ? 'timer.repeat' : 'timer')
         break
+      case 'webapi:start':
+        if (event.taskId !== undefined) callbacks.set(event.taskId, event.callback)
+        add(event, 'webApi', 'web-apis', { detail: event.detail ?? '' }, `webApi.${event.api}`)
+        break
+      case 'render:frame':
+        add(event, 'frame', 'event-loop', { count: event.callbacks, ms: event.frameMs })
+        break
       case 'await:suspend': {
         const top = stack[stack.length - 1]
         add(event, 'await', 'call-stack', { name: top?.label ?? '' }, 'await', event.loc?.line)

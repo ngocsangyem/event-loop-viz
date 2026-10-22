@@ -1,0 +1,26 @@
+{
+  "fixture": "window-post-message-clones-data.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "DataCloneError true 25"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "DataCloneError"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "false 1 2 true v true 3 false true"
+    }
+  ]
+}

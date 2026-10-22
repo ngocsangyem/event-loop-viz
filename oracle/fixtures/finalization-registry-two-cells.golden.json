@@ -1,0 +1,35 @@
+{
+  "fixture": "finalization-registry-two-cells.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "cleanup b"
+    },
+    {
+      "kind": "uncaught-exception",
+      "message": "cleanup failed"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "micro b"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "cleanup a"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "micro a"
+    }
+  ]
+}

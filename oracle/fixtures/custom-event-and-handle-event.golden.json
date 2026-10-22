@@ -1,0 +1,21 @@
+{
+  "fixture": "custom-event-and-handle-event.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "handleEvent 42 true true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "function true true 2"
+    }
+  ]
+}

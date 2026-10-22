@@ -8,7 +8,7 @@ export default {
   nothing: 'trống',
   edge: {
     register: 'đăng ký',
-    'timer-fires': 'hết giờ',
+    'timer-fires': 'xong: xếp Task',
     'next-task': 'Task kế tiếp',
     'run-task': 'chạy Task',
     'queue-job': 'xếp Job',
@@ -19,6 +19,9 @@ export default {
     register: 'Call Stack → Web APIs: đăng ký một timer',
     timerCallback: 'Call Stack: callback của timer bắt đầu chạy',
     message: 'Web APIs → Task Queue: một message được xếp hàng thành Task',
+    registerWebApi: 'Call Stack → Web APIs: {api} giao việc cho trình duyệt',
+    webApiDone: 'Web APIs → Task Queue: trình duyệt xong việc, một Task ({source}) được xếp hàng',
+    frame: 'Event Loop: một lần rendering chạy {count} callback của animation frame',
     runTask: 'Task Queue → Event Loop → Call Stack: đang chạy một Task',
     timerDue: 'Web APIs → Task Queue: timer đến hạn, Task của nó được xếp hàng',
     runTimerTask: 'Task Queue → Event Loop → Call Stack: Task của timer bắt đầu chạy',

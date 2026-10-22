@@ -41,7 +41,8 @@ export const SCENE_PARTS: readonly ScenePart[] = [
     id: 'timers',
     component: TimerShelfPart,
     readout(state) {
-      return state.timers.length === 0 ? null : `timers ${state.timers.length}`
+      const pending = state.timers.length + state.webOps.length
+      return pending === 0 ? null : state.webOps.length === 0 ? `timers ${pending}` : `web apis ${pending}`
     },
   },
   {

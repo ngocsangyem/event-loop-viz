@@ -38,6 +38,32 @@ export default {
       body: 'setInterval giao {callback} cho một timer tới hạn mỗi {ms} ms.',
     },
   },
+  webApi: {
+    requestAnimationFrame: {
+      title: 'Một callback của requestAnimationFrame chờ frame kế tiếp',
+      body: 'requestAnimationFrame giao {callback} cho trình duyệt và trả về một id ngay. Nó chạy ở lần rendering kế tiếp, sau các Task đã đến hạn.',
+    },
+    fetch: {
+      title: 'fetch gửi một request: {detail}',
+      body: 'fetch trả về một promise pending ngay lập tức. Request chạy bên ngoài event loop; khi response về, một Task thuộc nguồn networking settle promise đó.',
+    },
+    body: {
+      title: 'Body của response được đọc: {detail}',
+      body: 'Đọc body cũng là bất đồng bộ: nó settle trong một Task networking, không phải trong Task hiện tại.',
+    },
+    import: {
+      title: 'import() bắt đầu tải {detail}',
+      body: 'import() trả về một promise pending ngay lập tức. Module được tải trong một Task networking, Task đó chạy module rồi settle promise.',
+    },
+    waitAsync: {
+      title: 'Atomics.waitAsync chờ ở {detail}',
+      body: 'Promise nó trả về settle trong một Task riêng khi Atomics.notify đánh thức nó.',
+    },
+  },
+  frame: {
+    title: 'Một lần rendering: {count} callback của animation frame',
+    body: 'Trình duyệt vẽ một frame khoảng mỗi 16,7 ms. Trước khi vẽ, nó chạy các callback của requestAnimationFrame đang chờ, cùng timestamp {ms} ms.',
+  },
   taskQueued: {
     timer: {
       title: 'Timer tới hạn: Task #{task} vào hàng',
@@ -50,6 +76,22 @@ export default {
     domManipulation: {
       title: 'Task #{task} vào hàng',
       body: 'Trình duyệt tự xếp một Task, thuộc nguồn task DOM manipulation. Nó chờ trong task queue.',
+    },
+    postedMessage: {
+      title: 'Message của window vào hàng thành Task #{task}',
+      body: 'window.postMessage đã xếp một Task thuộc nguồn posted message. Khi nó chạy, mọi listener của message được gọi, sau mỗi listener có một microtask checkpoint.',
+    },
+    networking: {
+      title: 'Mạng xếp Task #{task}',
+      body: 'Một response của fetch, một lần đọc body hoặc một lần tải import() đã xong, nên một Task thuộc nguồn networking vào task queue. Promise settle khi Task đó chạy.',
+    },
+    javascriptEngine: {
+      title: 'Engine xếp Task #{task}',
+      body: 'Cleanup của FinalizationRegistry hoặc Atomics.waitAsync được đánh thức chạy thành một Task riêng. Nó chờ trong task queue.',
+    },
+    animationFrame: {
+      title: 'Rendering: Task #{task} là một callback của requestAnimationFrame',
+      body: 'Đã đến lúc rendering. Từng callback của requestAnimationFrame đang chờ chạy ngay bây giờ, lần lượt, sau mỗi cái có một microtask checkpoint.',
     },
     other: { title: 'Task #{task} vào hàng', body: 'Nó chờ trong task queue.' },
   },
@@ -95,6 +137,10 @@ export default {
     timer: { title: 'Event loop lấy Task #{task}: một callback của timer', body: 'Call stack và microtask queue đều trống, nên event loop lấy Task kế tiếp từ task queue.' },
     portMessage: { title: 'Event loop lấy Task #{task}: một message', body: 'Call stack và microtask queue đều trống, nên event loop lấy Task kế tiếp từ task queue.' },
     domManipulation: { title: 'Event loop lấy Task #{task}: một Task của trình duyệt', body: 'Call stack và microtask queue đều trống, nên event loop lấy Task kế tiếp từ task queue.' },
+    postedMessage: { title: 'Event loop lấy Task #{task}: một message của window', body: 'Call stack và microtask queue đều trống, nên event loop lấy Task kế tiếp từ task queue.' },
+    networking: { title: 'Event loop lấy Task #{task}: một Task của mạng', body: 'Call stack và microtask queue đều trống, nên event loop lấy Task kế tiếp từ task queue.' },
+    javascriptEngine: { title: 'Event loop lấy Task #{task}: một Task của engine', body: 'Call stack và microtask queue đều trống, nên event loop lấy Task kế tiếp từ task queue.' },
+    animationFrame: { title: 'Task #{task} chạy: một callback của requestAnimationFrame', body: 'Bước rendering gọi các callback đang chờ frame này, từng cái một.' },
     other: { title: 'Event loop lấy Task #{task}', body: 'Call stack và microtask queue đều trống, nên event loop lấy Task kế tiếp từ task queue.' },
   },
   callbackStart: {

@@ -1,0 +1,31 @@
+{
+  "fixture": "dom-tree-basics.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "2 ab <li class=\"item\">a</li><li class=\"item\">b</li>"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "2 a true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "[object HTMLUListElement] UL UL true true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "null false"
+    }
+  ]
+}

@@ -51,11 +51,12 @@ describe('runScript: console and timers', () => {
 })
 
 describe('runScript: Trace shape', () => {
-  it('has a v2 header, dense seq numbers, run:start first and a natural run:halted last', async () => {
+  it('has a v3 header, dense seq numbers, run:start first and a natural run:halted last', async () => {
     const script = `setTimeout(() => console.log('x'), 3)`
     const { trace } = await ran(script)
     expect(trace.header).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
+      sourceType: 'script',
       hostProfile: 'chrome-155',
       source: script,
       nodeCostUs: 1,

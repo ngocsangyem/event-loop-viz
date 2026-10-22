@@ -41,6 +41,32 @@ export default {
       body: 'setInterval hands {callback} to a timer that comes due every {ms} ms.',
     },
   },
+  webApi: {
+    requestAnimationFrame: {
+      title: 'A requestAnimationFrame callback waits for the next frame',
+      body: 'requestAnimationFrame hands {callback} to the browser and returns an id at once. It runs at the next rendering opportunity, after the Tasks that are already due.',
+    },
+    fetch: {
+      title: 'fetch sends a request: {detail}',
+      body: 'fetch returns a pending promise at once. The request runs outside the event loop; when the response arrives, a networking Task settles the promise.',
+    },
+    body: {
+      title: 'The response body is read: {detail}',
+      body: 'Reading a body is asynchronous too: it settles in a networking Task, not in the current one.',
+    },
+    import: {
+      title: 'import() starts loading {detail}',
+      body: 'import() returns a pending promise at once. The module loads in a networking Task, which evaluates it and then settles the promise.',
+    },
+    waitAsync: {
+      title: 'Atomics.waitAsync waits on {detail}',
+      body: 'The promise it returned settles in a Task of its own once Atomics.notify wakes it.',
+    },
+  },
+  frame: {
+    title: 'A rendering opportunity: {count} animation frame callback(s)',
+    body: 'The browser renders a frame about every 16.7 ms. Before painting it runs the requestAnimationFrame callbacks that were waiting, all with the timestamp {ms} ms.',
+  },
   taskQueued: {
     timer: {
       title: 'The timer is due: Task #{task} is queued',
@@ -53,6 +79,22 @@ export default {
     domManipulation: {
       title: 'Task #{task} is queued',
       body: 'The browser queues a Task of its own, on the DOM manipulation task source. It waits in the task queue.',
+    },
+    postedMessage: {
+      title: 'The window message is queued as Task #{task}',
+      body: 'window.postMessage queued a Task on the posted message task source. When it runs, every message listener is called, with a microtask checkpoint after each one.',
+    },
+    networking: {
+      title: 'The network queues Task #{task}',
+      body: 'A fetch response, a body read or an import() load is done, so a Task on the networking task source joins the task queue. The promise settles when that Task runs.',
+    },
+    javascriptEngine: {
+      title: 'The engine queues Task #{task}',
+      body: 'A FinalizationRegistry cleanup or an Atomics.waitAsync wake-up runs as a Task of its own. It waits in the task queue.',
+    },
+    animationFrame: {
+      title: 'Rendering: Task #{task} is a requestAnimationFrame callback',
+      body: 'A rendering opportunity came. Each waiting requestAnimationFrame callback runs now, one by one, with a microtask checkpoint after each.',
     },
     other: { title: 'Task #{task} is queued', body: 'It waits in the task queue.' },
   },
@@ -98,6 +140,10 @@ export default {
     timer: { title: 'The event loop takes Task #{task}: a timer callback', body: 'The call stack and the microtask queue are empty, so the event loop takes the next Task from the task queue.' },
     portMessage: { title: 'The event loop takes Task #{task}: a message', body: 'The call stack and the microtask queue are empty, so the event loop takes the next Task from the task queue.' },
     domManipulation: { title: 'The event loop takes Task #{task}: a browser Task', body: 'The call stack and the microtask queue are empty, so the event loop takes the next Task from the task queue.' },
+    postedMessage: { title: 'The event loop takes Task #{task}: a window message', body: 'The call stack and the microtask queue are empty, so the event loop takes the next Task from the task queue.' },
+    networking: { title: 'The event loop takes Task #{task}: a network Task', body: 'The call stack and the microtask queue are empty, so the event loop takes the next Task from the task queue.' },
+    javascriptEngine: { title: 'The event loop takes Task #{task}: an engine Task', body: 'The call stack and the microtask queue are empty, so the event loop takes the next Task from the task queue.' },
+    animationFrame: { title: 'Task #{task} runs: a requestAnimationFrame callback', body: 'The rendering step calls the callbacks that were waiting for this frame, one at a time.' },
     other: { title: 'The event loop takes Task #{task}', body: 'The call stack and the microtask queue are empty, so the event loop takes the next Task from the task queue.' },
   },
   callbackStart: {

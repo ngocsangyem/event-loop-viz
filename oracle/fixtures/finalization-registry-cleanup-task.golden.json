@@ -1,0 +1,36 @@
+{
+  "fixture": "finalization-registry-cleanup-task.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "after gc"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "microtask"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "cleanup held value"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "cleanup microtask"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout 0"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "fixture": "error-event-listeners.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "uncaught-exception",
+      "message": "boom"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "E1 Uncaught Error: boom boom"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "E2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "E1 micro"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "next timer"
+    }
+  ]
+}

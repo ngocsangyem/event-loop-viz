@@ -1,0 +1,21 @@
+{
+  "fixture": "raf-missed-frame-after-busy-script.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "raf"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout 0"
+    }
+  ]
+}

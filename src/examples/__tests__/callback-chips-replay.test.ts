@@ -12,6 +12,7 @@ const labels: ChipLabels = {
   line: (n) => `line ${n}`,
   taskSource: (s) => s,
   jobKind: (k) => k,
+  webApi: (a) => a,
 }
 
 describe('chipsOf', () => {
@@ -26,6 +27,7 @@ describe('chipsOf', () => {
         const chips = chipsOf(s, source, labels)
         const ids = [
           ...s.timers.map((t) => t.taskId),
+          ...s.webOps.map((o) => o.taskId),
           ...s.tasks.map((t) => t.taskId),
           ...s.jobs.map((j) => j.jobId),
           ...(s.runningCallback && !s.runningCallback.done ? [s.runningCallback.chipId] : []),

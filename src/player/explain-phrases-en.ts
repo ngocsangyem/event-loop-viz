@@ -1,7 +1,7 @@
-import type { TraceEvent } from '../trace/trace-event'
+import type { TaskSource, TraceEvent, WebApiKind } from '../trace/trace-event'
 import type { ExplainPhrases } from './explain-phrases-types'
 
-const taskSource = (source: 'script' | 'timer' | 'port-message' | 'dom-manipulation'): string => {
+const taskSource = (source: TaskSource): string => {
   switch (source) {
     case 'script':
       return 'the initial Script'
@@ -11,6 +11,29 @@ const taskSource = (source: 'script' | 'timer' | 'port-message' | 'dom-manipulat
       return 'a MessagePort message'
     case 'dom-manipulation':
       return 'the browser (a rejection notification)'
+    case 'posted-message':
+      return 'window.postMessage'
+    case 'networking':
+      return 'the network (a fetch response, a body read or an import)'
+    case 'javascript-engine':
+      return 'the JavaScript engine (a FinalizationRegistry cleanup or an Atomics.waitAsync wake-up)'
+    case 'animation-frame':
+      return 'the rendering step (a requestAnimationFrame callback)'
+  }
+}
+
+const webApi = (api: WebApiKind): string => {
+  switch (api) {
+    case 'requestAnimationFrame':
+      return 'requestAnimationFrame callback waits for the next rendering opportunity'
+    case 'fetch':
+      return 'fetch request is in flight'
+    case 'body':
+      return 'response body is being read'
+    case 'import':
+      return 'import() is loading a module'
+    case 'waitAsync':
+      return 'Atomics.waitAsync waits for an Atomics.notify'
   }
 }
 
@@ -38,7 +61,7 @@ const viaWork = (via: 'then' | 'await' | 'asyncgen' | 'from-sync'): string => {
   }
 }
 
-const exceptionOrigin = (origin: 'script' | 'task-callback' | 'microtask-callback'): string => {
+const exceptionOrigin = (origin: 'script' | 'task-callback' | 'microtask-callback' | 'event-listener'): string => {
   switch (origin) {
     case 'script':
       return 'the Script'
@@ -46,6 +69,8 @@ const exceptionOrigin = (origin: 'script' | 'task-callback' | 'microtask-callbac
       return 'a Task callback'
     case 'microtask-callback':
       return 'a Job callback'
+    case 'event-listener':
+      return 'an event listener'
   }
 }
 
@@ -67,7 +92,9 @@ export const EN_PHRASES: ExplainPhrases = {
     'task:queue': (e, name) =>
       e.source === 'timer' && e.tid !== undefined
         ? `Time is up for ${name.timer(e.tid)}: its callback joins the Task Queue as Task ${e.taskId}. It runs when the call stack is empty and the event loop picks it.`
-        : `A Task (${e.taskId}) was queued by ${taskSource(e.source)}${e.dueUs === undefined ? '' : `, due at ${e.dueUs / 1000} ms of virtual time`}. It runs when the call stack is empty and the event loop picks it.`,
+        : e.source === 'animation-frame'
+          ? `The rendering step runs requestAnimationFrame callbacks one by one; this one is shown as Task ${e.taskId}, and a Checkpoint follows it before the next callback.`
+          : `A Task (${e.taskId}) was queued by ${taskSource(e.source)}${e.dueUs === undefined ? '' : `, due at ${e.dueUs / 1000} ms of virtual time`}. It runs when the call stack is empty and the event loop picks it.`,
     'task:begin': (e) => `The event loop starts running Task ${e.taskId}.`,
     'task:end': (e) => `Task ${e.taskId} finished. A Checkpoint follows before the next Task.`,
     'checkpoint:begin': (e) =>
@@ -92,6 +119,11 @@ export const EN_PHRASES: ExplainPhrases = {
       `The event loop picks ${name.timer(e.tid)}'s Task; its callback runs now.`,
     'timer:clear': (e, name) =>
       `${name.timerStart(e.tid)} was cleared, so its callback will not run.`,
+    'webapi:start': (e) =>
+      `A ${webApi(e.api)}${e.detail ? ` (${e.detail})` : ''}. It is outside the event loop until ${e.taskId ? `its Task ${e.taskId}` : 'a Task'} is queued${e.dueUs === undefined ? '' : `, at ${e.dueUs / 1000} ms of virtual time`}.`,
+    'webapi:cancel': (e) => `Operation ${e.opId} was cancelled, so its callback will not run.`,
+    'render:frame': (e) =>
+      `A rendering opportunity at ${e.frameMs} ms: ${e.callbacks} requestAnimationFrame callback${e.callbacks === 1 ? '' : 's'} run now, all with this timestamp. Callbacks they request wait for the next frame.`,
     'promise:create': (e) => `A new promise (${e.pid}) was created, initially pending.`,
     'promise:reaction': (e, name) =>
       `${name.promise(e.pid)} got a ${viaWork(e.via)} reaction. ${e.pending ? 'It is still pending, so the reaction waits until the promise settles.' : 'It had already settled, so the reaction is queued as a Job right away.'}`,
@@ -122,7 +154,7 @@ export const EN_PHRASES: ExplainPhrases = {
         ? `No handler was attached in time, so ${name.promiseInline(e.pid)} is reported as an unhandled rejection: ${e.message}`
         : `A handler was attached late, so the host reports rejectionhandled for ${name.promiseInline(e.pid)}: ${e.message}`,
     'exception:report': (e) =>
-      `An exception escaped ${exceptionOrigin(e.origin)} and was reported to the console: ${e.message}${e.unsupportedApi ? ` (${e.unsupportedApi} is not supported in v1)` : ''}`,
+      `An exception escaped ${exceptionOrigin(e.origin)} and was reported to the console: ${e.message}${e.unsupportedApi ? ` (${e.unsupportedApi} is not supported by the simulator)` : ''}`,
     console: (e) => `console.${e.level} printed ${JSON.stringify(e.text)}.`,
   },
 }

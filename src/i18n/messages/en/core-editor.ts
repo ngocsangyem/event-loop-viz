@@ -72,6 +72,42 @@ export default {
         title: 'Infinite loop',
         description: 'A runaway loop is stopped by the execution budget instead of freezing the tab.',
       },
+      requestAnimationFrame: {
+        title: 'requestAnimationFrame',
+        description: 'Animation frame callbacks run one by one, each followed by a microtask checkpoint.',
+      },
+      postMessageListeners: {
+        title: 'window.postMessage listeners',
+        description: 'The event loop fires the message event: microtasks run between its listeners.',
+      },
+      clickIsSynchronous: {
+        title: 'click() runs listeners now',
+        description: 'element.click() dispatches on the stack, so microtasks wait until the Script ends.',
+      },
+      fetchMockApi: {
+        title: 'fetch a (mocked) API',
+        description: 'The response arrives as a networking Task after its latency; reading the body takes one more.',
+      },
+      dynamicImport: {
+        title: 'Dynamic import()',
+        description: 'import() loads and evaluates the module in a Task, after the current microtasks.',
+      },
+      topLevelAwait: {
+        title: 'Top-level await',
+        description: 'A module pauses at await like an async function, letting timers run in between.',
+      },
+      messagePortTransfer: {
+        title: 'MessagePort transfer',
+        description: 'A transferred port arrives as a new object, still connected to its old partner.',
+      },
+      finalizationRegistry: {
+        title: 'gc() and FinalizationRegistry',
+        description: 'After gc(), cleanup callbacks run in a Task of their own, after the current microtasks.',
+      },
+      atomicsWaitAsync: {
+        title: 'Atomics.waitAsync and notify',
+        description: 'Atomics.wait would block, so it throws on the page; waitAsync wakes in a Task queued by notify.',
+      },
     },
   },
   settings: {
@@ -88,12 +124,21 @@ export default {
   supportedApis: {
     button: 'Supported APIs',
     title: 'Supported in the Chrome 155 model',
-    group: { timer: 'Timer · Web APIs', job: 'Job · Promises', console: 'Log · Console' },
-    footer: 'Anything else is an Unsupported API and blocks the Run before it starts.',
+    group: { timer: 'Timer · Web APIs', dom: 'Task · DOM and events', job: 'Job · Promises and the engine', console: 'Log · Console' },
+    footer: 'Worker, XMLHttpRequest, WebSocket and requestIdleCallback are Unsupported APIs and block the Run before it starts.',
     promises: 'Promise, async/await, generators, async generators, for await',
     timers: 'setTimeout, setInterval, clearTimeout, clearInterval',
+    raf: 'requestAnimationFrame, cancelAnimationFrame (frames every 16.7 ms)',
     microtask: 'queueMicrotask',
-    messageChannel: 'MessageChannel',
+    messageChannel: 'MessageChannel, MessagePort, port transfer',
+    postMessage: 'window.postMessage (structured clone)',
+    fetch: "fetch of data: URLs, and http(s) URLs declared by // {'@'}fetch lines; Response, Headers",
+    window: 'window, self, onmessage, onerror, onunhandledrejection',
+    dom: 'document, elements: createElement, append, querySelector, textContent, click()',
+    events: 'addEventListener, dispatchEvent, Event, CustomEvent, MessageEvent',
+    modules: 'Modules: import / export, top-level await, import() of data: URLs',
+    weak: 'WeakRef, FinalizationRegistry, gc()',
+    atomics: 'SharedArrayBuffer, Atomics (wait throws on the window, waitAsync + notify)',
     console: 'console.log / info / warn / error',
     clock: 'Date.now() and performance.now() (Virtual Clock)',
     random: 'Math.random (seeded per Run)',
@@ -104,7 +149,7 @@ export default {
   },
   timing: {
     badge: 'Timing-sensitive: ordering depends on compute time and may differ in your browser.',
-    hint: "A timer was due within 2 ms of a compute stretch ending, so Chrome's real timing could order this Run differently.",
+    hint: "A timer was due within 2 ms of a compute stretch ending, or within 4 ms of a rendering opportunity, so Chrome's real timing could order this Run differently.",
   },
   halt: {
     withLimit: 'Halted: the {name} Budget ({limit} {unit}) was exceeded.',

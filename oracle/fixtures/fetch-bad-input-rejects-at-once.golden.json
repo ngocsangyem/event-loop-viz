@@ -1,0 +1,36 @@
+{
+  "fixture": "fetch-bad-input-rejects-at-once.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "rejected TypeError Failed to execute 'fetch' on 'Window': Failed to parse URL from /relative"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "m1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "Failed to execute 'fetch' on 'Window': 1 argument required, but only 0 present."
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "m2"
+    }
+  ]
+}

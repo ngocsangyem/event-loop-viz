@@ -1,0 +1,20 @@
+{
+  "fixture": "on-error-handler-arguments.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "uncaught-exception",
+      "message": "boom"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "onerror Uncaught Error: boom boom number"
+    }
+  ]
+}

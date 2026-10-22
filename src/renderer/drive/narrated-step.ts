@@ -24,6 +24,8 @@ export type NarrationKind =
   | 'rejectionReport'
   | 'exception'
   | 'halt'
+  | 'webApi'
+  | 'frame'
 
 export type NarrationParams = Record<string, string | number>
 
@@ -43,7 +45,7 @@ export interface NarratedStep {
 /** Steps whose `line` param names the code they are about: the call, the callback. */
 const LINE_PARAM_KINDS: ReadonlySet<NarrationKind> = new Set(['builtinCall', 'call', 'callbackStart', 'taskQueued'])
 /** Steps about the code that is running at their event: what printed, what was set or queued there. */
-const RUNNING_CODE_KINDS: ReadonlySet<NarrationKind> = new Set(['console', 'timer', 'jobQueued', 'await', 'genYield', 'exception'])
+const RUNNING_CODE_KINDS: ReadonlySet<NarrationKind> = new Set(['console', 'timer', 'jobQueued', 'await', 'genYield', 'exception', 'webApi'])
 
 export function codeLineOf(event: TraceEvent, kind: NarrationKind, params: NarrationParams, line: number | undefined): number | undefined {
   if (line !== undefined) return line

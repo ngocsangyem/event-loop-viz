@@ -44,7 +44,7 @@ const { onEnter, onEnterCancelled } = useEnterMotion((el) =>
 </script>
 
 <template>
-  <g data-part="timers" :data-pending="state.timers.length">
+  <g data-part="timers" :data-pending="state.timers.length + state.webOps.length">
     <IsoRaw :svg="timerShelfBackSvg" />
     <g :transform="CLOCK_MATRIX">
       <clipPath :id="clipId"><path :d="clockScreenPath" /></clipPath>
@@ -79,7 +79,7 @@ const { onEnter, onEnterCancelled } = useEnterMotion((el) =>
             font-size="3.8"
             :transform="blockTextMatrix(slot, 0)"
           >
-            {{ timer.repeat ? `t${timer.tid} repeat` : `t${timer.tid}` }}
+            {{ timer.name ?? (timer.repeat ? `t${timer.tid} repeat` : `t${timer.tid}`) }}
           </text>
           <text
             class="iso-face-text"

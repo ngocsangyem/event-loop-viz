@@ -24,13 +24,8 @@ export function findUnsupportedUsages(text: string, apis: readonly string[]): Un
   javascriptLanguage.parser.parse(text).iterate({
     enter: (node) => {
       if (node.name !== 'VariableName') return
-      let api = text.slice(node.from, node.to)
-      let to = node.to
-      // `Atomics.wait` is only unsupported as a pair; plain `Atomics` is fine.
-      if (api === 'Atomics' && text.startsWith('.wait', node.to)) {
-        api = 'Atomics.wait'
-        to = node.to + '.wait'.length
-      }
+      const api = text.slice(node.from, node.to)
+      const to = node.to
       if (!wanted.has(api)) return
       const line = text.slice(0, node.from).split('\n').length
       usages.push({ api, from: node.from, to, line })

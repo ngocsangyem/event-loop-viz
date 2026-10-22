@@ -12,8 +12,13 @@ const open = ref(false)
  * in the Unsupported list throws, so this list is the whole contract with the learner.
  */
 const GROUPS = [
-  { id: 'timer', hue: 'text-webapi', items: ['timers', 'messageChannel', 'clock', 'random'] },
-  { id: 'job', hue: 'text-job', items: ['promises', 'microtask'] },
+  {
+    id: 'timer',
+    hue: 'text-webapi',
+    items: ['timers', 'raf', 'messageChannel', 'postMessage', 'fetch', 'clock', 'random'],
+  },
+  { id: 'dom', hue: 'text-task', items: ['window', 'dom', 'events'] },
+  { id: 'job', hue: 'text-job', items: ['promises', 'microtask', 'modules', 'weak', 'atomics'] },
   { id: 'console', hue: 'text-console', items: ['console'] },
 ] as const
 </script>

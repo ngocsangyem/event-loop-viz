@@ -1,0 +1,41 @@
+{
+  "fixture": "module-dynamic-import-data-url.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "m1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "m2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "m3"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "module evaluated"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "imported 42"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout 0"
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 /**
- * Trace schema v1: the only contract between execution and presentation.
+ * Trace schema v3: the only contract between execution and presentation.
  * Events are frozen, JSON-serializable and contain no engine objects.
  */
 
-export const TRACE_SCHEMA_VERSION = 2
+export const TRACE_SCHEMA_VERSION = 3
 
 export interface TraceBudgets {
   nodes: number
@@ -24,6 +24,8 @@ export interface TraceHeader {
   source: string
   unsupportedApis: string[]
   timingSensitive: boolean
+  /** How the Script ran: a classic script, or a module (it uses import / export / top-level await). */
+  sourceType: 'script' | 'module'
 }
 
 export interface SourceLocation {
@@ -64,16 +66,35 @@ export type PromiseReactionVia = 'then' | 'await' | 'asyncgen' | 'from-sync'
 
 export type HaltReason = 'natural' | 'nodes' | 'tasks' | 'virtual-time' | 'events'
 
+/**
+ * Where a Task comes from. Most are HTML task sources; `animation-frame` is a callback of the
+ * rendering step (HTML update the rendering), shown as a Task of its own.
+ */
+export type TaskSource =
+  | 'script'
+  | 'timer'
+  | 'port-message'
+  | 'dom-manipulation'
+  | 'posted-message'
+  | 'networking'
+  | 'javascript-engine'
+  | 'animation-frame'
+
+/** A Web API operation that ends by queuing a Task: shown as a card in Web APIs until then. */
+export type WebApiKind = 'requestAnimationFrame' | 'fetch' | 'body' | 'import' | 'waitAsync'
+
 export type TraceEventBody =
   | { k: 'run:start' }
   | { k: 'run:halted'; reason: HaltReason; limit?: number }
   | {
       k: 'task:queue'
       taskId: string
-      source: 'script' | 'timer' | 'port-message' | 'dom-manipulation'
+      source: TaskSource
       dueUs?: number
       /** Timer id, on a timer Task: lets a replay move the timer from Web APIs to the queue. */
       tid?: string
+      /** The Web API operation (webapi:start) this Task completes: its card leaves Web APIs. */
+      opId?: string
       /** The function the Task will call, when it is known. */
       callback?: CallbackInfo
     }
@@ -116,12 +137,30 @@ export type TraceEventBody =
    */
   | { k: 'asyncgen:yield' | 'asyncgen:resume' | 'asyncgen:return-await'; gid: string }
   | { k: 'timer:fire' | 'timer:clear'; tid: string }
+  /**
+   * A Web API operation started (`fetch`, a body read, `import()`, `requestAnimationFrame`,
+   * `Atomics.waitAsync`). `taskId` is the Task it will queue when known; `dueUs` when it is
+   * waiting on the Virtual Clock (network latency); `detail` a short label such as the URL.
+   */
+  | {
+      k: 'webapi:start'
+      opId: string
+      api: WebApiKind
+      taskId?: string
+      dueUs?: number
+      callback?: CallbackInfo
+      detail?: string
+    }
+  /** The operation was cancelled (`cancelAnimationFrame`): its card and any Task it queued are gone. */
+  | { k: 'webapi:cancel'; opId: string }
+  /** A rendering opportunity (HTML update the rendering) runs `callbacks` animation-frame callbacks; `frameMs` is their timestamp. */
+  | { k: 'render:frame'; frameMs: number; callbacks: number }
   | { k: 'rejection:track'; pid: string; op: 'reject' | 'handle' }
   /** A queued notification Task fired: `unhandled` (unhandledrejection) or `handled` (rejectionhandled). */
   | { k: 'rejection:notify'; pid: string; outcome: 'unhandled' | 'handled'; message: string }
   | {
       k: 'exception:report'
-      origin: 'script' | 'task-callback' | 'microtask-callback'
+      origin: 'script' | 'task-callback' | 'microtask-callback' | 'event-listener'
       message: string
       /** Set when the exception is an UnsupportedApiError; names the API. */
       unsupportedApi?: string

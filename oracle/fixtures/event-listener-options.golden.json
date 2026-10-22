@@ -1,0 +1,31 @@
+{
+  "fixture": "event-listener-options.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "f"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "once"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "--"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "added late"
+    }
+  ]
+}

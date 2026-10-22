@@ -1,0 +1,21 @@
+{
+  "fixture": "fetch-timeout-before-data-url.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout 0"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "fetch resolved"
+    }
+  ]
+}

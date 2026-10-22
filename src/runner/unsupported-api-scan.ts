@@ -7,18 +7,11 @@
  * binding is not tracked, so the list may over-report but never under-reports.
  */
 
-/** Bare global names whose any reference is unsupported. */
-const UNSUPPORTED_GLOBALS = new Set([
-  'fetch',
-  'document',
-  'window',
-  'requestAnimationFrame',
-  'addEventListener',
-  'postMessage',
-  'FinalizationRegistry',
-  'WeakRef',
-  'SharedArrayBuffer',
-])
+/**
+ * Bare global names whose any reference is unsupported (kept in step with the runtime stubs in
+ * src/engine/unsupported-api-stubs.ts).
+ */
+const UNSUPPORTED_GLOBALS = new Set(['requestIdleCallback', 'Worker', 'SharedWorker', 'XMLHttpRequest', 'WebSocket'])
 
 const IDENT_START = /[A-Za-z_$]/
 const IDENT_PART = /[A-Za-z0-9_$]/
@@ -127,15 +120,8 @@ export function scanUnsupportedApis(script: string): string[] {
     if (token.kind !== 'ident') return
     const previous = tokens[index - 1]
     if (previous?.text === '.') return
-    // `{ window: 1 }` and `class { fetch() {} }`-style keys are not references.
+    // `{ Worker: 1 }` and `class { Worker() {} }`-style keys are not references.
     if (UNSUPPORTED_GLOBALS.has(token.text) && tokens[index + 1]?.text !== ':') add(token.text)
-    if (
-      token.text === 'Atomics' &&
-      tokens[index + 1]?.text === '.' &&
-      tokens[index + 2]?.text === 'wait'
-    ) {
-      add('Atomics.wait')
-    }
   })
   return found
 }

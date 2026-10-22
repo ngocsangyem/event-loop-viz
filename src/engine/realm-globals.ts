@@ -1,10 +1,11 @@
 import * as E from '@engine262/engine262'
 import type { CallbackHandle, HostBindings } from '../host/engine-adapter'
-import { installMessageChannel } from './message-channel-global'
+import type { CallbackInfo } from '../trace/trace-event'
 import type { EngineJob, EngineValue, NativeGenerator, NativeSteps } from './engine262-types'
 import type { EngineRunState } from './engine-run-state'
 import type { DescribeCallback } from './describe-callback'
 import type { ReportingJobQueue } from './reporting-job-queue'
+import type { Invocation } from './host-callbacks'
 
 /** Fixed epoch so `Date.now()` is deterministic across Runs (2023-11-14T22:13:20Z). */
 const VIRTUAL_EPOCH_MS = 1_700_000_000_000
@@ -41,30 +42,33 @@ const toDelayMs = (v: EngineValue | undefined) => {
 }
 
 /**
- * Installs the host-provided globals: timers, queueMicrotask, MessageChannel, console,
- * a seeded Math.random and Virtual Clock backed Date.now / performance.now.
- * `callbacks` maps the handles given to the host back to the Script functions they wrap.
+ * Installs the host-provided globals: timers, queueMicrotask, console, a seeded Math.random and
+ * Virtual Clock backed Date.now / performance.now. `register` turns a Script function into a
+ * handle the host can call back as a Task.
  */
 export function installRealmGlobals(
   state: EngineRunState,
   bindings: HostBindings,
   jobQueue: ReportingJobQueue,
-  callbacks: WeakMap<CallbackHandle, EngineValue>,
+  register: (invocation: Invocation, info?: CallbackInfo) => CallbackHandle,
   format: (v: EngineValue) => string,
   describe: DescribeCallback,
 ) {
   const { realm } = state
   const global = realm.GlobalObject
+  // HTML timer initialization steps: the callback runs with the window as `this` and the
+  // arguments after the delay.
   const timerFn = (repeat: boolean, name: string): NativeGenerator =>
-    function* (callback, delay) {
+    function* (callback, delay, ...args) {
       if (!E.isFunctionObject(callback ?? E.Value.undefined)) {
         return E.Throw.TypeError(`${name}: callback must be a function`)
       }
       const delayMs = toDelayMs(delay)
       if (delayMs instanceof E.ThrowCompletion) return delayMs
-      const info = describe(callback)
-      const handle = { __callbackHandle: true, ...(info && { info }) } as const
-      callbacks.set(handle, callback as EngineValue)
+      const handle = register(
+        { kind: 'call', fn: callback as EngineValue, thisArg: global, origin: 'task-callback', args },
+        describe(callback),
+      )
       return E.Value(bindings.setTimer(handle, delayMs, repeat))
     }
   const clearFn: NativeGenerator = function* (id) {
@@ -89,20 +93,9 @@ export function installRealmGlobals(
         callerScriptOrModule: null,
       } as EngineJob,
       { jobKind: 'microtask', callback: describe(fn) },
+      [fn],
     )
     return E.Value.undefined
-  })
-
-  installMessageChannel({
-    realm,
-    defineFunction: defineGlobal,
-    enqueuePortMessage: bindings.enqueuePortMessage,
-    describe,
-    registerCallback(fn, info) {
-      const handle = { __callbackHandle: true, ...(info && { info }) } as const
-      callbacks.set(handle, fn)
-      return handle
-    },
   })
 
   const consoleObject = E.OrdinaryObjectCreate(realm.Intrinsics['%Object.prototype%'])

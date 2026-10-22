@@ -1,0 +1,31 @@
+{
+  "fixture": "window-message-listeners-checkpoint.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "L1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "L1 micro"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "L2"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "L2 micro"
+    }
+  ]
+}

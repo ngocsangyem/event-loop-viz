@@ -29,7 +29,7 @@ A deterministic limit on a Run, counted in steps, tasks, virtual time, or trace 
 _Avoid_: timeout, quota
 
 **Unsupported API**:
-A global the Script may reference that v1 deliberately refuses to simulate; touching it fails loudly instead of approximating.
+A global the Script may reference that the simulator deliberately refuses to simulate; touching it fails loudly instead of approximating.
 _Avoid_: missing API, polyfill
 
 ## Event loop
@@ -49,6 +49,18 @@ _Avoid_: token, pill
 **Checkpoint**:
 One microtask checkpoint: draining the microtask queue until it is empty.
 _Avoid_: flush, microtask phase
+
+**Web API operation**:
+Work a Web API does outside the event loop (a fetch in flight, a body read, an `import()` load, a `requestAnimationFrame` callback waiting for a frame, an `Atomics.waitAsync`); a card in Web APIs until the Task it queues joins a queue.
+_Avoid_: request, pending call
+
+**Rendering opportunity**:
+A point on the 60 Hz frame grid where the event loop runs the waiting `requestAnimationFrame` callbacks, each shown as an animation-frame Task followed by a Checkpoint.
+_Avoid_: frame (alone), paint
+
+**Fetch mock**:
+A `// @fetch` line in a Script that declares the response an http(s) URL gets; a Run has no other network.
+_Avoid_: stub, fake server
 
 **Tick**:
 One FIFO round of the microtask queue; a Job enqueued during round r runs in round r+1.

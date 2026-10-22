@@ -15,5 +15,9 @@ const SOURCE_LABEL: Record<string, string> = {
   timer: 'timer',
   'port-message': 'port msg',
   'dom-manipulation': 'dom',
+  'posted-message': 'post msg',
+  networking: 'network',
+  'javascript-engine': 'engine',
+  'animation-frame': 'raf',
 }
 export const sourceLabel = (source: string) => SOURCE_LABEL[source] ?? source

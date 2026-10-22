@@ -1,0 +1,26 @@
+{
+  "fixture": "gc-keeps-reachable-objects.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "awaited true captured true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "rejected promise collected true module object true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "after await true"
+    }
+  ]
+}

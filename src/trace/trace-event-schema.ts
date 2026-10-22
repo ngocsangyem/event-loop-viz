@@ -1,5 +1,5 @@
 /**
- * Runtime description of the Trace schema (schemaVersion 2), kept in lockstep with the types in
+ * Runtime description of the Trace schema (schemaVersion 3), kept in lockstep with the types in
  * trace-event.ts: the mapped type below fails to compile when an event kind or field is added,
  * removed or renamed without updating this table. A snapshot test pins the table itself, so any
  * shape change is a deliberate, versioned decision.
@@ -33,6 +33,16 @@ const taskRef = { taskId: str }
 const jobRef = { jobId: str }
 const checkpoint = { reason: oneOf('task-end', 'script-end', 'callback-end') }
 const timerRef = { tid: str }
+const taskSources = oneOf(
+  'script',
+  'timer',
+  'port-message',
+  'dom-manipulation',
+  'posted-message',
+  'networking',
+  'javascript-engine',
+  'animation-frame',
+)
 const callback = opt(
   obj({
     kind: oneOf('function', 'await', 'builtin'),
@@ -49,9 +59,10 @@ export const TRACE_EVENT_SCHEMA: EventSchema = {
   },
   'task:queue': {
     taskId: str,
-    source: oneOf('script', 'timer', 'port-message', 'dom-manipulation'),
+    source: taskSources,
     dueUs: opt(num),
     tid: opt(str),
+    opId: opt(str),
     callback,
   },
   'task:begin': taskRef,
@@ -80,6 +91,16 @@ export const TRACE_EVENT_SCHEMA: EventSchema = {
   },
   'timer:fire': timerRef,
   'timer:clear': timerRef,
+  'webapi:start': {
+    opId: str,
+    api: oneOf('requestAnimationFrame', 'fetch', 'body', 'import', 'waitAsync'),
+    taskId: opt(str),
+    dueUs: opt(num),
+    callback,
+    detail: opt(str),
+  },
+  'webapi:cancel': { opId: str },
+  'render:frame': { frameMs: num, callbacks: num },
   'promise:create': { pid: str },
   'promise:reaction': {
     pid: str,
@@ -96,7 +117,7 @@ export const TRACE_EVENT_SCHEMA: EventSchema = {
   'rejection:track': { pid: str, op: oneOf('reject', 'handle') },
   'rejection:notify': { pid: str, outcome: oneOf('unhandled', 'handled'), message: str },
   'exception:report': {
-    origin: oneOf('script', 'task-callback', 'microtask-callback'),
+    origin: oneOf('script', 'task-callback', 'microtask-callback', 'event-listener'),
     message: str,
     unsupportedApi: opt(str),
   },
@@ -123,9 +144,10 @@ const HEADER_SCHEMA: { [F in keyof TraceHeader]-?: FieldSpec } = {
   source: str,
   unsupportedApis: { type: 'string-array' },
   timingSensitive: bool,
+  sourceType: oneOf('script', 'module'),
 }
 
-/** Returns a list of problems; empty means the event conforms to schema v1. */
+/** Returns a list of problems; empty means the event conforms to the current schema. */
 export function validateTraceEvent(event: unknown): string[] {
   if (typeof event !== 'object' || event === null) return ['event: expected object']
   const record = event as Record<string, unknown>

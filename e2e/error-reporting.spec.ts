@@ -1,22 +1,22 @@
 import { test, expect } from './fixtures'
 import { revealPanel } from './reveal-panel'
 
-test('a Script using fetch shows the pre-run notice and the replay console shows the error', async ({
+test('a Script using Worker shows the pre-run notice and the replay console shows the error', async ({
   page,
 }) => {
   await page.goto('/')
-  await page.getByLabel('Script').fill(`fetch('/x')`)
-  await expect(page.getByTestId('unsupported-api-notice')).toContainText('fetch')
+  await page.getByLabel('Script').fill(`new Worker('w.js')`)
+  await expect(page.getByTestId('unsupported-api-notice')).toContainText('Worker')
 
   await page.getByRole('button', { name: 'Run' }).click()
   await expect(page.getByTestId('replay-banner')).toBeVisible()
-  await expect(page.getByTestId('unsupported-api-notice')).toContainText('fetch')
+  await expect(page.getByTestId('unsupported-api-notice')).toContainText('Worker')
   // The console shows lines up to the playhead; step to the end.
   const next = page.getByRole('button', { name: 'Next' })
   while (await next.isEnabled()) await next.click()
   await revealPanel(page, 'Console')
   await expect(page.getByTestId('console-panel')).toContainText(
-    'Uncaught UnsupportedApiError: fetch is not supported in v1',
+    'Uncaught UnsupportedApiError: Worker is not supported by the simulator',
   )
 })
 

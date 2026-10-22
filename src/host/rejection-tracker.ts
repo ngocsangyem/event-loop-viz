@@ -46,6 +46,11 @@ export function createRejectionTracker() {
       return list
     },
 
+    /** Still awaiting its check, or reported unhandled (a late handler fires rejectionhandled). */
+    tracked(pid: string): boolean {
+      return aboutToBeNotified.has(pid) || outstanding.has(pid) || notificationTasks.some((t) => t.pid === pid)
+    },
+
     enqueue(task: NotificationTask) {
       notificationTasks.push(task)
     },

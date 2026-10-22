@@ -1,0 +1,41 @@
+{
+  "fixture": "sync-promise-async-timeout.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "start"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "async that"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "end"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "promise 1"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "async end"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "timeout 1"
+    }
+  ]
+}

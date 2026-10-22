@@ -1,0 +1,26 @@
+{
+  "fixture": "fetch-mock-404-and-order.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "404 false Not Found"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "nope"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "slow"
+    }
+  ]
+}

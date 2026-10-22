@@ -9,6 +9,11 @@
  */
 const WINDOW_US = 2_000
 const MIN_COMPUTE_US = 1_000
+/**
+ * A Task due this close to a rendering opportunity may land on either side of the frame: Chrome's
+ * first frame came 2 to 7 ms after the script started, and rAF vs 1 ms / 4 ms timers varied.
+ */
+const FRAME_RACE_US = 4_000
 
 export function createTimingSensitivityTracker() {
   let sensitive = false
@@ -22,6 +27,10 @@ export function createTimingSensitivityTracker() {
           return
         }
       }
+    },
+    /** The loop chose between a rendering step due at `frameUs` and a Task due at `taskUs`. */
+    frameRace(frameUs: number | undefined, taskUs: number | undefined): void {
+      if (frameUs !== undefined && taskUs !== undefined && Math.abs(frameUs - taskUs) < FRAME_RACE_US) sensitive = true
     },
     get timingSensitive() {
       return sensitive

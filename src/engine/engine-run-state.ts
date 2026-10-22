@@ -23,6 +23,8 @@ export interface EngineRunState {
    * last. `lastLoc` cannot say where an await is: by the time it suspends, the operand has run.
    */
   pendingAwaits: WeakMap<object, SourceLocation[]>
+  /** True while a classic Script's own Task runs: `document.readyState` is `loading` then. */
+  scriptRunning: boolean
 }
 
 export function createEngineRunState(): EngineRunState {
@@ -32,6 +34,7 @@ export function createEngineRunState(): EngineRunState {
     lastLoc: undefined,
     scriptRoot: undefined,
     pendingAwaits: new WeakMap(),
+    scriptRunning: false,
   } as EngineRunState
 }
 

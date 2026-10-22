@@ -1,0 +1,46 @@
+{
+  "fixture": "dispatch-event-is-synchronous.js",
+  "oracle": {
+    "browser": "chrome",
+    "version": "155.0.8059.85"
+  },
+  "status": "recorded",
+  "skipReason": null,
+  "observableOutput": [
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "before"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "A"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "B"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "not cancelled: true"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "after"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "A micro"
+    },
+    {
+      "kind": "console",
+      "level": "log",
+      "text": "B micro"
+    }
+  ]
+}

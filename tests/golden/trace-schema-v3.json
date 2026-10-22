@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "header": {
     "schemaVersion": {
       "type": "number"
@@ -55,6 +55,13 @@
     },
     "timingSensitive": {
       "type": "boolean"
+    },
+    "sourceType": {
+      "type": "enum",
+      "values": [
+        "script",
+        "module"
+      ]
     }
   },
   "eventBase": {
@@ -121,7 +128,11 @@
           "script",
           "timer",
           "port-message",
-          "dom-manipulation"
+          "dom-manipulation",
+          "posted-message",
+          "networking",
+          "javascript-engine",
+          "animation-frame"
         ]
       },
       "dueUs": {
@@ -129,6 +140,10 @@
         "optional": true
       },
       "tid": {
+        "type": "string",
+        "optional": true
+      },
+      "opId": {
         "type": "string",
         "optional": true
       },
@@ -358,6 +373,82 @@
         "type": "string"
       }
     },
+    "webapi:start": {
+      "opId": {
+        "type": "string"
+      },
+      "api": {
+        "type": "enum",
+        "values": [
+          "requestAnimationFrame",
+          "fetch",
+          "body",
+          "import",
+          "waitAsync"
+        ]
+      },
+      "taskId": {
+        "type": "string",
+        "optional": true
+      },
+      "dueUs": {
+        "type": "number",
+        "optional": true
+      },
+      "callback": {
+        "type": "object",
+        "fields": {
+          "kind": {
+            "type": "enum",
+            "values": [
+              "function",
+              "await",
+              "builtin"
+            ]
+          },
+          "loc": {
+            "type": "object",
+            "fields": {
+              "start": {
+                "type": "number"
+              },
+              "end": {
+                "type": "number"
+              },
+              "line": {
+                "type": "number"
+              },
+              "column": {
+                "type": "number"
+              }
+            },
+            "optional": true
+          },
+          "name": {
+            "type": "string",
+            "optional": true
+          }
+        },
+        "optional": true
+      },
+      "detail": {
+        "type": "string",
+        "optional": true
+      }
+    },
+    "webapi:cancel": {
+      "opId": {
+        "type": "string"
+      }
+    },
+    "render:frame": {
+      "frameMs": {
+        "type": "number"
+      },
+      "callbacks": {
+        "type": "number"
+      }
+    },
     "promise:create": {
       "pid": {
         "type": "string"
@@ -487,7 +578,8 @@
         "values": [
           "script",
           "task-callback",
-          "microtask-callback"
+          "microtask-callback",
+          "event-listener"
         ]
       },
       "message": {
