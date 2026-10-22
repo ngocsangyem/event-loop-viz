@@ -51,50 +51,73 @@ The block uses the app's orange accent, which in the UI always means "now". The 
 
 ## Supported APIs
 
-- Everything engine262 implements: Promise, async/await, generators, async generators, `for await`.
-- `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval` (the callback gets `window` as
-  `this` and the extra arguments)
-- `queueMicrotask`
-- `requestAnimationFrame`, `cancelAnimationFrame`: rendering opportunities every 16.7 ms of
-  virtual time, the first 4 ms after the Script starts. Each callback is shown as an
-  `animation-frame` Task with a microtask checkpoint after it.
-- `MessageChannel` and `MessagePort` as event targets: `postMessage` with a structured clone and a
-  transfer list, `onmessage`, `addEventListener('message')` with `start()`, `close()`, and port transfer.
-- `window.postMessage(message, targetOrigin, transfer)`: a Task on the posted message source;
-  listeners run with a microtask checkpoint between them.
-- `window`, `self`, `globalThis` (the same object), `EventTarget`, `Event`, `CustomEvent`,
-  `MessageEvent`, `ErrorEvent`, `PromiseRejectionEvent`, `DOMException`, `addEventListener` /
-  `removeEventListener` / `dispatchEvent`, and `onmessage`, `onerror`, `onunhandledrejection`,
-  `onrejectionhandled`. `error` and `unhandledrejection` reach the Script's listeners.
-- `document`: the Oracle's page (`<html><head></head><body><script>`), `createElement`,
-  `createTextNode`, `getElementById`, `querySelector(All)` with tag / `#id` / `.class` / descendant
-  selectors, `append`, `appendChild`, `insertBefore`, `remove`, `textContent`, `innerHTML` (read),
-  attributes, `classList`, `click()` (synchronous dispatch with capture and bubbling), `onclick`.
-- `fetch` with `Response` and `Headers`. `data:` URLs behave as in Chrome. A Run has no network:
-  a `// @fetch <url> [status] [latency]ms [body]` line in the Script declares the response an
-  http(s) URL gets; any other URL fails with `TypeError: Failed to fetch`, as when offline.
-- Modules: a Script that only parses as a module (`import`, `export`, top-level `await`,
-  `import.meta`) runs as one. `import` and `import()` load `data:` URLs.
-- `WeakRef`, `FinalizationRegistry`, and `gc()` (as Chrome with `--js-flags=--expose-gc`):
-  cleanup callbacks run in a Task of their own.
-- `SharedArrayBuffer` (the page counts as cross-origin isolated) and `Atomics`: `Atomics.wait`
-  throws on the window as in Chrome; `Atomics.waitAsync` wakes in a Task queued by `Atomics.notify`.
-- `console.log`, `console.info`, `console.warn`, `console.error`
-- `Date.now()` and `performance.now()` (they read the Virtual Clock). `Math.random` is seeded per Run.
-
-The measured Chrome behaviour behind each of them is in
+Each API below behaves the way Chrome 155 behaved when we measured it. The measurements are in
 [docs/research/host-api-semantics.md](docs/research/host-api-semantics.md).
+
+### Language and timers
+
+| API | How the simulator runs it |
+|---|---|
+| Promise, async/await, generators, async generators, `for await` | Everything engine262 implements. |
+| `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval` | The callback runs as a Task, with `window` as `this` and the extra arguments passed through. |
+| `queueMicrotask` | The callback joins the microtask queue. |
+| `requestAnimationFrame`, `cancelAnimationFrame` | A rendering opportunity comes every 16.7 ms of virtual time, the first one 4 ms after the Script starts. Each callback shows as an `animation-frame` Task, and a microtask checkpoint follows it. |
+| `Date.now()`, `performance.now()` | Both read the Virtual Clock. |
+| `Math.random` | Seeded per Run. |
+| `console.log`, `console.info`, `console.warn`, `console.error` | Lines go to the Console panel. |
+
+### Messages and events
+
+| API | How the simulator runs it |
+|---|---|
+| `MessageChannel`, `MessagePort` | Ports are event targets. `postMessage` sends a structured clone and accepts a transfer list. Ports support `onmessage`, `addEventListener('message')` with `start()`, `close()`, and transfer to another port. |
+| `window.postMessage(message, targetOrigin, transfer)` | Queues a Task on the posted message source. When it runs, the listeners are called one by one with a microtask checkpoint between them. |
+| `window`, `self`, `globalThis` | All three are the same object. |
+| `EventTarget`, `Event`, `CustomEvent`, `MessageEvent`, `ErrorEvent`, `PromiseRejectionEvent`, `DOMException` | Constructible as in the browser. |
+| `addEventListener`, `removeEventListener`, `dispatchEvent` | `dispatchEvent` runs the listeners right away, on the current stack. |
+| `onmessage`, `onerror`, `onunhandledrejection`, `onrejectionhandled` | `error` and `unhandledrejection` events reach the Script's own listeners. |
+
+### DOM
+
+The page is the one the Oracle loads: `<html><head></head><body><script>`.
+
+| API | How the simulator runs it |
+|---|---|
+| `document.createElement`, `createTextNode`, `getElementById` | As in the browser. |
+| `querySelector`, `querySelectorAll` | Tag, `#id`, `.class` and descendant selectors. |
+| `append`, `appendChild`, `insertBefore`, `remove` | Build and change the tree. |
+| `textContent`, attributes, `classList` | Read and write. |
+| `innerHTML` | Read only. |
+| `click()`, `onclick` | `click()` dispatches synchronously, with capture and bubbling. |
+
+### Network and modules
+
+| API | How the simulator runs it |
+|---|---|
+| `fetch`, `Response`, `Headers` | `data:` URLs behave as in Chrome. A Run has no network, so a line such as `// @fetch <url> [status] [latency]ms [body]` in the Script declares the response an http(s) URL gets. Any other URL fails with `TypeError: Failed to fetch`, as it does offline. |
+| `import`, `export`, top-level `await`, `import.meta` | A Script that only parses as a module runs as one. |
+| `import()` and static `import` | Both load `data:` URLs. |
+
+### Memory and the engine
+
+| API | How the simulator runs it |
+|---|---|
+| `WeakRef`, `FinalizationRegistry` | Cleanup callbacks run in a Task of their own. |
+| `gc()` | Collects garbage, as Chrome does when started with `--js-flags=--expose-gc`. |
+| `SharedArrayBuffer` | Available, because the page counts as cross-origin isolated. |
+| `Atomics` | `Atomics.wait` throws on the window, as in Chrome. `Atomics.waitAsync` wakes in a Task that `Atomics.notify` queues. |
 
 ## Unsupported APIs
 
-`Worker`, `SharedWorker`, `XMLHttpRequest`, `WebSocket` and `requestIdleCallback`. Each one is a
-stub that throws `UnsupportedApiError` with the API's name, and a scan lists the ones a Script uses
-before it runs. The app does not guess how they would be ordered.
+The simulator does not model these. It refuses them instead of guessing how they would be ordered.
 
-A few parts of supported APIs also fail loudly instead of approximating: setting `innerHTML` to
-markup, selectors beyond tag / `#id` / `.class` / descendant, and `Atomics.waitAsync` with a finite
-timeout (Chrome resolves it about 5 ms late, for a reason not pinned down). `DOMContentLoaded` and
-`load` never fire: the Oracle loads its page with `document.write`, so it cannot pin their timing.
+| API | What happens |
+|---|---|
+| `Worker`, `SharedWorker`, `XMLHttpRequest`, `WebSocket`, `requestIdleCallback` | Each is a stub that throws `UnsupportedApiError` with the API's name. A scan lists the ones a Script uses before it runs, and the Run does not start. |
+| Setting `innerHTML` to markup | Throws `UnsupportedApiError`. Plain text works. |
+| Selectors beyond tag, `#id`, `.class` and descendant | Throws `UnsupportedApiError`. |
+| `Atomics.waitAsync` with a finite timeout | Throws `UnsupportedApiError`. Chrome resolves it about 5 ms late, and the reason is not pinned down. |
+| `DOMContentLoaded`, `load` | Never fire. The Oracle loads its page with `document.write`, so it cannot pin their timing. |
 
 ## Prerequisites
 
