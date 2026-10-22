@@ -11,6 +11,7 @@ export interface AppHotkeyActions {
   toggleShare: () => void
   toggleAsk: () => void
   toggleTrace: () => void
+  toggleDrive: () => void
   toggleSheet: () => void
   tourStep: (direction: 'prev' | 'next') => void
   /** ⌘↵ / Ctrl↵: Run the Script (a no-op while replaying or already running). */
@@ -26,7 +27,7 @@ const OPEN_DIALOG = '[data-slot=dialog-content][data-state=open]'
 
 /**
  * Page-wide app keys from DESIGN.md · Keyboard map, beyond the playback keys: E/R, 1/2/3, L/T/S,
- * A, V, P/N, ?, ⌘↵ and Esc. They never fire while typing (editor, fields), inside menus and
+ * A, V, D, P/N, ?, ⌘↵ and Esc. They never fire while typing (editor, fields), inside menus and
  * listboxes, or with a modifier the key does not use. Printing the keys is a separate switch
  * (KEYS ON/OFF); they work either way.
  */
@@ -64,6 +65,7 @@ export function useAppHotkeys(actions: AppHotkeyActions) {
       s: actions.toggleShare,
       a: actions.toggleAsk,
       v: actions.toggleTrace,
+      d: actions.toggleDrive,
       '?': actions.toggleSheet,
       p: () => actions.tourStep('prev'),
       n: () => actions.tourStep('next'),

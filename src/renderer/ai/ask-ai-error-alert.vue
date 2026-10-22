@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import AskAiWordButton from './ask-ai-word-button.vue'
+import { ERROR_KEYS } from './openrouter-error'
 import type { AskAiErrorKind } from './openrouter-error'
 
 /** A failed request: `⚠ OPENROUTER 401`, the cause in plain words, and RETRY / SETTINGS / DISMISS words. */
@@ -9,15 +10,6 @@ defineProps<{ error: { kind: AskAiErrorKind; detail?: string } }>()
 const emit = defineEmits<{ retry: []; settings: []; dismiss: [] }>()
 const { t } = useI18n()
 
-const ERROR_KEYS = {
-  'invalid-key': 'invalidKey',
-  'no-credits': 'noCredits',
-  'rate-limited': 'rateLimited',
-  'model-not-found': 'modelNotFound',
-  network: 'network',
-  empty: 'empty',
-  unknown: 'unknown',
-} as const
 </script>
 
 <template>

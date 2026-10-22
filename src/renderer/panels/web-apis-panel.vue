@@ -25,6 +25,7 @@ const ghostRef = (card: { api: string; tid: string }) => `${card.api} #${card.ti
 
 <template>
   <PanelCard
+    data-drive-target="web-apis"
     concept="webapi"
     :title="t('panels.webApis.title')"
     :subtitle="t('panels.webApis.subtitle')"

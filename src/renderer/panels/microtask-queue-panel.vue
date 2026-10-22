@@ -41,6 +41,7 @@ const items = computed(() => {
 
 <template>
   <PanelCard
+    data-drive-target="microtask-queue"
     concept="job"
     :title="t('panels.microtaskQueue.title')"
     :subtitle="t('panels.microtaskQueue.subtitle')"

@@ -6,7 +6,8 @@ const INTERVIEW_LEAD: Record<Locale, string> = {
   vi: 'Khi phỏng vấn, bạn có thể nói:',
 }
 
-const LANGUAGE: Record<Locale, string> = {
+/** How an answer must be worded per UI locale; Drive me reuses it. */
+export const LANGUAGE: Record<Locale, string> = {
   en: 'Answer in English.',
   vi:
     'Answer in Vietnamese, in natural wording a Vietnamese developer would write. ' +

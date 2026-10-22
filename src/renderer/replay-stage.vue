@@ -58,10 +58,15 @@ const consoleMeta = computed(() => consoleMetaOf(props.events, props.position))
 </script>
 
 <template>
-  <div class="flex min-w-0 flex-col">
+  <!-- min-h-0: on wide screens the stage is as tall as its column, not as tall as its content. -->
+  <div class="flex min-w-0 flex-col xl:min-h-0">
     <StepCaption v-if="player" :events="events" :position="position" :state="state" :running="running" />
     <GhostStage v-if="!player" :state="ghostState" class="flex-1 border-t" />
-    <div v-else class="ruled bg-border grid gap-px border-t">
+    <!-- Wide screens: the Diagram fills the rest of the column and scales to fit it, so it never scrolls. -->
+    <div
+      v-else
+      :class="['ruled bg-border grid gap-px border-t', view === 'diagram' && 'xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)_auto]']"
+    >
       <template v-if="view === 'panels'">
         <ChipTravelLayer
           :player="player"
@@ -82,8 +87,8 @@ const consoleMeta = computed(() => consoleMetaOf(props.events, props.position))
         </div>
       </template>
       <template v-else>
-        <Card size="sm" class="min-w-0">
-          <CardContent>
+        <Card size="sm" class="min-w-0 xl:min-h-0">
+          <CardContent class="xl:min-h-0 xl:flex-1">
             <EventLoopDiagram v-if="view === 'diagram'" :state="state" :event="events[position]" />
             <SceneView v-else :state="state" :previous="previous" />
           </CardContent>

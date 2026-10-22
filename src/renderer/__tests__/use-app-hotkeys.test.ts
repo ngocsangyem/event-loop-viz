@@ -6,7 +6,7 @@ import type { AppHotkeyActions } from '../use-app-hotkeys'
 function setup() {
   const actions = {
     edit: vi.fn(), replay: vi.fn(), setView: vi.fn(), toggleLocale: vi.fn(), toggleTheme: vi.fn(),
-    toggleShare: vi.fn(), toggleAsk: vi.fn(), toggleTrace: vi.fn(), toggleSheet: vi.fn(), tourStep: vi.fn(), run: vi.fn(),
+    toggleShare: vi.fn(), toggleAsk: vi.fn(), toggleTrace: vi.fn(), toggleDrive: vi.fn(), toggleSheet: vi.fn(), tourStep: vi.fn(), run: vi.fn(),
     cancelRun: vi.fn(),
   } satisfies AppHotkeyActions
   const scope = effectScope()

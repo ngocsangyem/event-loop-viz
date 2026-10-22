@@ -40,6 +40,21 @@
   overflow: visible;
 }
 
+/*
+ * Wide screens: the stage column has a fixed height, so the picture fills it and scales down to
+ * fit (preserveAspectRatio meet) instead of growing past it. Below the floor the column scrolls,
+ * so labels never shrink past reading size.
+ */
+@media (min-width: 1280px) {
+  .diagram-root {
+    height: 100%;
+    min-height: 360px;
+  }
+  .diagram-root svg {
+    height: 100%;
+  }
+}
+
 /* Text */
 .diagram-title {
   fill: var(--foreground);

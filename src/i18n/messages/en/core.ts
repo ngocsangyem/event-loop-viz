@@ -1,12 +1,14 @@
 import editor from './core-editor'
 import playback from './core-playback'
 import panels from './core-panels'
+import drive from './core-drive'
 
 /** App shell strings. Each feature keeps its own message file so they can grow apart. */
 export default {
   ...editor,
   ...playback,
   ...panels,
+  ...drive,
   app: {
     title: 'Event Loop Visualizer',
     tagline: 'Chrome 155 model',
@@ -59,5 +61,6 @@ export default {
     prefs: 'Language · theme · share link',
     sheet: 'This sheet',
     trace: 'Show / hide the Trace panel',
+    drive: 'Start / end Drive me',
   },
 }

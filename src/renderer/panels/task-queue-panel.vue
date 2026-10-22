@@ -41,6 +41,7 @@ const items = computed(() => {
 
 <template>
   <PanelCard
+    data-drive-target="task-queue"
     concept="task"
     :title="t('panels.taskQueue.title')"
     :subtitle="t('panels.taskQueue.subtitle')"

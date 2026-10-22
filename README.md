@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo/logo-symbol-color-dark-bg.svg">
+    <img src="docs/assets/logo/logo-symbol-color-light-bg.svg" alt="Event Loop Visualizer logo" width="96" height="96">
+  </picture>
+</p>
+
 # Event Loop Visualizer
 
 Paste a JavaScript Script, press Run, and replay every step of the Run against a simulated browser
@@ -24,6 +31,14 @@ straight to OpenRouter and the app stores it nowhere unless the learner asks it 
 device. Architecture: [docs/system-architecture.md](docs/system-architecture.md).
 Status and plans: [docs/project-roadmap.md](docs/project-roadmap.md). Terms are defined in
 [GLOSSARY.md](GLOSSARY.md). The code is the record of design decisions.
+
+## Logo
+
+The mark is a square loop. Its top-right corner has broken off as a block: the Task running now.
+The block uses the app's orange accent, which in the UI always means "now". The masters live in
+[docs/assets/logo/](docs/assets/logo/): black, white, colour on light and on dark, and a dark tile.
+`logo-tile-small.svg` is a 16px-grid cut with wider gaps, used for `public/favicon.svg` and
+`public/favicon.ico`.
 
 ## Supported APIs
 

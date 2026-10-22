@@ -45,6 +45,7 @@ const rowClass = (line: ConsoleRow, newest: boolean) =>
 
 <template>
   <PanelCard
+    data-drive-target="console"
     concept="console"
     :title="t('console.title')"
     :info="t('console.info')"

@@ -44,5 +44,8 @@ export function useAskAiDock(options: AskAiDockOptions) {
   // Before the first measurement, assume the dock's desktop height so nothing overlaps it.
   const dockStyle = computed(() => ({ '--ai-dock': `${Math.round(transportHeight.value || 92)}px` }))
 
-  return { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, dockStyle }
+  /** The dock's height in pixels; overlays that must keep it clear read this. */
+  const dockHeight = computed(() => Math.round(transportHeight.value || 92))
+
+  return { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, dockStyle, dockHeight }
 }

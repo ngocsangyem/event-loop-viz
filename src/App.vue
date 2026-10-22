@@ -11,6 +11,9 @@ import AppHeader from '@/renderer/app-header.vue'
 import { useAskAiDock } from '@/renderer/ai/use-ask-ai-dock'
 import AskAiLauncher from '@/renderer/ai/ask-ai-launcher.vue'
 import TracePanelToggle from '@/renderer/trace-panel-toggle.vue'
+import DriveMeButton from '@/renderer/drive/drive-me-button.vue'
+import DriveMeOverlay from '@/renderer/drive/drive-me-overlay.vue'
+import { useDriveMe } from '@/renderer/drive/use-drive-me'
 import EditorCard from '@/renderer/editor-card.vue'
 import TransportBar from '@/renderer/transport-bar.vue'
 import HaltBanner from '@/renderer/halt-banner.vue'
@@ -81,10 +84,16 @@ const {
 // The travel layer tells the panel lists when a coming patch is a jump or a flight's landing row.
 const { sameView, travelMs } = usePanelChipTravel(view, player, () => transport.value)
 
-const { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, dockStyle } = useAskAiDock({
+const { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, dockStyle, dockHeight } = useAskAiDock({
   running, run, position, hasTrace: () => trace.value !== null, pausePlayback: () => transport.value?.pause(),
 })
 const { tab, gridStyle } = useAppLayout({ replaying, askOpen, traceOpen })
+
+// Drive me: the highlighted walkthrough; it owns P / N / Esc while it is on.
+const { session: drive, exampleId } = useDriveMe({
+  script, trace, position, view, tab, ensureRun, pause: () => transport.value?.pause(),
+})
+const { active: driving, toggle: toggleDrive } = drive
 
 /** The "Edit" button vanishes with the replay banner, so focus moves to the editor it unlocks. */
 async function editScript() {
@@ -110,6 +119,7 @@ const toggleLocale = () => (locale.value = LOCALES[(LOCALES.indexOf(locale.value
 
 /** P / N: the tour's Prev and Next live in the Ask AI panel or its dock segment, whichever shows. */
 function tourStep(direction: 'prev' | 'next') {
+  if (driving.value) return direction === 'next' ? drive.next() : drive.prev()
   document.querySelector<HTMLButtonElement>(`[data-testid="ask-ai-tour-${direction}"]:not(:disabled)`)?.click()
 }
 
@@ -127,19 +137,23 @@ useAppHotkeys({
   toggleTrace: () => {
     if (replaying.value) traceOpen.value = !traceOpen.value
   },
+  toggleDrive,
   toggleSheet: () => (sheetOpen.value = !sheetOpen.value),
   tourStep,
   run: () => {
     if (!replaying.value && !running.value && unsupportedApis.value.length === 0) void run()
   },
   cancelRun: () => {
-    if (running.value) cancel()
+    if (driving.value) drive.end()
+    else if (running.value) cancel()
   },
 })
 
 function loadExample(id: string) {
   const example = findExample(id)
-  if (example) session.replaceScript(example.script)
+  if (!example) return
+  exampleId.value = id
+  session.replaceScript(example.script)
 }
 
 const { url: shareUrl, copied: shareCopied, share } = useShareLink(script, settings)
@@ -199,6 +213,7 @@ onMounted(() => {
             :run-number="runCount || null"
             :replaying="replaying"
             :running="running"
+            :driving="driving"
             :syntax-error="syntaxError"
             :syntax-error-at="syntaxErrorAt"
             :highlight="sourceHighlight"
@@ -207,6 +222,7 @@ onMounted(() => {
             @cancel="cancel"
             @edit="editScript"
             @load-example="loadExample"
+            @drive="toggleDrive"
           />
         </div>
         <!-- A flex column so the ghost stage can fill the column height before the first Run. -->
@@ -267,12 +283,14 @@ onMounted(() => {
           <template #trailing>
             <!-- The minimized Ask AI tour docks here as a segment, next to the ASK AI word. -->
             <div id="dock-tour" class="contents" />
+            <DriveMeButton :active="driving" @toggle="toggleDrive" />
             <TracePanelToggle v-if="replaying" :open="traceOpen" @toggle="traceOpen = !traceOpen" />
             <AskAiLauncher ref="launcher" :open="askOpen" @toggle="toggleAsk" />
           </template>
         </TransportBar>
       </div>
       <ShortcutSheet v-model:open="sheetOpen" />
+      <DriveMeOverlay :session="drive" :bottom-reserve="dockHeight" :layout-key="view" />
     </main>
   </TooltipProvider>
 </template>

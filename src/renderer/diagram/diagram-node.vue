@@ -4,6 +4,16 @@ import type { NodeId } from './diagram-flow'
 import { CARD_RADIUS, outlineLength, outlinePathFrom } from './diagram-geometry'
 import type { Point, Rect } from './diagram-geometry'
 import { NODE_ICON } from './diagram-icons'
+import type { DriveTarget } from '../drive/drive-step'
+
+/** The Drive me spot each card stands for. The console card has none: the Console panel below it is the spot. */
+const DRIVE_TARGET: Partial<Record<NodeId, DriveTarget>> = {
+  stack: 'call-stack',
+  webapis: 'web-apis',
+  taskq: 'task-queue',
+  microq: 'microtask-queue',
+  loop: 'event-loop',
+}
 
 /**
  * One card: a quiet bordered box with an icon badge and a title. When the signal reaches it the
@@ -31,6 +41,7 @@ const drawStyle = computed(() => ({ '--outline': `${length.value}px` }))
   <g
     :data-testid="`diagram-node-${id}`"
     :data-node="id"
+    :data-drive-target="DRIVE_TARGET[id]"
     :data-lit="lit ? 'true' : 'false'"
     :data-refused="refused ? 'true' : 'false'"
     class="diagram-node"

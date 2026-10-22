@@ -38,6 +38,7 @@ const items = computed(() => {
 
 <template>
   <PanelCard
+    data-drive-target="call-stack"
     concept="stack"
     :title="t('panels.callStack.title')"
     :subtitle="t('panels.callStack.subtitle')"

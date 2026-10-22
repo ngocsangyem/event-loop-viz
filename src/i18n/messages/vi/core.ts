@@ -2,11 +2,13 @@ import type en from '../en/core'
 import editor from './core-editor'
 import playback from './core-playback'
 import panels from './core-panels'
+import drive from './core-drive'
 
 export default {
   ...editor,
   ...playback,
   ...panels,
+  ...drive,
   app: {
     title: 'Event Loop Visualizer',
     tagline: 'Mô hình Chrome 155',
@@ -57,5 +59,6 @@ export default {
     prefs: 'Ngôn ngữ · giao diện · liên kết chia sẻ',
     sheet: 'Bảng này',
     trace: 'Hiện / ẩn panel Trace',
+    drive: 'Bắt đầu / kết thúc Drive me',
   },
 } satisfies typeof en

@@ -34,12 +34,14 @@ const props = withDefaults(
     replayState?: ReplayState | null
     /** Which Run this is; the Source footer prints `RUN #n`. */
     runNumber?: number | null
+    /** A Drive me walkthrough is on; the pane header's DRIVE ME shows it pressed. */
+    driving?: boolean
   }>(),
-  { trace: null, replayState: null, runNumber: null },
+  { trace: null, replayState: null, runNumber: null, driving: false },
 )
 const script = defineModel<string>('script', { required: true })
 const settings = defineModel<SharedSettings>('settings', { required: true })
-const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string] }>()
+const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string]; drive: [] }>()
 
 const { t } = useI18n()
 const editor = useTemplateRef('editor')
@@ -63,13 +65,15 @@ function requestRun() {
 </script>
 
 <template>
-  <section class="flex min-h-full min-w-0 flex-col" role="region" :aria-label="t('editor.region')">
+  <section class="flex min-h-full min-w-0 flex-col" role="region" :aria-label="t('editor.region')" data-drive-target="source">
     <EditorPaneHeader
       :mode="replaying ? 'source' : 'edit'"
       :running="running"
       :examples="EXAMPLES"
       :current-example-id="currentExampleId"
+      :driving="driving"
       @edit="emit('edit')"
+      @drive="emit('drive')"
       @load-example="emit('load-example', $event)"
     />
     <progress v-if="running" class="sr-only" :aria-label="t('editor.running')">{{ t('editor.runningText') }}</progress>

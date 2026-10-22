@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { Button } from '@/components/ui/button'
 import ExamplePicker from './example-picker.vue'
 import SupportedApis from './supported-apis.vue'
+import DriveMeButton from './drive/drive-me-button.vue'
 import type { Example } from '@/examples/example-library'
 
 /** The 40px pane header: Script controls while editing, the Source label during replay. */
@@ -11,8 +12,10 @@ defineProps<{
   running: boolean
   examples: readonly Example[]
   currentExampleId: string | null
+  /** A Drive me walkthrough is on. */
+  driving: boolean
 }>()
-const emit = defineEmits<{ edit: []; 'load-example': [id: string] }>()
+const emit = defineEmits<{ edit: []; 'load-example': [id: string]; drive: [] }>()
 const { t } = useI18n()
 </script>
 
@@ -26,6 +29,7 @@ const { t } = useI18n()
         {{ running ? t('editor.locked') : t('editor.editing') }}
       </span>
       <span class="flex-1" />
+      <DriveMeButton compact :active="driving" @toggle="emit('drive')" />
       <ExamplePicker :examples="examples" :current-id="currentExampleId" @load="emit('load-example', $event)" />
       <SupportedApis />
     </template>
@@ -33,6 +37,7 @@ const { t } = useI18n()
       <h2 class="text-foreground font-medium">{{ t('editor.sourceTitle') }}</h2>
       <span class="text-muted-foreground" data-testid="replay-banner">{{ t('editor.readOnlyTag') }}</span>
       <span class="flex-1" />
+      <DriveMeButton compact :active="driving" @toggle="emit('drive')" />
       <!-- Going back to Edit discards the Trace; the accessible name says so. -->
       <Button variant="ghost" size="sm" hotkey="E" :aria-label="t('editor.edit')" @click="emit('edit')">
         {{ t('editor.editLabel') }}

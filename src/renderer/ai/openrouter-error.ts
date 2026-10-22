@@ -8,6 +8,17 @@ export type AskAiErrorKind =
   | 'empty'
   | 'unknown'
 
+/** Message key of each kind under `ai.errors` (and `ai.errors.title`), shared by every place that explains one. */
+export const ERROR_KEYS = {
+  'invalid-key': 'invalidKey',
+  'no-credits': 'noCredits',
+  'rate-limited': 'rateLimited',
+  'model-not-found': 'modelNotFound',
+  network: 'network',
+  empty: 'empty',
+  unknown: 'unknown',
+} as const satisfies Record<AskAiErrorKind, string>
+
 /** A failed request, reduced to a kind the UI can localize. `detail` is the provider's message. */
 export class AskAiError extends Error {
   readonly kind: AskAiErrorKind

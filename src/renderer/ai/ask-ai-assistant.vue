@@ -6,7 +6,7 @@ import type { Locale } from '@/i18n/locales'
 import type { Player } from '../../player/player'
 import type { ReplayState } from '../../player/replay-state'
 import type { TraceEvent } from '../../trace/trace-event'
-import { createApiKeyStore } from './api-key-store'
+import { sharedApiKeyStore } from './shared-api-key-store'
 import AskAiComposer from './ask-ai-composer.vue'
 import AskAiContextLine from './ask-ai-context-line.vue'
 import AskAiEmptyState from './ask-ai-empty-state.vue'
@@ -44,7 +44,7 @@ const props = defineProps<{
 const emit = defineEmits<{ seek: [position: number]; minimize: [] }>()
 
 const { t, locale } = useI18n()
-const store = createApiKeyStore()
+const store = sharedApiKeyStore()
 const { model, models, status: modelStatus, fetchModels } = useOpenRouterModelChoice()
 const settingsOpen = shallowRef(false)
 const announcement = shallowRef('')

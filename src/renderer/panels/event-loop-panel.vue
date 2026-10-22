@@ -38,6 +38,7 @@ const ARCS = [
 
 <template>
   <PanelCard
+    data-drive-target="event-loop"
     concept="loop"
     :title="t('panels.eventLoop.title')"
     :info="t('panels.eventLoop.info')"
