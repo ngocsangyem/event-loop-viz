@@ -53,3 +53,6 @@ design-system/dist/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Showreel render output
+motion/out/

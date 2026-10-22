@@ -18,6 +18,15 @@ targets one Host Profile, `chrome-155`.
 The site is not deployed yet. The maintainer deploys by hand with
 [docs/deployment-guide.md](docs/deployment-guide.md) and will add the URL here.
 
+## Showreel
+
+[![Event Loop Visualizer showreel: a Job cuts ahead of a Task at the microtask checkpoint](docs/assets/showreel/event-loop-showreel-poster.jpg)](docs/assets/showreel/event-loop-showreel.mp4)
+
+A 15-second motion piece made from the app's sample Script (click the frame to play it, sound
+on). It is rendered in code from [`motion/`](motion/): `node score.mjs` synthesizes the score and
+measures its beat grid, then `node render.mjs` renders every frame through `window.seek(t)` and
+encodes the MP4.
+
 ## How it works
 
 The Script runs in [engine262](https://github.com/engine262/engine262) behind a hand-written HTML
