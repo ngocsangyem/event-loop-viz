@@ -123,6 +123,7 @@ export default {
   },
   supportedApis: {
     button: 'Supported APIs',
+    buttonShort: 'APIs',
     title: 'Supported in the Chrome 155 model',
     group: { timer: 'Timer · Web APIs', dom: 'Task · DOM and events', job: 'Job · Promises and the engine', console: 'Log · Console' },
     footer: 'Worker, XMLHttpRequest, WebSocket and requestIdleCallback are Unsupported APIs and block the Run before it starts.',

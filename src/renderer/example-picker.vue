@@ -31,9 +31,16 @@ const currentName = computed(() => {
   <!-- Non-modal: a modal menu aria-hides the page while focusable controls stay under it. -->
   <DropdownMenu :modal="false">
     <DropdownMenuTrigger as-child>
-      <Button variant="ghost" size="sm" class="h-auto self-stretch" data-testid="example-library">
+      <!-- The name truncates on narrow panes and hides below sm; aria-label keeps it whole. -->
+      <Button
+        variant="ghost"
+        size="sm"
+        class="h-auto self-stretch"
+        :aria-label="`${t('examples.button')}: ${currentName}`"
+        data-testid="example-library"
+      >
         <span class="text-foreground-2">{{ t('examples.button') }}</span>
-        <span class="text-foreground normal-case">{{ currentName }}</span>
+        <span class="text-foreground max-w-48 truncate normal-case max-sm:hidden">{{ currentName }}</span>
         <span aria-hidden="true" class="text-muted-foreground">▾</span>
       </Button>
     </DropdownMenuTrigger>
