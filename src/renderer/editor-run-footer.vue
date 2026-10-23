@@ -7,7 +7,10 @@ import { budgetSummary } from './run-settings-model'
 import type { EditableRunSettings } from './run-settings-model'
 import { runHotkeyLabel } from './run-hotkey-label'
 
-/** The 56px footer: Run settings and Budget summary, then Run, or the Recording state with Cancel. */
+/**
+ * The 56px footer: Run settings and Budget summary, then Run, or the Recording state with Cancel.
+ * On a phone it is pinned to the bottom of the SCRIPT tab, where it replaces the playback dock.
+ */
 defineProps<{ running: boolean; blocked: boolean }>()
 const settings = defineModel<EditableRunSettings>('settings', { required: true })
 const emit = defineEmits<{ run: []; cancel: [] }>()
@@ -24,7 +27,7 @@ defineExpose({ focusRun: () => (runButton.value?.$el as HTMLElement | undefined)
 </script>
 
 <template>
-  <footer class="border-border mt-auto flex h-14 shrink-0 items-center gap-4 border-t px-4">
+  <footer class="border-border bg-background mt-auto flex h-14 shrink-0 items-center gap-4 border-t px-4 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:h-16">
     <AdvancedSettings v-model="settings" />
     <span class="text-muted-foreground min-w-0 truncate font-mono text-[11.5px] leading-4 uppercase" :title="budget">{{ budget }}</span>
     <span class="flex-1" />
@@ -34,11 +37,12 @@ defineExpose({ focusRun: () => (runButton.value?.$el as HTMLElement | undefined)
         <span class="recording-spinner text-brand" aria-hidden="true">
           <span>✻</span><span>✼</span><span>✽</span><span>✼</span>
         </span>
-        {{ t('editor.recording') }}
+        <!-- A phone keeps the spinner and Cancel; the words would push Cancel off the edge. -->
+        <span class="max-sm:sr-only">{{ t('editor.recording') }}</span>
       </span>
       <Button variant="destructive" size="lg" hotkey="ESC" @click="emit('cancel')">{{ t('editor.cancel') }}</Button>
     </template>
-    <Button v-else ref="runButton" size="lg" :hotkey="runHotkey" :disabled="blocked" @click="emit('run')">
+    <Button v-else ref="runButton" size="lg" class="max-md:h-12 max-md:px-6" :hotkey="runHotkey" :disabled="blocked" @click="emit('run')">
       {{ t('editor.run') }}
     </Button>
   </footer>

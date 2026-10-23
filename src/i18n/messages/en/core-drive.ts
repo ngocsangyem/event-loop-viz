@@ -17,6 +17,8 @@ export default {
     },
     region: 'Drive me walkthrough',
     progress: 'Step {current} of {total}',
+    /** First step only: how to leave the walkthrough. */
+    escHint: 'Press Esc or End to leave any time.',
     prev: 'Prev',
     next: 'Next',
     done: 'Done',

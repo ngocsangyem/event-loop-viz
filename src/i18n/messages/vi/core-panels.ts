@@ -106,5 +106,6 @@ export default {
       'Script chạy một lần trong Worker sandbox trên mô hình event loop của Chrome 155. Sau đó bạn replay từng bước — tiến và lùi.',
     busyBody: 'Replay bắt đầu ngay khi Run kết thúc. Cancel sẽ dừng Worker.',
     blockedBody: 'Script gọi một API mà mô hình này không mô phỏng. Hãy bỏ nó để chạy.',
+    run: 'Chạy Script',
   },
 } satisfies typeof en

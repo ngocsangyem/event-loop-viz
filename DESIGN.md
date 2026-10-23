@@ -32,14 +32,14 @@ Virtual Clock, Unsupported API. Never "macrotask", "flush", "session".
 - **Main grid**, columns separated by 1px `line` (gap:1px on a line-coloured ground):
   - Edit mode · `600px | 1fr` — Script editor | stage preview.
   - Replay · `320px | 1fr | 380px` — read-only Source | stage | Why rail. With the AI panel open, the right column becomes 400px and holds the panel instead of the rail.
-- **Dock 92px** (pinned) · row 1: step counter · scrubber · Virtual Clock. Row 2: transport words · "what just happened" line · legend · `AUTO-PLAY` `SPEED` `[?]KEYS` · tour segment · `[A]ASK AI`.
+- **Dock 92px** (pinned) · row 1: step counter · scrubber · Virtual Clock. Row 2: transport words · "what just happened" line · `PLAYBACK 1×` (a popover holding `SPEED` and `AUTO-PLAY`) · `[?]KEYS` · tour segment · `[D]DRIVE ME` `[V]TRACE` `[A]ASK AI`.
 
 ## Layout — mobile (≥360, designed at 390)
-- Header 48px: title · view picker · `ASK AI` · `MENU` (theme, language, share, Task jumps, speed).
+- Header 48px: title · `MENU` (language, theme, share, then the guides: Drive me, Ask AI). The view switch `PANELS DIAGRAM 3D SCENE` is a 44px row under it on the REPLAY tab only.
 - Tabs 44px: `SCRIPT` / `REPLAY`.
 - Replay: caption → one-line **Source peek** (current line) → panes. Only panes the step touched are open; the rest collapse to 44px summary rows. Console last.
 - Dock pinned: step + "where", scrubber, five 52px targets `← TICK` `← STEP` `PLAY` `STEP →` `TICK →`. The tour bar (48px) sits above it while a tour runs.
-- Edit: editor card + alerts; full-width 48px `RUN SCRIPT` pinned at the bottom.
+- Edit: editor card + alerts; the Run footer (48px `RUN`) is pinned at the bottom and replaces the dock on the SCRIPT tab. While recording, a phone shows the spinner without its words.
 - Ask AI and settings open as bottom sheets; the tour sheet sits above the dock.
 - Hotkeys are not printed on touch.
 
@@ -69,9 +69,10 @@ All three show the same state at the same step. **Panels** is the default.
 
 ## Control dock
 - Transport words with printed keys: `[⌥←]TASK [⇧←]TICK [←]STEP [␣]PLAY [→]STEP [⇧→]TICK [⌥→]TASK`. PLAY is the only filled (primary) button.
-- Scrubber: 4px raised track; lanes underneath (task blue = Task, magenta = Checkpoint); 2px green ticks for console output; red ticks for errors. Playhead = 2px × 24px accent bar.
+- Scrubber: 4px raised track in a 28px grab area (36px on a phone); markers carry a title; lanes underneath (task blue = Task, magenta = Checkpoint); 2px green ticks for console output; red ticks for errors. Playhead = 2px × 24px accent bar.
 - **Tour segment** (while a tour runs) · raised box: `TOUR 03/07` · (minimized: stop title) · `[P]PREV` · `[N]NEXT STOP` (primary) · `OPEN` when minimized. Next/Prev move the replay to each stop.
 - `[A]ASK AI` · outline; pressed state = ink border + hover-row fill.
+- **Drive me** lives in the dock only (not in the Script header). Its card shows `STEP 01 OF 14` over a 2px accent progress rule (scaleX), and the first step says how to leave.
 
 ## Ask AI
 - The panel replaces the Why rail; nothing floats over the stage.
@@ -83,7 +84,7 @@ All three show the same state at the same step. **Panels** is the default.
 - **Tour**: numbered stop list (`01 ✓ … 03` current on an accent rule), stop card (`STOP 03 OF 07 · STEP 15`, lowercase title, body), `❯ YOUR TURN` coach prompt in accent. It ends with a Recap stop.
 
 ## States
-- **Empty / first visit** · example Script loaded; the stage shows ghost lanes labelled with what will appear; a centred pane `READY · EXAMPLE LOADED` / "press run to record a trace" / `[⌘↵]RUN SCRIPT`.
+- **Empty / first visit** · without a share link the page opens on the "Sync, promise, async, timer" example; the stage shows ghost lanes labelled with what will appear; a centred pane `READY` / "press run to record a trace" / `[⌘↵]RUN SCRIPT` (the card's own Run).
 - **Running** · see Edit ↔ Replay.
 - **Halt** · banner, run badge `HALTED · BUDGET`, phase `HALT · BUDGET` in accent, last Trace Event `HALT` active.
 - **Unsupported API** · red admonition `⚠ UNSUPPORTED API · RUN BLOCKED` with ruled rows `fetch · LINE 2`; offending tokens get a red wavy underline + `-soft` fill; the `SUPPORTED APIS` popover lists APIs grouped by concept. Run is disabled.
@@ -157,7 +158,7 @@ Keys never fire while typing in the editor or AI input, or with an unrelated mod
 | Panes, Trace Events, chat | `ScrollArea` |
 | Printed hotkeys | `Kbd` (bracket style, no box) |
 | Halt, Unsupported API, syntax, 401 | `Alert` (admonition variant) |
-| Shortcut sheet | `Command` |
+| Shortcut sheet | `Dialog`, grouped Playback · Guides · Script and app, keys in brackets |
 | Tags, counts | `Badge` (text-only variant) |
 | Transport hints | `Tooltip` |
 

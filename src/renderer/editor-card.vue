@@ -34,14 +34,12 @@ const props = withDefaults(
     replayState?: ReplayState | null
     /** Which Run this is; the Source footer prints `RUN #n`. */
     runNumber?: number | null
-    /** A Drive me walkthrough is on; the pane header's DRIVE ME shows it pressed. */
-    driving?: boolean
   }>(),
-  { trace: null, replayState: null, runNumber: null, driving: false },
+  { trace: null, replayState: null, runNumber: null },
 )
 const script = defineModel<string>('script', { required: true })
 const settings = defineModel<SharedSettings>('settings', { required: true })
-const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string]; drive: []; 'video-opened': [] }>()
+const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string]; 'video-opened': [] }>()
 
 const { t } = useI18n()
 const editor = useTemplateRef('editor')
@@ -71,9 +69,7 @@ function requestRun() {
       :running="running"
       :examples="EXAMPLES"
       :current-example-id="currentExampleId"
-      :driving="driving"
       @edit="emit('edit')"
-      @drive="emit('drive')"
       @load-example="emit('load-example', $event)"
       @video-opened="emit('video-opened')"
     />

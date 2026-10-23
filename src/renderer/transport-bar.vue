@@ -4,15 +4,14 @@ import { useI18n } from 'vue-i18n'
 import type { Player } from '../player/player'
 import type { TraceEvent } from '../trace/trace-event'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { formatVirtualMs } from './scene/timer-shelf-model'
 import { stepProgressOf } from './step-progress'
+import PlaybackOptionsPopover from './playback-options-popover.vue'
 import TimelineScrubber from './timeline-scrubber.vue'
 import TransportControlButton from './transport-control-button.vue'
 import { BACK_CONTROLS, FORWARD_CONTROLS } from './transport-controls'
-import { SPEEDS, usePlayback } from './use-playback'
-import type { SameView, Speed } from './use-playback'
+import { usePlayback } from './use-playback'
+import type { SameView } from './use-playback'
 import { useStepSentence } from './use-step-sentence'
 import { useTraceNavigation } from './use-trace-navigation'
 import { useTransportShortcuts } from './use-transport-shortcuts'
@@ -59,12 +58,6 @@ const progress = computed(() => stepProgressOf(props.events, position.value))
 const clock = computed(() => formatVirtualMs(props.clockUs))
 const sentence = useStepSentence(() => props.events, () => position.value)
 const edge = (control: { side: 'start' | 'end' }) => (control.side === 'start' ? atStart.value : atEnd.value)
-
-/** The speed Select works in strings; playback keeps the number. */
-const speedText = computed({
-  get: () => String(speed.value),
-  set: (value: string) => (speed.value = Number(value) as Speed),
-})
 </script>
 
 <template>
@@ -124,23 +117,7 @@ const speedText = computed({
         {{ player ? sentence : t('dock.noTrace') }}
       </p>
       <div class="ml-auto flex items-center gap-0.5 max-sm:w-full max-sm:flex-wrap max-sm:justify-end">
-        <Switch
-          v-model="autoplay"
-          class="max-sm:h-11"
-          data-control="autoplay"
-          :title="t('transport.autostartHint')"
-          :label="t('transport.autostart')"
-          :on-label="t('switch.on')"
-          :off-label="t('switch.off')"
-        />
-        <Select v-model="speedText" :disabled="!player">
-          <SelectTrigger size="sm" :aria-label="t('transport.speed')" class="w-20 max-sm:h-11!">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="s in SPEEDS" :key="s" :value="String(s)">{{ s }}×</SelectItem>
-          </SelectContent>
-        </Select>
+        <PlaybackOptionsPopover v-model:speed="speed" v-model:autoplay="autoplay" :disabled="!player" />
         <Button variant="secondary" size="lg" hotkey="?" data-control="keys" class="max-xl:hidden" @click="emit('keys')">
           {{ t('dock.keys') }}
         </Button>

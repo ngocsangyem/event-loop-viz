@@ -16,7 +16,7 @@ test('switching to Vietnamese translates labels, event explanations and <html la
 
   await chooseVietnamese(page)
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi')
-  await expect(page.getByRole('button', { name: 'Chạy' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Chạy', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Ví dụ' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Trình soạn code' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Call Stack' }).getByText('Trống')).toBeVisible()

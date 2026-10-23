@@ -35,6 +35,10 @@ export default {
     replayRun: 'Replay · Run #{n}',
     keys: 'Keys',
     keysHint: 'Print hotkeys next to controls',
+    /** Phone only: the header menu that holds language, theme, Share and the guides. */
+    menu: 'Menu',
+    guides: 'Guides',
+    shareCopiedShort: 'Copied',
   },
   /** The words of every ON/OFF switch. */
   switch: {
@@ -62,5 +66,7 @@ export default {
     sheet: 'This sheet',
     trace: 'Show / hide the Trace panel',
     drive: 'Start / end Drive me',
+    /** Group headings of the sheet. */
+    groups: { playback: 'Playback', guides: 'Guides', app: 'Script and app' },
   },
 }
