@@ -27,6 +27,13 @@ on). It is rendered in code from [`motion/`](motion/): `node score.mjs` synthesi
 measures its beat grid, then `node render.mjs` renders every frame through `window.seek(t)` and
 encodes the MP4.
 
+## Lesson videos
+
+Every example has a narrated lesson video in Vietnamese and English (**Video lesson** in the
+Script pane header). The videos are rendered in code from each example's real Trace, so the
+picture cannot disagree with the simulator. Pipeline and authoring guide:
+[docs/lesson-videos.md](docs/lesson-videos.md).
+
 ## How it works
 
 The Script runs in [engine262](https://github.com/engine262/engine262) behind a hand-written HTML

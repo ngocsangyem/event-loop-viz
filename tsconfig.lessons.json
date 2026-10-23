@@ -1,0 +1,14 @@
+// Lesson video system (motion/lessons): the timeline builder runs the app's own modules in Node
+// through Vite, and the film runs in a browser page, so both share the app's compiler settings.
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": ["env.d.ts", "motion/lessons/**/*.ts", "src/**/*", "src/**/*.vue"],
+  "exclude": ["src/**/__tests__/*"],
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "types": ["vite/client"],
+    "paths": { "@/*": ["./src/*"] },
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lessons.tsbuildinfo"
+  }
+}

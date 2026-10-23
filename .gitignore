@@ -56,3 +56,5 @@ design-system/dist/
 
 # Showreel render output
 motion/out/
+motion/lessons/out/
+motion/.venv/

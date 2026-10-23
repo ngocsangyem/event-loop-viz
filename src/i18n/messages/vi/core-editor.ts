@@ -1,6 +1,16 @@
 import type en from '../en/core-editor'
 
 export default {
+  video: {
+    play: 'Video bài giảng',
+    playLabel: 'Phát video bài giảng cho {title}',
+    dialogTitle: 'Video bài giảng: {title}',
+    description: 'Từng bước qua Call Stack, các hàng đợi và Event Loop.',
+    otherLanguage: 'Bài này chưa có bản tiếng Việt, nên video phát bằng tiếng Anh.',
+    loading: 'Đang tải video…',
+    error: 'Không tải được video.',
+    retry: 'Thử lại',
+  },
   editor: {
     region: 'Trình soạn code',
     title: 'Script',

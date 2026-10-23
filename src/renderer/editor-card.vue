@@ -41,7 +41,7 @@ const props = withDefaults(
 )
 const script = defineModel<string>('script', { required: true })
 const settings = defineModel<SharedSettings>('settings', { required: true })
-const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string]; drive: [] }>()
+const emit = defineEmits<{ run: []; cancel: []; edit: []; 'load-example': [id: string]; drive: []; 'video-opened': [] }>()
 
 const { t } = useI18n()
 const editor = useTemplateRef('editor')
@@ -75,6 +75,7 @@ function requestRun() {
       @edit="emit('edit')"
       @drive="emit('drive')"
       @load-example="emit('load-example', $event)"
+      @video-opened="emit('video-opened')"
     />
     <progress v-if="running" class="sr-only" :aria-label="t('editor.running')">{{ t('editor.runningText') }}</progress>
     <div

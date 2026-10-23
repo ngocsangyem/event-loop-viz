@@ -223,6 +223,7 @@ onMounted(() => {
             @edit="editScript"
             @load-example="loadExample"
             @drive="toggleDrive"
+            @video-opened="transport?.pause()"
           />
         </div>
         <!-- A flex column so the ghost stage can fill the column height before the first Run. -->

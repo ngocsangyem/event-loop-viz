@@ -1,0 +1,182 @@
+{
+  "async-generators": {
+    "en": {
+      "seconds": 278,
+      "bytes": 14933154
+    },
+    "vi": {
+      "seconds": 287,
+      "bytes": 15264504
+    }
+  },
+  "atomics-wait-async": {
+    "en": {
+      "seconds": 376,
+      "bytes": 28663037
+    },
+    "vi": {
+      "seconds": 395,
+      "bytes": 30029751
+    }
+  },
+  "await-vs-then": {
+    "en": {
+      "seconds": 267,
+      "bytes": 12825895
+    },
+    "vi": {
+      "seconds": 274,
+      "bytes": 13268716
+    }
+  },
+  "busy-wait": {
+    "en": {
+      "seconds": 272,
+      "bytes": 13897125
+    },
+    "vi": {
+      "seconds": 291,
+      "bytes": 15168142
+    }
+  },
+  "click-is-synchronous": {
+    "en": {
+      "seconds": 247,
+      "bytes": 14680581
+    },
+    "vi": {
+      "seconds": 260,
+      "bytes": 15595655
+    }
+  },
+  "dynamic-import": {
+    "en": {
+      "seconds": 347,
+      "bytes": 19670073
+    },
+    "vi": {
+      "seconds": 363,
+      "bytes": 21233465
+    }
+  },
+  "fetch-mock-api": {
+    "en": {
+      "seconds": 397,
+      "bytes": 29818395
+    },
+    "vi": {
+      "seconds": 419,
+      "bytes": 31125991
+    }
+  },
+  "finalization-registry": {
+    "en": {
+      "seconds": 331,
+      "bytes": 20224860
+    },
+    "vi": {
+      "seconds": 349,
+      "bytes": 21817551
+    }
+  },
+  "infinite-loop": {
+    "en": {
+      "seconds": 137,
+      "bytes": 5253469
+    },
+    "vi": {
+      "seconds": 145,
+      "bytes": 5760424
+    }
+  },
+  "message-channel-vs-timeout": {
+    "en": {
+      "seconds": 230,
+      "bytes": 11420607
+    },
+    "vi": {
+      "seconds": 235,
+      "bytes": 11795094
+    }
+  },
+  "message-port-transfer": {
+    "en": {
+      "seconds": 268,
+      "bytes": 15870710
+    },
+    "vi": {
+      "seconds": 285,
+      "bytes": 16882732
+    }
+  },
+  "post-message-listeners": {
+    "en": {
+      "seconds": 254,
+      "bytes": 13591095
+    },
+    "vi": {
+      "seconds": 272,
+      "bytes": 14635934
+    }
+  },
+  "request-animation-frame": {
+    "en": {
+      "seconds": 257,
+      "bytes": 13264083
+    },
+    "vi": {
+      "seconds": 268,
+      "bytes": 13801371
+    }
+  },
+  "sync-promise-async-timeout": {
+    "en": {
+      "seconds": 317,
+      "bytes": 18079599
+    },
+    "vi": {
+      "seconds": 332,
+      "bytes": 19086602
+    }
+  },
+  "thenables": {
+    "en": {
+      "seconds": 293,
+      "bytes": 15475584
+    },
+    "vi": {
+      "seconds": 297,
+      "bytes": 15903989
+    }
+  },
+  "timers-and-clamp": {
+    "en": {
+      "seconds": 367,
+      "bytes": 18896673
+    },
+    "vi": {
+      "seconds": 384,
+      "bytes": 20116676
+    }
+  },
+  "top-level-await": {
+    "en": {
+      "seconds": 323,
+      "bytes": 16133546
+    },
+    "vi": {
+      "seconds": 342,
+      "bytes": 17671144
+    }
+  },
+  "unhandled-rejection": {
+    "en": {
+      "seconds": 267,
+      "bytes": 13418008
+    },
+    "vi": {
+      "seconds": 275,
+      "bytes": 13686948
+    }
+  }
+}

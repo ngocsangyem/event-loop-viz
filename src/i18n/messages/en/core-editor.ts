@@ -1,5 +1,15 @@
 /** Editor card: the Script, Run, examples, settings and the notices about a Run. */
 export default {
+  video: {
+    play: 'Video lesson',
+    playLabel: 'Play the video lesson for {title}',
+    dialogTitle: 'Video lesson: {title}',
+    description: 'Step by step through the call stack, the queues and the event loop.',
+    otherLanguage: 'This lesson is not available in English yet, so it plays in Vietnamese.',
+    loading: 'Loading video…',
+    error: 'The video could not be loaded.',
+    retry: 'Try again',
+  },
   editor: {
     region: 'Code editor',
     title: 'Script',
