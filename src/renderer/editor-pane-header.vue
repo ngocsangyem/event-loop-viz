@@ -22,11 +22,11 @@ const { t } = useI18n()
 
 <template>
   <header
-    class="border-border-soft flex h-10 items-center gap-3 border-b px-4 font-mono text-xs leading-none font-medium tracking-[0.02em] uppercase"
+    class="border-border-soft flex h-10 items-center gap-3 border-b px-4 max-sm:gap-2 font-mono text-xs leading-none font-medium tracking-[0.02em] uppercase"
   >
     <template v-if="mode === 'edit'">
       <h2 class="text-foreground font-medium">{{ t('editor.title') }}</h2>
-      <span :class="running ? 'text-brand-text' : 'text-muted-foreground'" data-testid="editor-state">
+      <span :class="['min-w-0 truncate', running ? 'text-brand-text' : 'text-muted-foreground']" data-testid="editor-state">
         {{ running ? t('editor.locked') : t('editor.editing') }}
       </span>
       <span class="flex-1" />
@@ -37,7 +37,7 @@ const { t } = useI18n()
     </template>
     <template v-else>
       <h2 class="text-foreground font-medium">{{ t('editor.sourceTitle') }}</h2>
-      <span class="text-muted-foreground" data-testid="replay-banner">{{ t('editor.readOnlyTag') }}</span>
+      <span class="text-muted-foreground min-w-0 truncate" data-testid="replay-banner">{{ t('editor.readOnlyTag') }}</span>
       <span class="flex-1" />
       <ExampleVideoButton :examples="examples" :current-example-id="currentExampleId" @opened="emit('video-opened')" />
       <DriveMeButton compact :active="driving" @toggle="emit('drive')" />

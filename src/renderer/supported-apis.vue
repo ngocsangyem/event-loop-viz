@@ -32,8 +32,11 @@ const GROUPS = [
         size="sm"
         hotkey="?"
         class="h-auto self-stretch data-[state=open]:shadow-[inset_0_-2px_0_var(--foreground)]"
+        :aria-label="t('supportedApis.button')"
       >
-        {{ t('supportedApis.button') }}
+        <!-- The full label does not fit a phone header next to the other controls. -->
+        <span aria-hidden="true" class="max-sm:hidden">{{ t('supportedApis.button') }}</span>
+        <span aria-hidden="true" class="sm:hidden">{{ t('supportedApis.buttonShort') }}</span>
       </Button>
     </PopoverTrigger>
     <PopoverContent align="end" :side-offset="0" class="w-[340px] gap-3.5 p-4" data-testid="supported-apis">

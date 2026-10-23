@@ -134,6 +134,7 @@ export default {
   },
   supportedApis: {
     button: 'API được hỗ trợ',
+    buttonShort: 'API',
     title: 'Được hỗ trợ trong mô hình Chrome 155',
     group: { timer: 'Timer · Web API', dom: 'Task · DOM và event', job: 'Job · Promise và engine', console: 'Log · Console' },
     footer: 'Worker, XMLHttpRequest, WebSocket và requestIdleCallback là Unsupported API và chặn Run ngay từ trước khi chạy.',
