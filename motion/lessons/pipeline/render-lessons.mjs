@@ -3,6 +3,9 @@
 //   node render-lessons.mjs <id> [--lang=vi,en]            full render → public/videos/event-loop/<id>/<lang>.mp4
 //   node render-lessons.mjs <id> --lang=en --contact       one frame per beat → out/<id>/contact-<lang>.png
 //   node render-lessons.mjs <id> --lang=en --at=3.5,40     single frames → out/<id>/frames/
+// The app's videos are painted by motion/lessons/film-visualized. --style=sketch paints with the
+// earlier hand-drawn film (motion/lessons/film) instead; that video goes to out/<id>/sketch.<lang>.mp4
+// and the app's manifest is left alone.
 // The timeline is cut into chunks rendered in parallel, each encoded with the final settings so
 // the chunks join without re-encoding.
 import { chromium } from '@playwright/test'
@@ -20,6 +23,15 @@ const opt = Object.fromEntries(argv.filter((a) => a.startsWith('--')).map((a) =>
 const ids = argv.filter((a) => !a.startsWith('--'))
 const langs = String(opt.lang ?? 'vi,en').split(',')
 const WORKERS = Number(opt.workers ?? 6)
+const FILMS = { visualized: 'film-visualized', sketch: 'film' }
+const DEFAULT_STYLE = 'visualized'
+const chosen = typeof opt.style === 'string' ? opt.style : DEFAULT_STYLE
+if (!FILMS[chosen]) throw new Error(`unknown --style=${chosen} (${Object.keys(FILMS).join(', ')})`)
+const filmDir = FILMS[chosen]
+/** null for the style the app ships; otherwise the name used for its files in out/. */
+const STYLE = chosen === DEFAULT_STYLE ? null : chosen
+const suffix = STYLE ? `${STYLE}-` : ''
+const outputOf = (id, lang) => (STYLE ? join(lessonOutDir(id), `${STYLE}.${lang}.mp4`) : videoPath(id, lang))
 
 async function startServer() {
   process.env.ELV_E2E = '1'
@@ -32,7 +44,7 @@ async function startServer() {
 async function openPage(browser, url, id, lang) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
   page.on('pageerror', (e) => console.error(`page error (${id} ${lang}):`, e.message))
-  await page.goto(`${url}/motion/lessons/film/index.html?id=${id}&lang=${lang}`)
+  await page.goto(`${url}/motion/lessons/${filmDir}/index.html?id=${id}&lang=${lang}`)
   await page.waitForFunction(() => window.__ready === true, null, { timeout: 60_000 })
   return page
 }
@@ -61,7 +73,7 @@ async function renderChunk(browser, url, id, lang, from, to, file, progress) {
 async function renderVideo(browser, url, id, lang) {
   const timing = JSON.parse(readFileSync(join(lessonOutDir(id), `timing.${lang}.json`), 'utf8'))
   const total = Math.ceil(timing.duration * FPS)
-  const dir = join(lessonOutDir(id), `chunks-${lang}`)
+  const dir = join(lessonOutDir(id), `chunks-${suffix}${lang}`)
   rmSync(dir, { recursive: true, force: true })
   mkdirSync(dir, { recursive: true })
   const size = Math.ceil(total / WORKERS)
@@ -75,7 +87,7 @@ async function renderVideo(browser, url, id, lang) {
   writeFileSync(join(dir, 'list.txt'), chunks.map((c) => `file '${c.file}'`).join('\n'))
   const silent = join(dir, 'video.mp4')
   execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', join(dir, 'list.txt'), '-c', 'copy', silent])
-  const out = videoPath(id, lang)
+  const out = outputOf(id, lang)
   mkdirSync(dirname(out), { recursive: true })
   mixAudio(silent, join(lessonOutDir(id), `narration.${lang}.wav`), timing.duration, out)
   rmSync(dir, { recursive: true, force: true })
@@ -85,15 +97,15 @@ async function renderVideo(browser, url, id, lang) {
 /** One frame per beat, 70% into its voice, tiled 6 across: the review sheet. */
 async function contactSheet(browser, url, id, lang) {
   const timing = JSON.parse(readFileSync(join(lessonOutDir(id), `timing.${lang}.json`), 'utf8'))
-  const dir = join(lessonOutDir(id), `contact-${lang}`)
+  const dir = join(lessonOutDir(id), `contact-${suffix}${lang}`)
   rmSync(dir, { recursive: true, force: true })
   mkdirSync(dir, { recursive: true })
   const page = await openPage(browser, url, id, lang)
   for (const [i, beat] of timing.beats.entries()) {
     writeFileSync(join(dir, `b${String(i).padStart(3, '0')}.png`), await shot(page, beat.speech + beat.speechDuration * 0.7))
   }
-  execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-framerate', '1', '-i', join(dir, 'b%03d.png'), '-vf', `scale=640:360,tile=6x${Math.ceil(timing.beats.length / 6)}`, '-frames:v', '1', join(lessonOutDir(id), `contact-${lang}.png`)])
-  console.log(`contact sheet → ${join(lessonOutDir(id), `contact-${lang}.png`)} (full frames in ${dir})`)
+  execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-framerate', '1', '-i', join(dir, 'b%03d.png'), '-vf', `scale=640:360,tile=6x${Math.ceil(timing.beats.length / 6)}`, '-frames:v', '1', join(lessonOutDir(id), `contact-${suffix}${lang}.png`)])
+  console.log(`contact sheet → ${join(lessonOutDir(id), `contact-${suffix}${lang}.png`)} (full frames in ${dir})`)
 }
 
 const { server, url } = await startServer()
@@ -111,7 +123,7 @@ try {
       } else await renderVideo(browser, url, id, lang)
     }
   }
-  if (!opt.contact && !opt.at) console.log(`manifest: ${writeVideoManifest().count} videos`)
+  if (!opt.contact && !opt.at && !STYLE) console.log(`manifest: ${writeVideoManifest().count} videos`)
 } finally {
   await browser.close()
   await server.close()
