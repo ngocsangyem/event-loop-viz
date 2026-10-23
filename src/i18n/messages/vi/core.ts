@@ -35,6 +35,9 @@ export default {
     replayRun: 'Phát lại · Lần chạy #{n}',
     keys: 'Phím',
     keysHint: 'In phím tắt cạnh các nút',
+    menu: 'Menu',
+    guides: 'Hướng dẫn',
+    shareCopiedShort: 'Đã chép',
   },
   switch: {
     on: 'Bật',
@@ -60,5 +63,6 @@ export default {
     sheet: 'Bảng này',
     trace: 'Hiện / ẩn panel Trace',
     drive: 'Bắt đầu / kết thúc Drive me',
+    groups: { playback: 'Phát lại', guides: 'Hướng dẫn', app: 'Script và ứng dụng' },
   },
 } satisfies typeof en

@@ -20,11 +20,11 @@ test('phone width never scrolls horizontally and every transport control is tapp
   }))
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.client)
 
-  // The five 52px targets (Tick, Step, Play), the Auto-play switch and the speed picker; Start,
+  // The five 52px targets (Tick, Step, Play) and the PLAYBACK word (speed, Auto-play); Start,
   // End and the Task jumps are keyboard extras that hide on a phone. The scrubber's family
   // markers are a pointer shortcut.
   const controls = page.getByTestId('transport-bar').locator('[data-control]:visible, [role=combobox]:visible')
-  expect(await controls.count()).toBeGreaterThanOrEqual(7)
+  expect(await controls.count()).toBeGreaterThanOrEqual(6)
   for (const control of await controls.all()) {
     await control.scrollIntoViewIfNeeded()
     const box = await control.boundingBox()

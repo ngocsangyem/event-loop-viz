@@ -110,5 +110,7 @@ export default {
       'The Script runs once in a sandboxed Worker against a Chrome 155 event loop model. Then you replay every step — forwards and back.',
     busyBody: 'Replay starts as soon as the Run ends. Cancel stops the Worker.',
     blockedBody: 'The Script calls an API this model does not simulate. Remove it to run.',
+    /** The ready card's own Run, so the first action sits where the learner is looking. */
+    run: 'Run Script',
   },
 }

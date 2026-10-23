@@ -17,6 +17,7 @@ export default {
     },
     region: 'Hướng dẫn Drive me',
     progress: 'Bước {current} / {total}',
+    escHint: 'Nhấn Esc hoặc Kết thúc để thoát bất cứ lúc nào.',
     prev: 'Trước',
     next: 'Tiếp',
     done: 'Xong',

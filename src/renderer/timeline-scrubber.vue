@@ -48,7 +48,8 @@ function onSlide(value: number[] | undefined) {
 </script>
 
 <template>
-  <div class="scrubber relative h-[22px] w-full" data-testid="scrubber">
+  <!-- Taller than its marks: the track sits at the top, the rest is grab area for a pointer or a thumb. -->
+  <div class="scrubber relative h-7 w-full max-sm:h-9" data-testid="scrubber">
     <Slider
       class="h-full"
       thumb-alignment="overflow"
@@ -72,6 +73,7 @@ function onSlide(value: number[] | undefined) {
         :data-seq="m.seq"
         :data-family="m.family"
         :aria-label="t('scrubber.marker', { family: m.family, seq: m.seq })"
+        :title="t('scrubber.marker', { family: m.family, seq: m.seq })"
         :style="{ left: `${percent(m.index)}%` }"
         @click="seekIndex(m.index)"
       />

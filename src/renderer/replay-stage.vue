@@ -47,6 +47,8 @@ const props = defineProps<{
   travelMs: number
 }>()
 
+const emit = defineEmits<{ run: [] }>()
+
 // The first step has no step before it; compared with the empty loop, everything it shows is new.
 const EMPTY = createInitialState()
 const focus = computed(() => stepFocusOf(props.player ? (props.previous ?? EMPTY) : null, props.state))
@@ -61,7 +63,7 @@ const consoleMeta = computed(() => consoleMetaOf(props.events, props.position))
   <!-- min-h-0: on wide screens the stage is as tall as its column, not as tall as its content. -->
   <div class="flex min-w-0 flex-col xl:min-h-0">
     <StepCaption v-if="player" :events="events" :position="position" :state="state" :running="running" />
-    <GhostStage v-if="!player" :state="ghostState" class="flex-1 border-t" />
+    <GhostStage v-if="!player" :state="ghostState" class="flex-1 border-t" @run="emit('run')" />
     <!-- Wide screens: the Diagram fills the rest of the column and scales to fit it, so it never scrolls. -->
     <div
       v-else

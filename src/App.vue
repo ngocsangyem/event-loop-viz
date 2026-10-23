@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue'
+import { defineAsyncComponent, nextTick, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { findExample } from '@/examples/example-library'
 import { LOCALES } from '@/i18n/locales'
@@ -37,6 +37,8 @@ const AskAiAssistant = defineAsyncComponent(() => import('@/renderer/ai/ask-ai-a
 
 const { t } = useI18n()
 const shared = decodeShareFragment(window.location.hash)
+/** Without a share link the page opens on an example that uses every queue (DESIGN.md · States). */
+const FIRST_EXAMPLE = findExample('sync-promise-async-timeout')
 let autoRun = false // a share link runs on load; that Run must not move focus the user never placed
 const [editor, transport] = [useTemplateRef('editor'), useTemplateRef('transport')]
 const { choice: theme, toggle: toggleTheme } = useColorTheme()
@@ -71,7 +73,7 @@ async function afterRun() {
 }
 
 const session = useRunSession({
-  initial: shared ?? undefined,
+  initial: shared ?? (FIRST_EXAMPLE ? { script: FIRST_EXAMPLE.script, settings: {} } : undefined),
   onSettled: () => void afterRun(),
   // Lets tests shorten the 30 s wall-clock watchdog: /?watchdogMs=300
   watchdogMs: Number(new URLSearchParams(location.search).get('watchdogMs')) || undefined,
@@ -88,6 +90,10 @@ const { askOpen, askMounted, toggleAsk, focusLauncher, ensureRun, seekFromTour, 
   running, run, position, hasTrace: () => trace.value !== null, pausePlayback: () => transport.value?.pause(),
 })
 const { tab, gridStyle } = useAppLayout({ replaying, askOpen, traceOpen })
+// A phone's SCRIPT tab hides the dock and the stage, so a replay must not keep playing out of sight.
+watch(tab, (next) => {
+  if (next === 'script') transport.value?.pause()
+})
 
 // Drive me: the highlighted walkthrough; it owns P / N / Esc while it is on.
 const { session: drive, exampleId } = useDriveMe({
@@ -109,9 +115,11 @@ function editFromKey() {
 }
 
 /** R: back to the replay (the phone's REPLAY tab) with the playback controls focused. */
-function replayFromKey() {
+async function replayFromKey() {
   if (!replaying.value) return
   tab.value = 'replay'
+  // A phone hides the dock on SCRIPT; it has to render before it can take focus.
+  await nextTick()
   transport.value?.focusStep()
 }
 
@@ -125,7 +133,7 @@ function tourStep(direction: 'prev' | 'next') {
 
 useAppHotkeys({
   edit: editFromKey,
-  replay: replayFromKey,
+  replay: () => void replayFromKey(),
   setView: (next) => (view.value = next),
   toggleLocale,
   toggleTheme,
@@ -156,6 +164,11 @@ function loadExample(id: string) {
   session.replaceScript(example.script)
 }
 
+/** The ready card's Run: the same guard as the hotkey, then focus follows the Run like the footer's. */
+function runFromStage() {
+  if (!running.value && unsupportedApis.value.length === 0) void run()
+}
+
 const { url: shareUrl, copied: shareCopied, share } = useShareLink(script, settings)
 
 // Opening a share link runs it immediately: the link carries inputs, not a Trace.
@@ -179,6 +192,8 @@ onMounted(() => {
         :mode="replaying ? 'replay' : 'edit'"
         :can-replay="replaying"
         :run-number="runCount"
+        :phone-tab="tab"
+        :driving="driving"
         :share-url="shareUrl"
         :share-copied="shareCopied"
         @share="share"
@@ -187,6 +202,8 @@ onMounted(() => {
         @toggle-locale="toggleLocale"
         @toggle-theme="toggleTheme"
         @toggle-keys="keys.toggle"
+        @drive="toggleDrive"
+        @ask="toggleAsk"
       />
       <StepAnnouncer :events="events" :position="position" />
       <div class="border-border flex flex-col border-b empty:hidden">
@@ -213,7 +230,6 @@ onMounted(() => {
             :run-number="runCount || null"
             :replaying="replaying"
             :running="running"
-            :driving="driving"
             :syntax-error="syntaxError"
             :syntax-error-at="syntaxErrorAt"
             :highlight="sourceHighlight"
@@ -222,7 +238,6 @@ onMounted(() => {
             @cancel="cancel"
             @edit="editScript"
             @load-example="loadExample"
-            @drive="toggleDrive"
             @video-opened="transport?.pause()"
           />
         </div>
@@ -241,6 +256,7 @@ onMounted(() => {
             :running="running"
             :same-view="sameView"
             :travel-ms="travelMs"
+            @run="runFromStage"
           />
         </div>
         <div
@@ -269,7 +285,7 @@ onMounted(() => {
         ref="transportCard"
         :aria-label="t('dock.region')"
         role="region"
-        class="bg-background border-border sticky bottom-0 z-10 flex flex-col border-t xl:h-(--dock-h)"
+        :class="['bg-background border-border sticky bottom-0 z-10 flex flex-col border-t xl:h-(--dock-h)', tab === 'script' && 'max-md:hidden']"
       >
         <TransportBar
           ref="transport"

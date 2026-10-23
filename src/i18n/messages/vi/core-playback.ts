@@ -16,6 +16,8 @@ export default {
     speed: 'Tốc độ',
     autostart: 'Tự phát',
     autostartHint: 'Tự phát ngay khi Run xong',
+    options: 'Tùy chọn phát',
+    optionsTitle: 'Cài đặt phát lại',
     word: {
       start: 'Đầu',
       task: 'Task',

@@ -6,7 +6,7 @@ import DriveInfoButton from './drive-info-button.vue'
 import type { DriveInfo } from './drive-step'
 
 /**
- * The card of one Drive me step: `STEP 03 OF 07`, the title, the explanation, and
+ * The card of one Drive me step: `STEP 03 OF 07` over a progress rule, the title, the explanation, and
  * [P]PREV · [ESC]END · [N]NEXT. A non-modal dialog: the page stays readable around it, and the
  * body is a polite live region so each new step is read out. The default slot replaces the body
  * (a loading line or an error while steps are being prepared).
@@ -28,6 +28,7 @@ const titleId = useId()
 const pad = (n: number) => String(n).padStart(2, '0')
 const progress = computed(() => t('drive.progress', { current: pad(props.index + 1), total: pad(props.total) }))
 const last = computed(() => props.index >= props.total - 1)
+const fraction = computed(() => (props.total > 0 ? (props.index + 1) / props.total : 0))
 /** With no steps (loading, none fit, a failure) the card is a notice: no progress and no Prev/Next. */
 const stepping = computed(() => props.total > 0)
 
@@ -53,6 +54,10 @@ function onEscape(event: KeyboardEvent) {
     <p v-if="stepping" class="text-brand-text font-mono text-xs font-medium tracking-[0.02em] uppercase tabular-nums" data-testid="drive-progress">
       {{ progress }}
     </p>
+    <!-- How far the walkthrough has come; scaleX so only a transform animates. -->
+    <div v-if="stepping" class="bg-border-soft -mt-1 h-0.5 w-full overflow-hidden" aria-hidden="true">
+      <div class="bg-brand h-full w-full origin-left transition-transform duration-(--motion-base) ease-(--ease-out) motion-reduce:transition-none" :style="{ transform: `scaleX(${fraction})` }" />
+    </div>
     <h2 :id="titleId" class="text-foreground text-[15px] leading-5 font-semibold">{{ title }}</h2>
     <div aria-live="polite" class="text-foreground-2 flex flex-col gap-2 text-sm leading-[1.55]">
       <slot>
@@ -63,6 +68,7 @@ function onEscape(event: KeyboardEvent) {
       </slot>
     </div>
     <DriveInfoButton v-if="info" :info="info" />
+    <p v-if="stepping && index === 0" class="text-muted-foreground text-xs leading-4" data-testid="drive-esc-hint">{{ t('drive.escHint') }}</p>
     <div class="flex items-center gap-2 pt-1">
       <Button v-if="stepping" variant="secondary" size="sm" hotkey="P" class="max-sm:h-11!" :disabled="index === 0" data-testid="drive-prev" @click="emit('prev')">
         {{ t('drive.prev') }}

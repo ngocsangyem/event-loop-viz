@@ -7,6 +7,7 @@ import { NavTabs } from '@/components/ui/nav-tabs'
 import type { NavTabItem } from '@/components/ui/nav-tabs'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
+import AppHeaderPhoneMenu from './app-header-phone-menu.vue'
 import { LOCALES, LOCALE_NAMES } from '@/i18n/locales'
 import type { Locale } from '@/i18n/locales'
 import type { ThemeChoice } from './use-color-theme'
@@ -15,7 +16,8 @@ import type { VisualizerView } from './use-visualizer-view'
 /**
  * The 48px terminal bar (DESIGN.md · Layout): lowercase title and model tag, the Edit / Replay
  * mode, the view switch, then language, theme, Share and the KEYS ON/OFF switch. The active nav
- * item has a 2px ink underline. On a phone the bar wraps and the view switch takes its own row.
+ * item has a 2px ink underline. On a phone the bar is the title and MENU (language, theme, Share and
+ * the guides); the view switch takes its own row on the REPLAY tab only, since SCRIPT shows no stage.
  */
 const props = defineProps<{
   shareUrl: string | null
@@ -29,6 +31,10 @@ const props = defineProps<{
   canReplay: boolean
   /** Runs completed this session; 0 before the first. */
   runNumber: number
+  /** Phone tab on show; the view switch is useless on SCRIPT, where the stage is hidden. */
+  phoneTab: 'script' | 'replay'
+  /** A Drive me walkthrough is on (the phone MENU names the action accordingly). */
+  driving: boolean
 }>()
 const view = defineModel<VisualizerView>('view', { required: true })
 const shareOpen = defineModel<boolean>('shareOpen', { required: true })
@@ -39,6 +45,8 @@ const emit = defineEmits<{
   toggleLocale: []
   toggleTheme: []
   toggleKeys: []
+  drive: []
+  ask: []
 }>()
 
 const { t } = useI18n()
@@ -92,7 +100,10 @@ const headerButton = 'h-auto px-2'
     />
     <div class="flex-1" aria-hidden="true" />
     <NavTabs
-      class="max-md:order-last max-md:w-full max-md:[&>button]:h-11 max-md:[&>button]:flex-1 max-md:[&>button]:justify-center"
+      :class="[
+        'max-md:border-border-soft max-md:order-last max-md:w-full max-md:border-t max-md:[&>button]:h-11 max-md:[&>button]:flex-1 max-md:[&>button]:justify-center',
+        phoneTab === 'script' && 'max-md:hidden',
+      ]"
       height="auto"
       :aria-label="t('header.visualization')"
       :items="viewItems"
@@ -100,7 +111,18 @@ const headerButton = 'h-auto px-2'
       @update:model-value="onView"
     />
     <div class="bg-border my-3.5 w-px shrink-0 max-md:hidden" aria-hidden="true" />
-    <div class="flex items-stretch gap-1 max-md:ml-auto max-md:h-12">
+    <AppHeaderPhoneMenu
+      :locale="locale"
+      :theme="theme"
+      :share-copied="shareCopied"
+      :driving="driving"
+      @toggle-locale="emit('toggleLocale')"
+      @toggle-theme="emit('toggleTheme')"
+      @share="emit('share')"
+      @drive="emit('drive')"
+      @ask="emit('ask')"
+    />
+    <div class="flex items-stretch gap-1 max-md:hidden">
       <Button
         variant="secondary"
         :class="headerButton"

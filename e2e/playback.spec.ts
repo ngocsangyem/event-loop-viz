@@ -43,6 +43,7 @@ test('4x covers the same span in a quarter of the time', async ({ page }) => {
 
   await page.locator('body').click()
   await page.keyboard.press('Home')
+  await page.locator('[data-control=playback-options]').click()
   await page.getByRole('combobox', { name: 'Speed' }).click()
   await page.getByRole('option', { name: '4×' }).click()
   await page.getByRole('button', { name: 'Play' }).click()

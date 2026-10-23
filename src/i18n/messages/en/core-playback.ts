@@ -15,6 +15,9 @@ export default {
     speed: 'Speed',
     autostart: 'Auto-play',
     autostartHint: 'Start playing as soon as a Run finishes',
+    /** The dock word that holds the speed and Auto-play. */
+    options: 'Playback',
+    optionsTitle: 'Playback settings',
     /** Printed on the controls; each word is part of the control's full name above. */
     word: {
       start: 'Start',

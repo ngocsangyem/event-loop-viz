@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { runHotkeyLabel } from './run-hotkey-label'
 
 /** Where the Script stands before a Trace exists: idle, being recorded, or refused for an Unsupported API. */
 export type GhostStageState = 'idle' | 'running' | 'blocked'
@@ -9,9 +11,12 @@ export type GhostStageState = 'idle' | 'running' | 'blocked'
 /**
  * The stage in edit mode, with no Trace to replay: one ghost cell per pane, each saying what will
  * appear there, and a card that says what to do (or what is happening) next. Ghosts are outlines
- * only, so they never read as real, empty panes.
+ * only, so they never read as real, empty panes. While idle the card carries its own Run, so the
+ * first action sits where the learner is already looking.
  */
 const props = defineProps<{ state: GhostStageState }>()
+const emit = defineEmits<{ run: [] }>()
+const runHotkey = runHotkeyLabel()
 const { t } = useI18n()
 
 const CELLS = [
@@ -59,11 +64,15 @@ const card = computed(() => {
     <!-- The card sits over the ghosts' crossing; polite so a Run starting or being refused is heard. -->
     <div
       class="bg-popover border-border absolute top-1/2 left-1/2 flex w-[460px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 border p-7"
-      role="status"
     >
-      <Badge :variant="card.variant"><span v-if="state === 'blocked'" aria-hidden="true">⚠&nbsp;</span>{{ t(card.label) }}</Badge>
-      <h2 class="text-foreground text-2xl leading-[30px] font-medium tracking-[-0.02em]">{{ t(card.title) }}</h2>
-      <p class="text-foreground-2 text-[15px] leading-6">{{ t(card.body) }}</p>
+      <div class="flex flex-col gap-3" role="status">
+        <Badge :variant="card.variant"><span v-if="state === 'blocked'" aria-hidden="true">⚠&nbsp;</span>{{ t(card.label) }}</Badge>
+        <h2 class="text-foreground text-2xl leading-[30px] font-medium tracking-[-0.02em]">{{ t(card.title) }}</h2>
+        <p class="text-foreground-2 text-[15px] leading-6">{{ t(card.body) }}</p>
+      </div>
+      <Button v-if="state === 'idle'" size="lg" class="mt-1 self-start" :hotkey="runHotkey" data-testid="ghost-run" @click="emit('run')">
+        {{ t('ghostStage.run') }}
+      </Button>
     </div>
   </div>
 </template>
