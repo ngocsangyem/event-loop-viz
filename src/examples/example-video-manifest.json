@@ -2,181 +2,181 @@
   "async-generators": {
     "en": {
       "seconds": 278,
-      "bytes": 14933154
+      "bytes": 12654348
     },
     "vi": {
       "seconds": 287,
-      "bytes": 15264504
+      "bytes": 12936530
     }
   },
   "atomics-wait-async": {
     "en": {
       "seconds": 376,
-      "bytes": 28663037
+      "bytes": 24115094
     },
     "vi": {
       "seconds": 395,
-      "bytes": 30029751
+      "bytes": 25275069
     }
   },
   "await-vs-then": {
     "en": {
       "seconds": 267,
-      "bytes": 12825895
+      "bytes": 10885975
     },
     "vi": {
       "seconds": 274,
-      "bytes": 13268716
+      "bytes": 11178839
     }
   },
   "busy-wait": {
     "en": {
       "seconds": 272,
-      "bytes": 13897125
+      "bytes": 11874659
     },
     "vi": {
       "seconds": 291,
-      "bytes": 15168142
+      "bytes": 12743878
     }
   },
   "click-is-synchronous": {
     "en": {
       "seconds": 247,
-      "bytes": 14680581
+      "bytes": 12798047
     },
     "vi": {
       "seconds": 260,
-      "bytes": 15595655
+      "bytes": 13479253
     }
   },
   "dynamic-import": {
     "en": {
       "seconds": 347,
-      "bytes": 19670073
+      "bytes": 16418462
     },
     "vi": {
       "seconds": 363,
-      "bytes": 21233465
+      "bytes": 17284190
     }
   },
   "fetch-mock-api": {
     "en": {
       "seconds": 397,
-      "bytes": 29818395
+      "bytes": 23835696
     },
     "vi": {
       "seconds": 419,
-      "bytes": 31125991
+      "bytes": 24835890
     }
   },
   "finalization-registry": {
     "en": {
       "seconds": 331,
-      "bytes": 20224860
+      "bytes": 17187905
     },
     "vi": {
       "seconds": 349,
-      "bytes": 21817551
+      "bytes": 18405234
     }
   },
   "infinite-loop": {
     "en": {
       "seconds": 137,
-      "bytes": 5253469
+      "bytes": 4398754
     },
     "vi": {
       "seconds": 145,
-      "bytes": 5760424
+      "bytes": 4778286
     }
   },
   "message-channel-vs-timeout": {
     "en": {
       "seconds": 230,
-      "bytes": 11420607
+      "bytes": 9528720
     },
     "vi": {
       "seconds": 235,
-      "bytes": 11795094
+      "bytes": 9617597
     }
   },
   "message-port-transfer": {
     "en": {
       "seconds": 268,
-      "bytes": 15870710
+      "bytes": 13585316
     },
     "vi": {
       "seconds": 285,
-      "bytes": 16882732
+      "bytes": 14345031
     }
   },
   "post-message-listeners": {
     "en": {
       "seconds": 254,
-      "bytes": 13591095
+      "bytes": 11940731
     },
     "vi": {
       "seconds": 272,
-      "bytes": 14635934
+      "bytes": 12751284
     }
   },
   "request-animation-frame": {
     "en": {
       "seconds": 257,
-      "bytes": 13264083
+      "bytes": 11390688
     },
     "vi": {
       "seconds": 268,
-      "bytes": 13801371
+      "bytes": 11850433
     }
   },
   "sync-promise-async-timeout": {
     "en": {
       "seconds": 317,
-      "bytes": 18079599
+      "bytes": 15060748
     },
     "vi": {
       "seconds": 332,
-      "bytes": 19086602
+      "bytes": 15731153
     }
   },
   "thenables": {
     "en": {
       "seconds": 293,
-      "bytes": 15475584
+      "bytes": 13148813
     },
     "vi": {
       "seconds": 297,
-      "bytes": 15903989
+      "bytes": 13271346
     }
   },
   "timers-and-clamp": {
     "en": {
       "seconds": 367,
-      "bytes": 18896673
+      "bytes": 16321993
     },
     "vi": {
       "seconds": 384,
-      "bytes": 20116676
+      "bytes": 17114914
     }
   },
   "top-level-await": {
     "en": {
       "seconds": 323,
-      "bytes": 16133546
+      "bytes": 13656279
     },
     "vi": {
       "seconds": 342,
-      "bytes": 17671144
+      "bytes": 14619061
     }
   },
   "unhandled-rejection": {
     "en": {
       "seconds": 267,
-      "bytes": 13418008
+      "bytes": 11296558
     },
     "vi": {
       "seconds": 275,
-      "bytes": 13686948
+      "bytes": 11533709
     }
   }
 }

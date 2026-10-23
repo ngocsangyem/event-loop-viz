@@ -16,7 +16,8 @@ step stands on the Trace and why it happens.
 | Example source | `oracle/fixtures/*.js` via `src/examples/example-library.ts` | The Script, the same file Chrome was recorded on |
 | Execution timeline | `motion/lessons/timeline/` | Trace → `LessonSnapshot`s (stack, queues, Web APIs, loop phase, console, code line) and checks |
 | Narration | `motion/lessons/content/<example-id>.ts` | Intro, overview, steps anchored on Trace events, "why" points, recap, in `vi` and `en` |
-| Animation | `motion/lessons/film/` | Code panel, call stack, queues, Web APIs, event loop, console, flying cards, arrows, notes, captions, why board, recap |
+| Animation | `motion/lessons/film-visualized/` | The shipped style: editor-window code, console, gradient-bordered runtime panels, spotlight focus, cards that travel through the event loop, why card, recap |
+| Animation (earlier) | `motion/lessons/film/` | The hand-drawn style with captions, kept for `--style=sketch`. Its clock, easing and DOM helpers are shared by the shipped style |
 | Rendering | `motion/lessons/pipeline/` | Plan, voice, render, QA, manifest |
 | Output | `public/videos/event-loop/<example-id>/<lang>.mp4` | Served as static files, tracked with Git LFS |
 
@@ -58,11 +59,15 @@ two voices together sounded broken.
 node motion/lessons/pipeline/render-lessons.mjs <id> [--lang=vi,en]
 ```
 
-The render step paints every frame through `window.seek(t)` in headless Chromium and encodes
+The render step paints every frame of `motion/lessons/film-visualized/` through `window.seek(t)` in
+headless Chromium and encodes
 H.264 High at 1920×1080, 30 fps, yuv420p (BT.709, limited range), CRF 24 with
 `-tune animation`, AAC voice at -14 LUFS, and `+faststart`. It then rewrites
 `src/examples/example-video-manifest.json`. A 5-minute lesson renders in about 5 minutes and
 comes out at about 15 MB.
+
+Pass `--style=sketch` to paint the earlier hand-drawn film instead. It writes to
+`out/<id>/sketch.<lang>.mp4` and leaves the app's videos and manifest alone.
 
 Review and QA:
 
@@ -94,6 +99,30 @@ to `plans/samples/`.
    `sync-promise-async-timeout.ts` as the model. It is picked up automatically.
 3. Run plan, then voice, then a contact sheet. Review it, then do the full render.
 4. Commit the content file, the MP4s (LFS) and the manifest.
+
+## Visual style
+
+The shipped style is modelled on Lydia Hallie's *JavaScript Visualized – Event Loop*. The study
+and the rules taken from it are in
+[`research/event-loop-visualized-video-spec.md`](research/event-loop-visualized-video-spec.md).
+
+- **Layout:** the Script sits in an editor window on the left, with the console under it. The
+  runtime is drawn as a diagram on the right: Call Stack and Web APIs on top, then the Event Loop
+  column next to the Task Queue and Microtask Queue.
+- **Intro:** asks the question first, with one "?" per line the Script will print.
+- **Spotlight:** while a part is introduced or explained, it stays lit and the others dim.
+- **Moves:**
+  - A frame appears faint in place, then solidifies.
+  - A Web API card fills its callback and delay slots.
+  - A finished timer wobbles, then leaves.
+  - Work taken from a queue travels through the Event Loop column on its way to the stack.
+- **Code panel:** dims once the Script's own Task ends. Only the callback lines that still run
+  stay lit.
+
+The two styles differ in a few ways:
+
+- This style shows no captions; the hand-drawn film does.
+- The Script is still drawn as a Task taken by the event loop, which the original video skips.
 
 ## Timing rules
 
